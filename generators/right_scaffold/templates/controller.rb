@@ -38,7 +38,7 @@ class <%= controller_class_name %>Controller < ApplicationController
     @<%= file_name %> = <%= class_name %>.find(params[:id])
     
     respond_to do |format|
-      format.js  { rjs.show_form_for(@<%= file_name %>) }
+      format.js  { render rjs.show_form_for(@<%= file_name %>) }
       format.any # edit.html.erb
     end
   end
@@ -54,11 +54,11 @@ class <%= controller_class_name %>Controller < ApplicationController
         flash[:notice] = '<%= class_name %> was successfully created.'
         format.html { redirect_to(@<%= file_name %>) }
         format.xml  { render :xml => @<%= file_name %>, :status => :created, :location => @<%= file_name %> }
-        format.js   { rjs.insert(@<%= file_name %>) }
+        format.js   { render rjs.insert(@<%= file_name %>) }
       else
         format.html { render :action => "new" }
         format.xml  { render :xml => @<%= file_name %>.errors, :status => :unprocessable_entity }
-        format.js   { rjs.replace_form_for(@<%= file_name %>) }
+        format.js   { render rjs.replace_form_for(@<%= file_name %>) }
       end
     end
   end
@@ -74,11 +74,11 @@ class <%= controller_class_name %>Controller < ApplicationController
         flash[:notice] = '<%= class_name %> was successfully updated.'
         format.html { redirect_to(@<%= file_name %>) }
         format.xml  { head :ok }
-        format.js   { rjs.replace(@<%= file_name %>) }
+        format.js   { render rjs.replace(@<%= file_name %>) }
       else
         format.html { render :action => "edit" }
         format.xml  { render :xml => @<%= file_name %>.errors, :status => :unprocessable_entity }
-        format.js   { rjs.replace_form_for(@<%= file_name %>) }
+        format.js   { render rjs.replace_form_for(@<%= file_name %>) }
       end
     end
   end
@@ -93,7 +93,7 @@ class <%= controller_class_name %>Controller < ApplicationController
     respond_to do |format|
       format.html { redirect_to(<%= table_name %>_url) }
       format.xml  { head :ok }
-      format.js   { rjs.remove(@<%= file_name %>) }
+      format.js   { render rjs.remove(@<%= file_name %>) }
     end
   end
 end

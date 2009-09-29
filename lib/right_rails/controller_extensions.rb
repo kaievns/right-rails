@@ -8,13 +8,15 @@ module RightRails::ControllerExtensions
   # This method returns a wrapped RightRails scripts builder
   #
   #
-  def rjs(&block)
-    @right_rails_render_wrapper ||= RenderWrapper.new(self)
+  def rjs(options={}, &block)
+    @template.send(:_evaluate_assigns_and_ivars)
+    
+    wrapper = RenderWrapper.new(@template)
     
     if block_given?
-      @right_rails_render_wrapper.render_block(&block)
+      wrapper.render_block(options, &block)
     else
-      @right_rails_render_wrapper
+      wrapper
     end
   end
   
@@ -26,41 +28,48 @@ module RightRails::ControllerExtensions
   # #render method to create a proper response
   #
   class RenderWrapper
-    def initialize(controller)
-      @controller = controller
-      @generator  = RightRails::JavaScriptGenerator.new(@controller)
+    def initialize(template)
+      @generator = RightRails::JavaScriptGenerator.new(template)
     end
     
+    def render_block(options, &block)
+      build yield(@generator), options
+    end
+    
+    #
+    # The RR interface methods proxy
+    #
     def insert(record, options={})
-      render @generator.rr.insert(record), options
+      build @generator.rr.insert(record), options
     end
     
     def replace(record, options={})
-      render @generator.rr.replace(record), options
+      build @generator.rr.replace(record), options
     end
     
     def remove(record, options={})
-      render @generator.rr.remove(record), options
+      build @generator.rr.remove(record), options
     end
     
     def show_form_for(record, options={})
-      render @generator.rr.show_form_for(record), options
+      build @generator.rr.show_form_for(record), options
     end
     
     def replace_form_for(record)
-      render @generator.rr.replace_form_for(record), options
-    end
-    
-    def render_block(&block)
-      render yield(@generator), options
+      build @generator.rr.replace_form_for(record), options
     end
     
   protected
     
-    def render(text, options)
-      @controller.instance_eval do
-        render options.merge(:text => text.to_s)
-      end
+    #
+    # Compiles the options for the controller#render method
+    #
+    def render(source, options)
+      result = {:text => "#{source}", :content_type => Mime::JS}
+      
+      # TODO iframed uploads content-type and layout overriding
+      
+      result.merge(options)
     end
   end
   
