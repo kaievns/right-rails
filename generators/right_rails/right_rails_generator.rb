@@ -4,7 +4,7 @@
 
 class RightRailsGenerator < Rails::Generator::Base
   
-  mandatory_options :source => "#{File.dirname(__FILE__)}/javascripts"
+  mandatory_options :source => "#{File.dirname(__FILE__)}/../../javascripts"
   
   def initialize(args, options={})
     ['public/javascripts/right', 'public/javascripts/right/i18n'].each do |directory|
@@ -26,7 +26,7 @@ class RightRailsGenerator < Rails::Generator::Base
           else
             file.gsub('right-', 'right/')
           end
-        
+          
           m.file file, "public/javascripts/#{destination}", :chmod => 644
         end
       end
