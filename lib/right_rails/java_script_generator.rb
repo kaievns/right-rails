@@ -5,7 +5,7 @@ class RightRails::JavaScriptGenerator
   
   def initialize(template)
     @util         = Util.new(template)
-    @rr_generator = RRGenerator.new(@util)
+    @rr_generator = RRGenerator.new(@util, self)
     @code_lines   = []
   end
   
@@ -26,7 +26,7 @@ class RightRails::JavaScriptGenerator
   end
   
   # the top-level constants that the generator should respond to transparently
-  JS_CONSTANTS = [:document, :window, :top]
+  JS_CONSTANTS = [:document, :window, :top, :RR]
   
   # method calls catchup
   def method_missing(name, *args)
@@ -86,29 +86,30 @@ protected
   # RightRails javascript driver methods calling generator
   #
   class RRGenerator
-    def initialize(util)
+    def initialize(util, page)
       @util = util
+      @page = page
     end
     
     def insert(record)
-      "RR.insert(\"#{record.class.table_name}\", \"#{@util.render(record)}\")"
+      @page.RR.insert(record.class.table_name, @util.render(record))
     end
 
     def replace(record)
-      "RR.replace(\"#{@util.dom_id(record)}\", \"#{@util.render(record)}\")"
+      @page.RR.replace(@util.dom_id(record), @util.render(record))
     end
 
     def remove(record)
-      "RR.remove(\"#{@util.dom_id(record)}\")"
+      @page.RR.remove(@util.dom_id(record))
     end
 
     def show_form_for(record)
-      "RR.show_form_for(\"#{@util.dom_id(record)}\", \"#{@util.render('form')}\")"
+      @page.RR.show_form_for(@util.dom_id(record), @util.render('form'))
     end
 
     def replace_form_for(record)
       id = record.new_record? ? "new_#{record.class.table_name.singularize}" : "edit_#{@util.dom_id(record)}"
-      "RR.replace_form_for(\"#{id}\", \"#{@util.render('form')}\")"
+      @page.RR.replace_form_for(id, @util.render('form'))
     end
   end
   
@@ -133,7 +134,7 @@ protected
 
     # retnders the thing
     def render(what, options={})
-      @template.javascript_escape(@template.render(what, options))
+      @template.render(what, options)
     end
     
     # builds a new method call object

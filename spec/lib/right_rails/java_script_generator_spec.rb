@@ -1,5 +1,8 @@
 require File.dirname(__FILE__) + "/../../spec_helper.rb"
 
+#
+# Fake active-record and active resource classes to work with
+#
 module ActiveRecord
   class Base
     def initialize(hash)
@@ -8,6 +11,12 @@ module ActiveRecord
     
     def id
       @hash[:id]
+    end
+    
+    def self.table_name
+      name = 'records'
+      name.stub!(:singularize).and_return('record')
+      name
     end
   end
 end
@@ -127,6 +136,58 @@ describe RightRails::JavaScriptGenerator do
       
       @page["element-id"].test(@value)
       @page.to_s.should == '$("element-id").test({id:"22"});'
+    end
+  end
+  
+  describe "RR object method calls generator" do
+    before :each do
+      @record = ActiveRecord::Base.new({:id => '22'})
+    end
+    
+    it "should generate script for the 'insert' request" do
+      @template.should_receive(:render).with(@record, anything).and_return('<record html code/>')
+      
+      @page.rr.insert(@record)
+      @page.to_s.should == 'RR.insert("records","<record html code/>");'
+    end
+    
+    it "should generate script for the 'replace' request" do
+      @template.should_receive(:render).with(@record, anything).and_return('<record html code/>')
+      
+      @page.rr.replace(@record)
+      @page.to_s.should == 'RR.replace("record_22","<record html code/>");'
+    end
+    
+    it "should generate script for the 'remove' request" do
+      @page.rr.remove(@record)
+      @page.to_s.should == 'RR.remove("record_22");'
+    end
+    
+    it "should generate script for the 'show_form_for' request" do
+      @template.should_receive(:render).with('form', anything).and_return('<the form html code/>')
+      
+      @page.rr.show_form_for(@record)
+      @page.to_s.should == 'RR.show_form_for("record_22","<the form html code/>");'
+    end
+    
+    describe "replace_form_for generator" do
+      before :each do
+        @template.should_receive(:render).with('form', anything).and_return('<the form html code/>')
+      end
+      
+      it "should generate a script for a new record" do
+        @record.should_receive(:new_record?).and_return(true)
+
+        @page.rr.replace_form_for(@record)
+        @page.to_s.should == 'RR.replace_form_for("new_record","<the form html code/>");'
+      end
+      
+      it "should generate a script for an existing record" do
+        @record.should_receive(:new_record?).and_return(false)
+
+        @page.rr.replace_form_for(@record)
+        @page.to_s.should == 'RR.replace_form_for("edit_record_22","<the form html code/>");'
+      end
     end
   end
   
