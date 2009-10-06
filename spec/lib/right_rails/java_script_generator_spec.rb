@@ -62,6 +62,16 @@ describe RightRails::JavaScriptGenerator do
       @page.to_s.should == 'something=null;'
     end
     
+    it "should generate redirect" do
+      @page.redirect_to('/boo/boo/boo')
+      @page.to_s.should == 'window.location.href="/boo/boo/boo";'
+    end
+    
+    it "should generate reload" do
+      @page.reload
+      @page.to_s.should == 'window.location.reload();'
+    end
+    
     it "should process << pushes correctly" do
       @page << 'some_code();' << 'another_code();'
       @page.to_s.should == 'some_code();another_code();'
@@ -198,6 +208,18 @@ describe RightRails::JavaScriptGenerator do
         @page.rr.replace_form_for(@record)
         @page.to_s.should == 'RR.replace_form_for("edit_record_22","<the form html code/>");'
       end
+    end
+    
+    it "should generate redirection" do
+      @template.should_receive(:url_for).with({:the => options}).and_return('/the/url')
+      
+      @page.rr.redirect_to({:the => options})
+      @page.to_s.should == 'window.location.href="/the/url";'
+    end
+    
+    it "should generate redirection" do
+      @page.rr.reload
+      @page.to_s.should == 'window.location.reload();'
     end
   end
   

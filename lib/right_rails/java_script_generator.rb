@@ -26,6 +26,19 @@ class RightRails::JavaScriptGenerator
     line
   end
   
+  # generates the redirection script
+  def redirect_to(location)
+    url = location.is_a?(String) ? location : @util.template.url_for(location)
+    @thread << "window.location.href=#{url.inspect};"
+    self
+  end
+  
+  # generates the page reload script
+  def reload
+    @thread << "window.location.reload();"
+    self
+  end
+  
   # just pushes a line of code into the thread
   def << (code)
     @thread << code
@@ -121,6 +134,14 @@ protected
       id = record.new_record? ? "new_#{record.class.table_name.singularize}" : "edit_#{@util.dom_id(record)}"
       @page.RR.replace_form_for(id, @util.render('form'))
     end
+    
+    def redirect_to(url)
+      @page.redirect_to(url)
+    end
+    
+    def reload
+      @page.reload
+    end
   end
   
   #
@@ -145,6 +166,11 @@ protected
     # retnders the thing
     def render(what, options={})
       @template.render(what, options)
+    end
+    
+    # access to the template object
+    def template
+      @template
     end
     
     # builds a new method call object
