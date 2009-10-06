@@ -77,6 +77,11 @@ protected
       @child = @util.make_call(".#{name}")
     end
     
+    # attribute assignment hook
+    def []=(name, value)
+      send "#{name}=", value
+    end
+    
     # catches all the method calls
     def method_missing(name, *args)
       name = name.to_s

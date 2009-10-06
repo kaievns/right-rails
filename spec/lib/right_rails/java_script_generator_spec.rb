@@ -105,6 +105,16 @@ describe RightRails::JavaScriptGenerator do
       @page['element-id'].test(1).show.highlight()
       @page.to_s.should == '$("element-id").test(1).show().highlight();'
     end
+    
+    it "should catch up the assignments correctly" do
+      @page['element-id'].innerHTML  = nil;
+      @page.to_s.should == '$("element-id").innerHTML=null;'
+    end
+    
+    it "should catch the property assignment calls too" do
+      @page['element-id'][:title] = 'something';
+      @page.to_s.should == '$("element-id").title="something";'
+    end
   end
   
   describe "data types conversion" do
@@ -157,6 +167,13 @@ describe RightRails::JavaScriptGenerator do
       @page["element-id"].test(@value)
       @page.to_s.should == '$("element-id").test({id:"22"});'
     end
+    
+    # it "should convert lambdas to functions" do
+    #   @page.find("boo").each(lambda{ |item, i, array|
+    #     array.push(item.update(i).highlight)
+    #   })
+    #   @page.to_s.should == '$$("boo").each(function(a,b,c){c.push(a.update(b).highlight());});'
+    # end
   end
   
   describe "RR object method calls generator" do
