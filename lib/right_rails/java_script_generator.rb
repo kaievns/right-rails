@@ -4,13 +4,7 @@
 class RightRails::JavaScriptGenerator
   
   def initialize(template, thread=nil)
-    @util         = Util.new(template, thread)
-    @rr_generator = RRGenerator.new(@util, self)
-  end
-  
-  # the global RR handler reference
-  def rr
-    @rr_generator
+    @util = Util.new(template, thread)
   end
   
   # referring an element by an id or a record
@@ -18,16 +12,22 @@ class RightRails::JavaScriptGenerator
     @util.record("$(\"#{@util.dom_id(record_or_id)}\")")
   end
   
+  # just pushes a line of code into the thread
+  def << (code)
+    @util.write(code)
+    self
+  end
+  
   # builds a css-select block
   def find(css_rule)
     @util.record("$$(\"#{css_rule}\")")
   end
-  
+
   # access to the javascript variables
   def get(name)
     @util.record(name)
   end
-  
+
   # variables initializing method
   def set(name, value)
     @util.record("var #{name}=#{@util.js_args([value])}")
@@ -38,17 +38,37 @@ class RightRails::JavaScriptGenerator
     self.document[:location].href = (location.is_a?(String) ? location : @util.template.url_for(location))
     self
   end
-  
+
   # generates the page reload script
   def reload
     self.document[:location].reload
     self
   end
   
-  # just pushes a line of code into the thread
-  def << (code)
-    @util.write(code)
-    self
+  # builds the record HTML code and then insterts it in place
+  def insert(record)
+    self.RR.insert(record.class.table_name, @util.render(record))
+  end
+
+  # replaces the record element on the page
+  def replace(record)
+    self.RR.replace(@util.dom_id(record), @util.render(record))
+  end
+
+  # removes the record element from the page
+  def remove(record)
+    self.RR.remove(@util.dom_id(record))
+  end
+  
+  # renders and shows a form for the record
+  def show_form_for(record)
+    self.RR.show_form_for(@util.dom_id(record), @util.render('form'))
+  end
+  
+  # renders and updates a form for the record
+  def replace_form_for(record)
+    id = record.new_record? ? "new_#{record.class.table_name.singularize}" : "edit_#{@util.dom_id(record)}"
+    self.RR.replace_form_for(id, @util.render('form'))
   end
   
   # the top-level constants that the generator should respond to transparently
@@ -117,45 +137,6 @@ protected
     # exports the whole thing into a String
     def to_s
       @parent.to_s + (@child || '').to_s
-    end
-  end
-  
-  #
-  # RightRails javascript driver methods calling generator
-  #
-  class RRGenerator
-    def initialize(util, page)
-      @util = util
-      @page = page
-    end
-    
-    def insert(record)
-      @page.RR.insert(record.class.table_name, @util.render(record))
-    end
-
-    def replace(record)
-      @page.RR.replace(@util.dom_id(record), @util.render(record))
-    end
-
-    def remove(record)
-      @page.RR.remove(@util.dom_id(record))
-    end
-
-    def show_form_for(record)
-      @page.RR.show_form_for(@util.dom_id(record), @util.render('form'))
-    end
-
-    def replace_form_for(record)
-      id = record.new_record? ? "new_#{record.class.table_name.singularize}" : "edit_#{@util.dom_id(record)}"
-      @page.RR.replace_form_for(id, @util.render('form'))
-    end
-    
-    def redirect_to(url)
-      @page.redirect_to(url)
-    end
-    
-    def reload
-      @page.reload
     end
   end
   

@@ -194,26 +194,26 @@ describe RightRails::JavaScriptGenerator do
     it "should generate script for the 'insert' request" do
       @template.should_receive(:render).with(@record, anything).and_return('<record html code/>')
       
-      @page.rr.insert(@record)
+      @page.insert(@record)
       @page.to_s.should == 'RR.insert("records","<record html code/>");'
     end
     
     it "should generate script for the 'replace' request" do
       @template.should_receive(:render).with(@record, anything).and_return('<record html code/>')
       
-      @page.rr.replace(@record)
+      @page.replace(@record)
       @page.to_s.should == 'RR.replace("record_22","<record html code/>");'
     end
     
     it "should generate script for the 'remove' request" do
-      @page.rr.remove(@record)
+      @page.remove(@record)
       @page.to_s.should == 'RR.remove("record_22");'
     end
     
     it "should generate script for the 'show_form_for' request" do
       @template.should_receive(:render).with('form', anything).and_return('<the form html code/>')
       
-      @page.rr.show_form_for(@record)
+      @page.show_form_for(@record)
       @page.to_s.should == 'RR.show_form_for("record_22","<the form html code/>");'
     end
     
@@ -225,28 +225,16 @@ describe RightRails::JavaScriptGenerator do
       it "should generate a script for a new record" do
         @record.should_receive(:new_record?).and_return(true)
 
-        @page.rr.replace_form_for(@record)
+        @page.replace_form_for(@record)
         @page.to_s.should == 'RR.replace_form_for("new_record","<the form html code/>");'
       end
       
       it "should generate a script for an existing record" do
         @record.should_receive(:new_record?).and_return(false)
 
-        @page.rr.replace_form_for(@record)
+        @page.replace_form_for(@record)
         @page.to_s.should == 'RR.replace_form_for("edit_record_22","<the form html code/>");'
       end
-    end
-    
-    it "should generate redirection" do
-      @template.should_receive(:url_for).with({:the => options}).and_return('/the/url')
-      
-      @page.rr.redirect_to({:the => options})
-      @page.to_s.should == 'document.location.href="/the/url";'
-    end
-    
-    it "should generate redirection" do
-      @page.rr.reload
-      @page.to_s.should == 'document.location.reload();'
     end
   end
   
