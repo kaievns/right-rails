@@ -117,8 +117,9 @@ protected
     OPERATIONS = %w{+ - * / % <<}
     
     # catches all the method calls
-    def method_missing(name, *args)
+    def method_missing(name, *args, &block)
       name = name.to_s
+      args << block if block_given?
       
       @child = @util.make_call((
         # assignments
@@ -240,7 +241,7 @@ protected
           
           # throwing an ansupported class name
           else
-            throw "RightRails::JavaScriptGenerator doesn't instances of '#{value.class.name.to_sym}' yet"
+            throw "RightRails::JavaScriptGenerator doesn't instances of #{value.class.name} yet"
           end
       end
     end
@@ -249,18 +250,26 @@ protected
     def proc_to_function(&block)
       thread = []
       args   = []
-      name   = 'a'
       names  = []
+      name   = 'a'
+      page   = RightRails::JavaScriptGenerator.new(@template, thread)
       
       block.arity.times do |i|
-        args  << RightRails::JavaScriptGenerator.new(@template, thread)
+        args  << page.get(name)
         names << name
         name = name.succ
       end
       
-      result = yield(*args)
+      # swapping the current thread with the block's one
+      old_thread = @thread
+      @thread = thread
       
-      "function(#{names.join(',')}){#{thread.to_s};return #{to_js_type(result)}}"
+      yield(*args)
+      
+      # swapping the current therad back
+      @thread = old_thread
+      
+      "function(#{names.join(',')}){#{page.to_s}}"
     end
   end
   

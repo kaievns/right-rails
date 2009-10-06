@@ -195,12 +195,33 @@ describe RightRails::JavaScriptGenerator do
       @page.to_s.should == '$("element-id").test({id:"22"});'
     end
     
-    # it "should convert lambdas to functions" do
-    #   @page.find("boo").each(lambda{ |item, i, array|
-    #     array.push(item.update(i).highlight)
-    #   })
-    #   @page.to_s.should == '$$("boo").each(function(a,b,c){c.push(a.update(b).highlight());});'
-    # end
+    it "should convert lambdas to functions" do
+      @page.find("boo").each(lambda{ |item, i, array|
+        item.boo(i.foo(2)) + array.hoo
+      })
+      @page.to_s.should == '$$("boo").each(function(a,b,c){a.boo(b.foo(2))+c.hoo();});'
+    end
+    
+    it "should process blocks nicely" do
+      @page.find("boo").each do |item, i|
+        item.boo(i.foo('hoo'))
+      end
+      
+      @page.to_s.should == '$$("boo").each(function(a,b){a.boo(b.foo("hoo"));});'
+    end
+    
+    it "should process blocks with scope variables and the page builder calls" do
+      some_text = 'boo'
+      
+      @page.find("foo").each do |item, index|
+        @page['element'][:innerHTML] << item[:innerHTML] + index
+      end
+      
+      # checking that the context is getting back
+      @page.alert(@page['element'][:innerHTML])
+      
+      @page.to_s.should == '$$("foo").each(function(a,b){$("element").innerHTML+=a.innerHTML+b;});alert($("element").innerHTML);'
+    end
   end
   
   describe "RR object method calls generator" do
