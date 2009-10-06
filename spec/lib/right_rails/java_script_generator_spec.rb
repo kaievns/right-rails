@@ -72,6 +72,11 @@ describe RightRails::JavaScriptGenerator do
       @page.to_s.should == 'document.location.reload();'
     end
     
+    it "should provide access to javascript context variables" do
+      @page.get(:my_var).property = 'boo';
+      @page.to_s.should == 'my_var.property="boo";'
+    end
+    
     it "should process << pushes correctly" do
       @page << 'some_code();' << 'another_code();'
       @page.to_s.should == 'some_code();another_code();'

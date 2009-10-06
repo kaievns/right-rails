@@ -23,6 +23,11 @@ class RightRails::JavaScriptGenerator
     @util.record("$$(\"#{css_rule}\")")
   end
   
+  # access to the javascript variables
+  def get(name)
+    @util.record(name)
+  end
+  
   # generates the redirection script
   def redirect_to(location)
     self.document[:location].href = (location.is_a?(String) ? location : @util.template.url_for(location))
