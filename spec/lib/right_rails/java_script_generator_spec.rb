@@ -125,6 +125,23 @@ describe RightRails::JavaScriptGenerator do
       @page['element-id'][:title] = 'something';
       @page.to_s.should == '$("element-id").title="something";'
     end
+    
+    it "should process other methods calls as arguments" do
+      @page['element-id'].update(@page.my_method(@page.another_method(1,2),3,nil))
+      @page.to_s.should == '$("element-id").update(my_method(another_method(1,2),3,null));'
+    end
+    
+    it "should process operation calls" do
+      @page.property = @page.first + @page.another(1,nil) * @page.more / 2 -
+        @page.get(:thing) / @page.another(2) + nil - 'boo' + @page.last(@page.first)
+        
+      @page.to_s.should == 'property=first()+another(1,null)*more()/2-thing/another(2)+null-"boo"+last(first());'
+    end
+    
+    it "should process the append operation" do
+      @page['element'][:innerHTML] << 'boo'
+      @page.to_s.should == '$("element").innerHTML+="boo";'
+    end
   end
   
   describe "data types conversion" do

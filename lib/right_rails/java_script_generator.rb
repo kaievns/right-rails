@@ -30,7 +30,7 @@ class RightRails::JavaScriptGenerator
 
   # variables initializing method
   def set(name, value)
-    @util.record("var #{name}=#{@util.js_args([value])}")
+    @util.record("var #{name}=#{@util.to_js_type(value)}")
   end
   
   # generates the redirection script
@@ -79,9 +79,9 @@ class RightRails::JavaScriptGenerator
     @util.record(if JS_CONSTANTS.include?(name)
       name
     elsif name.to_s[name.to_s.size-1, name.to_s.size] == '='
-      "#{name.to_s[0, name.to_s.size-1]}=#{@util.js_args(args.slice(0,1))}"
+      "#{name.to_s[0, name.to_s.size-1]}=#{@util.to_js_type(args.first)}"
     else
-      "#{name}(#{@util.js_args(args)})"
+      "#{name}(#{@util.to_js_args(args)})"
     end)
   end
   
@@ -97,14 +97,16 @@ protected
   #
   class MethodCall
     
-    def initialize(parent, util)
-      @parent = parent
+    def initialize(this, util, parent)
+      @this   = this
       @util   = util
+      @parent = parent
+      @script = (parent ? parent.instance_variable_get('@script') : '') + this.to_s
     end
     
     # catches the properties request
     def [](name)
-      @child = @util.make_call(".#{name}")
+      @child = @util.make_call(".#{name}", self)
     end
     
     # attribute assignment hook
@@ -112,31 +114,32 @@ protected
       send "#{name}=", value
     end
     
+    OPERATIONS = %w{+ - * / % <<}
+    
     # catches all the method calls
     def method_missing(name, *args)
       name = name.to_s
       
-      @child = @util.make_call(
+      @child = @util.make_call((
+        # assignments
         if name[name.size-1, name.size] == '='
-          ".#{name[0,name.size-1]}=#{@util.js_args(args.slice(0,1))}"
+          ".#{name[0,name.size-1]}=#{@util.to_js_type(args.first)}"
+          
+        # operation calls
+        elsif OPERATIONS.include?(name)
+          name = "+=" if name == '<<'
+          "#{name}#{@util.to_js_type(args.first)}"
+          
+        # usual method calls
         else
-          ".#{name}(#{@util.js_args(args)})"
+          ".#{name}(#{@util.to_js_args(args)})"
         end
-      )
+      ), self)
     end
     
-    # operations
-    def +(value)
-      @child = @util.make_call("#{@parent} + ")
-    end
-    
-    def -(value)
-      @child = @util.make_call("#{@parent} - ")
-    end
-    
-    # exports the whole thing into a String
-    def to_s
-      @parent.to_s + (@child || '').to_s
+    # exports the whole thing into a javascript string
+    def to_s(dump=false)
+      dump ? @script : (@this.to_s + (@child || '').to_s)
     end
   end
   
@@ -171,8 +174,8 @@ protected
     end
     
     # builds a new method call object
-    def make_call(string)
-      MethodCall.new(string, self)
+    def make_call(string, parent=nil)
+      MethodCall.new(string, self, parent)
     end
     
     # Records a new call
@@ -181,10 +184,12 @@ protected
       line
     end
     
+    # writes a pline script code into the thread
     def write(script)
       @thread << script
     end
     
+    # builds the end script
     def build_script
       @thread.collect{|line|
         line.is_a?(String) ? line : (line.to_s + ';')
@@ -192,35 +197,52 @@ protected
     end
 
     # converts the list of values into a javascript function arguments list
-    def js_args(args)
+    def to_js_args(args)
       args.collect do |value|
-        case value.class.name.to_sym
-          when :Float, :Fixnum, :TrueClass, :FalseClass, :Symbol then value.to_s
-          when :String   then "\"#{@template.escape_javascript(value)}\""
-          when :NilClass then 'null'
-          when :Array    then "[#{js_args(value)}]"
-#          when :Proc     then proc_to_function(&value)
-          else
-            
-            # simple hashes processing
-            if value.is_a?(Hash)
-              pairs = []
-              value.each do |key, value|
-                pairs << "#{js_args([key])}:#{js_args([value])}"
-              end
-              "{#{pairs.sort.join(',')}}"
-            
-            # JSON exportable values processing
-            elsif value.respond_to?(:to_json)
-              js_args([value.to_json])
-            
-            
-            # throwing an ansupported class name
-            else
-              throw "RightRails::JavaScriptGenerator doesn't instances of '#{value.class.name}' yet"
-            end
-        end
+        to_js_type(value)
       end.join(',')
+    end
+    
+    # converts any ruby type into an javascript type
+    def to_js_type(value)
+      case value.class.name.to_sym
+        when :Float, :Fixnum, :TrueClass, :FalseClass, :Symbol then value.to_s
+        when :String   then "\"#{@template.escape_javascript(value)}\""
+        when :NilClass then 'null'
+        when :Array    then "[#{to_js_args(value)}]"
+        when :Proc     then proc_to_function(&value)
+        else
+            
+          # the other method-calls processing
+          if value.is_a?(MethodCall)
+            # removing the call out of the calls thread
+            top    = value
+            parent = value
+            while parent
+              top    = parent
+              parent = parent.instance_variable_get('@parent')
+            end
+            @thread.reject!{ |item| item == top }
+            
+            value.to_s(true) # <- reverse call reconstruction
+            
+          # simple hashes processing
+          elsif value.is_a?(Hash)
+            pairs = []
+            value.each do |key, value|
+              pairs << "#{to_js_type(key)}:#{to_js_type(value)}"
+            end
+            "{#{pairs.sort.join(',')}}"
+          
+          # JSON exportable values processing
+          elsif value.respond_to?(:to_json)
+            to_js_type(value.to_json)
+          
+          # throwing an ansupported class name
+          else
+            throw "RightRails::JavaScriptGenerator doesn't instances of '#{value.class.name.to_sym}' yet"
+          end
+      end
     end
     
     # converts a proc into a javascript function
@@ -236,9 +258,9 @@ protected
         name = name.succ
       end
       
-      yield(*args)
+      result = yield(*args)
       
-      "function(#{names.join(',')}){#{thread.to_s}}"
+      "function(#{names.join(',')}){#{thread.to_s};return #{to_js_type(result)}}"
     end
   end
   
