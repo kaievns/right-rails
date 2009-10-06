@@ -64,12 +64,12 @@ describe RightRails::JavaScriptGenerator do
     
     it "should generate redirect" do
       @page.redirect_to('/boo/boo/boo')
-      @page.to_s.should == 'window.location.href="/boo/boo/boo";'
+      @page.to_s.should == 'document.location.href="/boo/boo/boo";'
     end
     
     it "should generate reload" do
       @page.reload
-      @page.to_s.should == 'window.location.reload();'
+      @page.to_s.should == 'document.location.reload();'
     end
     
     it "should process << pushes correctly" do
@@ -214,12 +214,12 @@ describe RightRails::JavaScriptGenerator do
       @template.should_receive(:url_for).with({:the => options}).and_return('/the/url')
       
       @page.rr.redirect_to({:the => options})
-      @page.to_s.should == 'window.location.href="/the/url";'
+      @page.to_s.should == 'document.location.href="/the/url";'
     end
     
     it "should generate redirection" do
       @page.rr.reload
-      @page.to_s.should == 'window.location.reload();'
+      @page.to_s.should == 'document.location.reload();'
     end
   end
   

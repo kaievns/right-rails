@@ -4,9 +4,8 @@
 class RightRails::JavaScriptGenerator
   
   def initialize(template, thread=nil)
-    @util         = Util.new(template)
+    @util         = Util.new(template, thread)
     @rr_generator = RRGenerator.new(@util, self)
-    @thread       = thread || []
   end
   
   # the global RR handler reference
@@ -16,32 +15,29 @@ class RightRails::JavaScriptGenerator
   
   # referring an element by an id or a record
   def [](record_or_id)
-    @thread << (line = @util.call("$(\"#{@util.dom_id(record_or_id)}\")"))
-    line
+    @util.record("$(\"#{@util.dom_id(record_or_id)}\")")
   end
   
   # builds a css-select block
   def find(css_rule)
-    @thread << (line = @util.call("$$(\"#{css_rule}\")"))
-    line
+    @util.record("$$(\"#{css_rule}\")")
   end
   
   # generates the redirection script
   def redirect_to(location)
-    url = location.is_a?(String) ? location : @util.template.url_for(location)
-    @thread << "window.location.href=#{url.inspect};"
+    self.document[:location].href = (location.is_a?(String) ? location : @util.template.url_for(location))
     self
   end
   
   # generates the page reload script
   def reload
-    @thread << "window.location.reload();"
+    self.document[:location].reload
     self
   end
   
   # just pushes a line of code into the thread
   def << (code)
-    @thread << code
+    @util.write(code)
     self
   end
   
@@ -50,22 +46,18 @@ class RightRails::JavaScriptGenerator
   
   # method calls catchup
   def method_missing(name, *args)
-    @thread << (line = @util.call(if JS_CONSTANTS.include?(name)
+    @util.record(if JS_CONSTANTS.include?(name)
       name
     elsif name.to_s[name.to_s.size-1, name.to_s.size] == '='
       "#{name.to_s[0, name.to_s.size-1]}=#{@util.js_args(args.slice(0,1))}"
     else
       "#{name}(#{@util.js_args(args)})"
-    end))
-    
-    line
+    end)
   end
   
   # returns the result script
   def to_s
-    @thread.collect{|line|
-      line.is_a?(String) ? line : (line.to_s + ';')
-    }.join('')
+    @util.build_script
   end
   
 protected
@@ -82,21 +74,29 @@ protected
     
     # catches the properties request
     def [](name)
-      @child = @util.call(".#{name}")
+      @child = @util.make_call(".#{name}")
     end
     
     # catches all the method calls
     def method_missing(name, *args)
-      @child = @util.call(".#{name}(#{@util.js_args(args)})")
+      name = name.to_s
+      
+      @child = @util.make_call(
+        if name[name.size-1, name.size] == '='
+          ".#{name[0,name.size-1]}=#{@util.js_args(args.slice(0,1))}"
+        else
+          ".#{name}(#{@util.js_args(args)})"
+        end
+      )
     end
     
     # operations
     def +(value)
-      @child = @util.call("#{@parent} + ")
+      @child = @util.make_call("#{@parent} + ")
     end
     
     def -(value)
-      @child = @util.call("#{@parent} - ")
+      @child = @util.make_call("#{@parent} - ")
     end
     
     # exports the whole thing into a String
@@ -150,8 +150,9 @@ protected
   #
   class Util
     
-    def initialize(template)
+    def initialize(template, thread=nil)
       @template = template
+      @thread   = thread || []
     end
     
     # returns a conventional dom id for the record
@@ -174,8 +175,24 @@ protected
     end
     
     # builds a new method call object
-    def call(string)
+    def make_call(string)
       MethodCall.new(string, self)
+    end
+    
+    # Records a new call
+    def record(call)
+      @thread << (line = make_call(call))
+      line
+    end
+    
+    def write(script)
+      @thread << script
+    end
+    
+    def build_script
+      @thread.collect{|line|
+        line.is_a?(String) ? line : (line.to_s + ';')
+      }.join('')
     end
 
     # converts the list of values into a javascript function arguments list
@@ -186,6 +203,7 @@ protected
           when :String   then "\"#{@template.escape_javascript(value)}\""
           when :NilClass then 'null'
           when :Array    then "[#{js_args(value)}]"
+#          when :Proc     then proc_to_function(&value)
           else
             
             # simple hashes processing
@@ -207,6 +225,24 @@ protected
             end
         end
       end.join(',')
+    end
+    
+    # converts a proc into a javascript function
+    def proc_to_function(&block)
+      thread = []
+      args   = []
+      name   = 'a'
+      names  = []
+      
+      block.arity.times do |i|
+        args  << RightRails::JavaScriptGenerator.new(@template, thread)
+        names << name
+        name = name.succ
+      end
+      
+      yield(*args)
+      
+      "function(#{names.join(',')}){#{thread.to_s}}"
     end
   end
   
