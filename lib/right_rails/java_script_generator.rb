@@ -28,6 +28,11 @@ class RightRails::JavaScriptGenerator
     @util.record(name)
   end
   
+  # variables initializing method
+  def set(name, value)
+    @util.record("var #{name}=#{@util.js_args([value])}")
+  end
+  
   # generates the redirection script
   def redirect_to(location)
     self.document[:location].href = (location.is_a?(String) ? location : @util.template.url_for(location))

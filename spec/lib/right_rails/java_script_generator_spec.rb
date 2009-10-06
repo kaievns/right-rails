@@ -57,11 +57,6 @@ describe RightRails::JavaScriptGenerator do
       @page.to_s.should == '$$("div, span, table");'
     end
     
-    it "should process assignments" do
-      @page.something = nil;
-      @page.to_s.should == 'something=null;'
-    end
-    
     it "should generate redirect" do
       @page.redirect_to('/boo/boo/boo')
       @page.to_s.should == 'document.location.href="/boo/boo/boo";'
@@ -72,9 +67,19 @@ describe RightRails::JavaScriptGenerator do
       @page.to_s.should == 'document.location.reload();'
     end
     
+    it "should process assignments" do
+      @page.something = nil;
+      @page.to_s.should == 'something=null;'
+    end
+    
     it "should provide access to javascript context variables" do
       @page.get(:my_var).property = 'boo';
       @page.to_s.should == 'my_var.property="boo";'
+    end
+    
+    it "should let you set the variables" do
+      @page.set(:my_var, nil)
+      @page.to_s.should == 'var my_var=null;'
     end
     
     it "should process << pushes correctly" do
