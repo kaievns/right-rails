@@ -52,6 +52,16 @@ describe RightRails::JavaScriptGenerator do
       @page.to_s.should == '$("record_22");'
     end
     
+    it "should generate a CSS select block" do
+      @page.find('div, span, table')
+      @page.to_s.should == '$$("div, span, table");'
+    end
+    
+    it "should process assignments" do
+      @page.something = nil;
+      @page.to_s.should == 'something=null;'
+    end
+    
     it "should process << pushes correctly" do
       @page << 'some_code();' << 'another_code();'
       @page.to_s.should == 'some_code();another_code();'

@@ -3,10 +3,10 @@
 #
 class RightRails::JavaScriptGenerator
   
-  def initialize(template)
+  def initialize(template, thread=nil)
     @util         = Util.new(template)
     @rr_generator = RRGenerator.new(@util, self)
-    @code_lines   = []
+    @thread       = thread || []
   end
   
   # the global RR handler reference
@@ -16,12 +16,19 @@ class RightRails::JavaScriptGenerator
   
   # referring an element by an id or a record
   def [](record_or_id)
-    @code_lines << (line = @util.call("$(\"#{@util.dom_id(record_or_id)}\")"))
+    @thread << (line = @util.call("$(\"#{@util.dom_id(record_or_id)}\")"))
     line
   end
   
+  # builds a css-select block
+  def find(css_rule)
+    @thread << (line = @util.call("$$(\"#{css_rule}\")"))
+    line
+  end
+  
+  # just pushes a line of code into the thread
   def << (code)
-    @code_lines << code
+    @thread << code
     self
   end
   
@@ -30,8 +37,10 @@ class RightRails::JavaScriptGenerator
   
   # method calls catchup
   def method_missing(name, *args)
-    @code_lines << (line = @util.call(if JS_CONSTANTS.include?(name)
+    @thread << (line = @util.call(if JS_CONSTANTS.include?(name)
       name
+    elsif name.to_s[name.to_s.size-1, name.to_s.size] == '='
+      "#{name.to_s[0, name.to_s.size-1]}=#{@util.js_args(args.slice(0,1))}"
     else
       "#{name}(#{@util.js_args(args)})"
     end))
@@ -39,8 +48,9 @@ class RightRails::JavaScriptGenerator
     line
   end
   
+  # returns the result script
   def to_s
-    @code_lines.collect{|line|
+    @thread.collect{|line|
       line.is_a?(String) ? line : (line.to_s + ';')
     }.join('')
   end
