@@ -11,10 +11,10 @@ module RightRails::ControllerExtensions
   def rjs(options={}, &block)
     @template.send(:_evaluate_assigns_and_ivars)
     
-    wrapper = RenderWrapper.new(@template)
+    wrapper = RenderWrapper.new(@template, options)
     
     if block_given?
-      wrapper.render_block(options, &block)
+      wrapper.render_block(&block)
     else
       wrapper
     end
@@ -23,40 +23,24 @@ module RightRails::ControllerExtensions
   #
   # This class wraps the standard JavaScript responses in the controller
   # 
-  # It delegates all the scripts generating to the JavaScriptGenerator
-  # receives the result mixes the options and then uses the controller's
-  # #render method to create a proper response
+  # It delegates all the script generating calls to the JavaScriptGenerator
+  # instance, then grabs thre reults and creates a suitable hash of options
+  # for the ActionController::Base#render method
   #
   class RenderWrapper
-    def initialize(template)
+    def initialize(template, options)
       @generator = RightRails::JavaScriptGenerator.new(template)
+      @options   = options
     end
     
-    def render_block(options, &block)
-      build yield(@generator), options
+    def render_block(&block)
+      yield(@generator)
+      render
     end
     
-    #
-    # The RR interface methods proxy
-    #
-    def insert(record, options={})
-      build @generator.rr.insert(record), options
-    end
-    
-    def replace(record, options={})
-      build @generator.rr.replace(record), options
-    end
-    
-    def remove(record, options={})
-      build @generator.rr.remove(record), options
-    end
-    
-    def show_form_for(record, options={})
-      build @generator.rr.show_form_for(record), options
-    end
-    
-    def replace_form_for(record)
-      build @generator.rr.replace_form_for(record), options
+    def method_missing(name, *args)
+      @generator.send(name, *args)
+      render 
     end
     
   protected
@@ -64,12 +48,12 @@ module RightRails::ControllerExtensions
     #
     # Compiles the options for the controller#render method
     #
-    def render(source, options)
-      result = {:text => "#{source}", :content_type => Mime::JS}
+    def render
+      result = {:text => @generator.to_s, :content_type => Mime::JS}
       
       # TODO iframed uploads content-type and layout overriding
       
-      result.merge(options)
+      result.merge! @options
     end
   end
   

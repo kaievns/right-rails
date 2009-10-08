@@ -214,13 +214,13 @@ describe RightRails::JavaScriptGenerator do
       some_text = 'boo'
       
       @page.find("foo").each do |item, index|
-        @page['element'][:innerHTML] << item[:innerHTML] + index
+        @page['element'][:innerHTML] << item[:innerHTML] + index + some_text
       end
       
       # checking that the context is getting back
       @page.alert(@page['element'][:innerHTML])
       
-      @page.to_s.should == '$$("foo").each(function(a,b){$("element").innerHTML+=a.innerHTML+b;});alert($("element").innerHTML);'
+      @page.to_s.should == '$$("foo").each(function(a,b){$("element").innerHTML+=a.innerHTML+b+"boo";});alert($("element").innerHTML);'
     end
   end
   
