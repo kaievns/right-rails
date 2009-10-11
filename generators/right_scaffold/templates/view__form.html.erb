@@ -10,5 +10,7 @@
 
   <p class="buttons">
     <%%= f.submit f.object.new_record? ? 'Create' : 'Update' %>
+    <%%= link_to_function 'Cancel', "$(this).parent('form').remove();" if request.xhr? %>
+    <%%= image_tag 'spinner.gif', :style => 'display:none', :class => :spinner %>
   </p>
 <%% end %>
