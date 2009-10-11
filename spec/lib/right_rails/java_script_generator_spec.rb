@@ -5,7 +5,7 @@ require File.dirname(__FILE__) + "/../../spec_helper.rb"
 #
 module ActiveRecord
   class Base
-    def initialize(hash)
+    def initialize(hash={})
       @hash = hash
     end
     
@@ -17,6 +17,10 @@ module ActiveRecord
       name = 'records'
       name.stub!(:singularize).and_return('record')
       name
+    end
+    
+    def new_record?
+      true
     end
   end
 end
@@ -230,14 +234,14 @@ describe RightRails::JavaScriptGenerator do
     end
     
     it "should generate script for the 'insert' request" do
-      @template.should_receive(:render).with(@record, anything).and_return('<record html code/>')
+      @template.should_receive(:render).with(@record).and_return('<record html code/>')
       
       @page.insert(@record)
       @page.to_s.should == 'RR.insert("records","<record html code/>");'
     end
     
     it "should generate script for the 'replace' request" do
-      @template.should_receive(:render).with(@record, anything).and_return('<record html code/>')
+      @template.should_receive(:render).with(@record).and_return('<record html code/>')
       
       @page.replace(@record)
       @page.to_s.should == 'RR.replace("record_22","<record html code/>");'
@@ -249,7 +253,7 @@ describe RightRails::JavaScriptGenerator do
     end
     
     it "should generate script for the 'show_form_for' request" do
-      @template.should_receive(:render).with('form', anything).and_return('<the form html code/>')
+      @template.should_receive(:render).with('form').and_return('<the form html code/>')
       
       @page.show_form_for(@record)
       @page.to_s.should == 'RR.show_form_for("record_22","<the form html code/>");'
@@ -257,23 +261,56 @@ describe RightRails::JavaScriptGenerator do
     
     describe "replace_form_for generator" do
       before :each do
-        @template.should_receive(:render).with('form', anything).and_return('<the form html code/>')
+        @template.should_receive(:render).with('form').and_return('<the form html code/>')
       end
       
       it "should generate a script for a new record" do
         @record.should_receive(:new_record?).and_return(true)
 
         @page.replace_form_for(@record)
-        @page.to_s.should == 'RR.replace_form_for("new_record","<the form html code/>");'
+        @page.to_s.should == 'RR.replace_form("new_record","<the form html code/>");'
       end
       
       it "should generate a script for an existing record" do
         @record.should_receive(:new_record?).and_return(false)
 
         @page.replace_form_for(@record)
-        @page.to_s.should == 'RR.replace_form_for("edit_record_22","<the form html code/>");'
+        @page.to_s.should == 'RR.replace_form("edit_record_22","<the form html code/>");'
       end
     end
+    
+    describe "updates with care" do
+      before :each do
+        @template.should_receive(:flashes).and_return('<flashes/>')
+        @template.should_receive(:flash).and_return(mock(:flash, {:clear => true}))
+      end
+      
+      it "should generate response for #update_flash" do
+        @page.update_flash
+        @page.to_s.should == 'RR.update_flash("<flashes/>");'
+      end
+
+      it "should generate response for the #insert_and_care method" do
+        @template.should_receive(:render).with('form').and_return('<the form html code/>')
+        @template.should_receive(:render).with(@record).and_return('<record html code/>')
+
+        @page.insert_and_care(@record)
+
+        @page.to_s.should == 'RR.insert("records","<record html code/>");' +
+          'RR.replace_form("new_record","<the form html code/>");' +
+          'RR.update_flash("<flashes/>");'
+      end
+      
+      it "should generate response for the #replace_and_care method" do
+        @template.should_receive(:render).with(@record).and_return('<record html code/>')
+
+        @page.replace_and_care(@record)
+
+        @page.to_s.should == 'RR.replace("record_22","<record html code/>");' +
+          'RR.update_flash("<flashes/>");'
+      end
+    end
+    
   end
   
   

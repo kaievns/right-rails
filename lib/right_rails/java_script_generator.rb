@@ -7,70 +7,6 @@ class RightRails::JavaScriptGenerator
     @util = Util.new(template, thread)
   end
   
-  # referring an element by an id or a record
-  def [](record_or_id)
-    @util.record("$(\"#{@util.dom_id(record_or_id)}\")")
-  end
-  
-  # just pushes a line of code into the thread
-  def << (code)
-    @util.write(code)
-    self
-  end
-  
-  # builds a css-select block
-  def find(css_rule)
-    @util.record("$$(\"#{css_rule}\")")
-  end
-
-  # access to the javascript variables
-  def get(name)
-    @util.record(name)
-  end
-
-  # variables initializing method
-  def set(name, value)
-    @util.record("var #{name}=#{@util.to_js_type(value)}")
-  end
-  
-  # generates the redirection script
-  def redirect_to(location)
-    self.document[:location].href = (location.is_a?(String) ? location : @util.template.url_for(location))
-    self
-  end
-
-  # generates the page reload script
-  def reload
-    self.document[:location].reload
-    self
-  end
-  
-  # builds the record HTML code and then insterts it in place
-  def insert(record)
-    self.RR.insert(record.class.table_name, @util.render(record))
-  end
-
-  # replaces the record element on the page
-  def replace(record)
-    self.RR.replace(@util.dom_id(record), @util.render(record))
-  end
-
-  # removes the record element from the page
-  def remove(record)
-    self.RR.remove(@util.dom_id(record))
-  end
-  
-  # renders and shows a form for the record
-  def show_form_for(record)
-    self.RR.show_form_for(@util.dom_id(record), @util.render('form'))
-  end
-  
-  # renders and updates a form for the record
-  def replace_form_for(record)
-    id = record.new_record? ? "new_#{record.class.table_name.singularize}" : "edit_#{@util.dom_id(record)}"
-    self.RR.replace_form_for(id, @util.render('form'))
-  end
-  
   # the top-level constants that the generator should respond to transparently
   JS_CONSTANTS = [:document, :window, :top, :RR]
   
@@ -89,6 +25,96 @@ class RightRails::JavaScriptGenerator
   def to_s
     @util.build_script
   end
+  
+  #
+  # This module contains the predefined methods collection
+  #
+  module Methods
+    # referring an element by an id or a record
+    def [](record_or_id)
+      @util.record("$(\"#{@util.dom_id(record_or_id)}\")")
+    end
+
+    # just pushes a line of code into the thread
+    def << (code)
+      @util.write(code)
+      self
+    end
+
+    # builds a css-select block
+    def find(css_rule)
+      @util.record("$$(\"#{css_rule}\")")
+    end
+
+    # access to the javascript variables
+    def get(name)
+      @util.record(name)
+    end
+
+    # variables initializing method
+    def set(name, value)
+      @util.record("var #{name}=#{@util.to_js_type(value)}")
+    end
+
+    # generates the redirection script
+    def redirect_to(location)
+      self.document[:location].href = (location.is_a?(String) ? location : @util.template.url_for(location))
+      self
+    end
+
+    # generates the page reload script
+    def reload
+      self.document[:location].reload
+      self
+    end
+
+    # builds the record HTML code and then insterts it in place
+    def insert(record)
+      self.RR.insert(record.class.table_name, @util.render(record))
+    end
+    
+    # generates a script that inserts the record partial, then updates the form and the flashes block
+    def insert_and_care(record)
+      insert(record)
+      @util.template.instance_variable_set("@#{record.class.table_name.singularize}", record.class.new)
+      replace_form_for(record.class.new)
+      update_flash
+    end
+
+    # replaces the record element on the page
+    def replace(record)
+      self.RR.replace(@util.dom_id(record), @util.render(record))
+    end
+
+    # replaces the record partial and updates the flash
+    def replace_and_care(record)
+      replace(record)
+      update_flash
+    end
+
+    # removes the record element from the page
+    def remove(record)
+      self.RR.remove(@util.dom_id(record))
+    end
+
+    # renders and shows a form for the record
+    def show_form_for(record)
+      self.RR.show_form_for(@util.dom_id(record), @util.render('form'))
+    end
+
+    # renders and updates a form for the record
+    def replace_form_for(record)
+      self.RR.replace_form(@util.form_id_for(record), @util.render('form'))
+    end
+    
+    # updates the flashes block
+    def update_flash(content=nil)
+      self.RR.update_flash(content || @util.template.flashes)
+      @util.template.flash.clear
+    end
+  end
+  
+  include Methods
   
 protected
 
@@ -157,16 +183,21 @@ protected
     
     # returns a conventional dom id for the record
     def dom_id(record)
-      if record.is_a?(ActiveRecord::Base) || record.is_a?(ActiveResource::Base)
-        @template.dom_id(record)
-      else 
+      if [String, Symbol].include?(record.class)
         "#{record}"
+      else
+        @template.dom_id(record)
       end
+    end
+    
+    # generates the form-id for the given record
+    def form_id_for(record)
+      record.new_record? ? "new_#{record.class.table_name.singularize}" : "edit_#{dom_id(record)}"
     end
 
     # retnders the thing
-    def render(what, options={})
-      @template.render(what, options)
+    def render(what)
+      @template.render(what)
     end
     
     # access to the template object
