@@ -4,6 +4,7 @@ class DummyController
   include RightRails::ControllerExtensions
   
   attr_accessor :template
+  attr_accessor :request
 end
 
 module Mime
@@ -15,15 +16,13 @@ describe RightRails::ControllerExtensions do
   before :each do
     @controller = DummyController.new
     
-    @template   = mock(:template, {:_evaluate_assigns_and_ivars => nil})
+    @request    = mock(:request, {:content_type => Mime::JS})
+    
+    @template   = mock(:template, {:_evaluate_assigns_and_ivars => nil, :request => @request})
     @controller.template = @template
     
     @generator = RightRails::JavaScriptGenerator.new(@template)
     RightRails::JavaScriptGenerator.stub!(:new).with(@template).and_return(@generator)
-  end
-  
-  it "should provide the #rjs method" do
-    @controller.should respond_to(:rjs)
   end
   
   it "should bypass simple calls to the JavaScriptGenerator" do
@@ -51,6 +50,16 @@ describe RightRails::ControllerExtensions do
     
     @controller.rjs(:content_type => Mime::HTML, :layout => 'something').alert('boo').should == {
       :text => 'the script', :content_type => Mime::HTML, :layout => 'something'
+    }
+  end
+  
+  it "should overload content-type and layout for the iframed uploads" do
+    @request.should_receive(:content_type).and_return('multipart/form-data')
+    @generator.should_receive(:update)
+    @generator.should_receive(:to_s).and_return('the script')
+    
+    @controller.rjs.update.should == {
+      :text => 'the script', :content_type => Mime::HTML, :layout => 'iframed'
     }
   end
 end

@@ -1,5 +1,7 @@
 # Include hook code here
 
-ApplicationController.instance_eval do
+class ActionController::Base
   include RightRails::ControllerExtensions
+  
+  helper RightRails::Helpers::Basic
 end

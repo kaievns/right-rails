@@ -12,7 +12,7 @@ module RightRails::ControllerExtensions
     @template.send(:_evaluate_assigns_and_ivars)
     
     wrapper = RenderWrapper.new(@template, options)
-    
+        
     if block_given?
       wrapper.render_block(&block)
     else
@@ -29,6 +29,7 @@ module RightRails::ControllerExtensions
   #
   class RenderWrapper
     def initialize(template, options)
+      @template  = template
       @generator = RightRails::JavaScriptGenerator.new(template)
       @options   = options
     end
@@ -51,7 +52,10 @@ module RightRails::ControllerExtensions
     def render
       result = {:text => @generator.to_s, :content_type => Mime::JS}
       
-      # TODO iframed uploads content-type and layout overriding
+      # iframed uploads context overloading
+      if @template.request.content_type == 'multipart/form-data'
+        result.merge! :content_type => Mime::HTML, :layout => 'iframed'
+      end
       
       result.merge! @options
     end
