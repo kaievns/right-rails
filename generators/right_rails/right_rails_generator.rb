@@ -8,9 +8,11 @@ class RightRailsGenerator < Rails::Generator::Base
     
   def manifest
     record do |m|
+      # creating the javascript directories
       m.directory 'public/javascripts/right'
       m.directory 'public/javascripts/right/i18n'
       
+      # copying the javascript files
       Dir.open(options[:source]).each do |file|
         unless ['.', '..'].include?(file)
           destination = if ['right.js', 'right-src.js'].include?(file)
@@ -21,9 +23,13 @@ class RightRailsGenerator < Rails::Generator::Base
             file.gsub('right-', 'right/')
           end
           
-          m.file file, "public/javascripts/#{destination}", :chmod => 644
+          m.file file, "public/javascripts/#{destination}", :chmod => 0644
         end
       end
+      
+      # creating the iframed uploads layout
+      m.directory "app/views/layouts"
+      m.file "/../generators/right_rails/templates/iframed.html.erb", "app/views/layouts/iframed.html.erb"
     end
   end
   
