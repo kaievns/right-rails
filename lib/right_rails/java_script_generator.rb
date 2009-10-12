@@ -127,7 +127,6 @@ protected
       @this   = this
       @util   = util
       @parent = parent
-      @script = (parent ? parent.instance_variable_get('@script') : '') + this.to_s
     end
     
     # catches the properties request
@@ -165,8 +164,19 @@ protected
     end
     
     # exports the whole thing into a javascript string
-    def to_s(dump=false)
-      dump ? @script : (@this.to_s + (@child || '').to_s)
+    def to_s
+      nodes = []
+      node = self
+      
+      while node
+        nodes << node
+        node = node.instance_variable_get(@parent.nil? ? "@child" : "@parent")
+      end
+      
+      # reversing the calls list if building from the right end
+      nodes.reverse! unless @parent.nil?
+      
+      nodes.collect{|n| n.instance_variable_get("@this").to_s }.join('')
     end
   end
   
@@ -175,6 +185,7 @@ protected
   # So that the mesod_missing didn't interferate with the util methods
   #
   class Util
+    attr_reader :template
     
     def initialize(template, thread=nil)
       @template = template
@@ -200,19 +211,14 @@ protected
       @template.render(what)
     end
     
-    # access to the template object
-    def template
-      @template
-    end
-    
     # builds a new method call object
     def make_call(string, parent=nil)
       MethodCall.new(string, self, parent)
     end
     
     # Records a new call
-    def record(call)
-      @thread << (line = make_call(call))
+    def record(command)
+      @thread << (line = make_call(command))
       line
     end
     
@@ -256,7 +262,7 @@ protected
             end
             @thread.reject!{ |item| item == top }
             
-            value.to_s(true) # <- reverse call reconstruction
+            value.to_s
             
           # simple hashes processing
           elsif value.is_a?(Hash)
