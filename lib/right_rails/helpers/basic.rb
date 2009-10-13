@@ -14,14 +14,12 @@ module RightRails::Helpers::Basic
   #
   # Automatically generates the javascript include tags
   #
-  def rightjs_scripts
-    scripts = %w{
-      right
-      right/rails
-    }
+  def rightjs_scripts(*modules)
+    scripts = ['right']
     
     # including the submodules
-    (@_right_scripts || []).uniq.each do |package|
+    rightjs_include_module *modules
+    ((@_right_scripts || []) + ['rails']).each do |package|
       scripts << "right/#{package}"
     end
     
@@ -37,6 +35,16 @@ module RightRails::Helpers::Basic
     end
     
     javascript_include_tag *scripts
+  end
+  
+  #
+  # Notifies the scripts collection that the user needs the module
+  #
+  def rightjs_include_module(*list)
+    @_right_scripts ||= []
+    list.each do |name|
+      @_right_scripts << name.to_s unless @_right_scripts.include?(name.to_s)
+    end
   end
   
   #

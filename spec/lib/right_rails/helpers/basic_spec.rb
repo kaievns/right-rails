@@ -26,9 +26,15 @@ describe RightRails::Helpers::Basic do
   it "should catch the optional modules" do
     @_right_scripts = %w{lightbox dnd}
     
-    should_receive(:javascript_include_tag).with(*%w{right right/rails right/lightbox right/dnd})
+    should_receive(:javascript_include_tag).with(*%w{right right/lightbox right/dnd right/rails})
     
     rightjs_scripts
+  end
+  
+  it "should let to specify the modules as arguments" do
+    should_receive(:javascript_include_tag).with(*%w{right right/lightbox right/dnd right/rails})
+    
+    rightjs_scripts :lightbox, :dnd
   end
   
   it "should load internationalization modules if defined" do

@@ -39,16 +39,14 @@ module RightRails::Helpers::Rails
   
   # stubbing the draggables generator to make our autoscripts stuff working
   def draggable_element_js(*args)
-    @_right_scripts ||= []
-    @_right_scripts << 'dnd' unless @_right_scripts.include?('dnd')
+    rightjs_include_module 'dnd'
     
     super *args
   end
   
   # stubbing the droppables generator
   def drop_receiving_element_js(*args)
-    @_right_scripts ||= []
-    @_right_scripts << 'dnd' unless @_right_scripts.include?('dnd')
+    rightjs_include_module 'dnd'
     
     super(*args).gsub!('Droppables.add', 'new Droppable'
       ).gsub!('element.id', 'draggable.element.id'
@@ -57,9 +55,7 @@ module RightRails::Helpers::Rails
   
   # catching the sortables generator
   def sortable_element_js(id, options={})
-    @_right_scripts ||= []
-    @_right_scripts << 'dnd'      unless @_right_scripts.include?('dnd')
-    @_right_scripts << 'sortable' unless @_right_scripts.include?('sortable')
+    rightjs_include_module 'dnd', 'sortable'
     
     script = "new Sortable('#{id}'"
     
