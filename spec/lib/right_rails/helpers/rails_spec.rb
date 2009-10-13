@@ -3,13 +3,13 @@ require File.dirname(__FILE__) + "/../../../spec_helper.rb"
 describe RightRails::Helpers::Rails do
   include ActionView::Helpers::TagHelper
   include ActionView::Helpers::JavaScriptHelper
+  include ActionView::Helpers::ScriptaculousHelper
   include ActionView::Helpers::FormTagHelper
   include RightRails::Helpers::Basic
   include RightRails::Helpers::Rails
   
   # stubbing the convertion methods
   def url_for(url)               url    end
-  def escape_javascript(string)  string end
   def protect_against_forgery?() false  end
   
   describe "#remote_function" do
@@ -128,5 +128,22 @@ describe RightRails::Helpers::Rails do
       periodically_call_remote(:url => '/foo').should == 
         %Q{<script type=\"text/javascript\">\n//<![CDATA[\nfunction(){Xhr.load('/foo')}.periodical(10000)\n//]]>\n</script>}
     end
+  end
+  
+  it "should generate #draggable_element_js" do
+    draggable_element_js(:element_id, :revert => true).should == 'new Draggable("element_id", {revert:true});'
+    @_right_scripts.should == ['dnd']
+  end
+  
+  it "should generate #drop_receiving_element_js" do
+    drop_receiving_element_js(:element_id, :url => '/boo').should == 
+      %Q{new Droppable("element_id", {onDrop:function(draggable){Xhr.load('/boo',{params:'id=' + encodeURIComponent(draggable.element.id)})}});}
+      
+    @_right_scripts.should == ['dnd']
+  end
+  
+  it "should generate #sortable_element_js" do
+    sortable_element_js(:element_id, :url => '/stuff/%{id}.js').should ==
+      %Q{new Sortable('element_id',{url:'/stuff/%{id}.js'})}
   end
 end

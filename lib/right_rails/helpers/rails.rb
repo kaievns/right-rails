@@ -37,7 +37,67 @@ module RightRails::Helpers::Rails
     javascript_tag(code)
   end
   
+  # stubbing the draggables generator to make our autoscripts stuff working
+  def draggable_element_js(*args)
+    @_right_scripts ||= []
+    @_right_scripts << 'dnd' unless @_right_scripts.include?('dnd')
+    
+    super *args
+  end
+  
+  # stubbing the droppables generator
+  def drop_receiving_element_js(*args)
+    @_right_scripts ||= []
+    @_right_scripts << 'dnd' unless @_right_scripts.include?('dnd')
+    
+    super(*args).gsub!('Droppables.add', 'new Droppable'
+      ).gsub!('element.id', 'draggable.element.id'
+      ).gsub!('(element)', '(draggable)')
+  end
+  
+  # catching the sortables generator
+  def sortable_element_js(id, options={})
+    @_right_scripts ||= []
+    @_right_scripts << 'dnd'      unless @_right_scripts.include?('dnd')
+    @_right_scripts << 'sortable' unless @_right_scripts.include?('sortable')
+    
+    script = "new Sortable('#{id}'"
+    
+    s_options = {}
+    s_options[:url] = "'#{escape_javascript(url_for(options[:url]))}'" if options[:url]
+    
+    options.each do |key, value|
+      if SORTABLE_OPTION_KEYS.include?(key.to_s)
+        s_options[key] = case value.class.name.to_sym
+          when :NilClass then 'null'
+          when :String   then "'#{value}'"
+          else                value.inspect
+        end
+      end
+    end
+    
+    pairs = s_options.collect do |key, value|
+      if !value || value == '' then nil
+      else
+        "#{key}:#{value}"
+      end
+    end.compact.sort
+    
+    script << ",{#{pairs.join(',')}}" unless pairs.empty?
+    
+    script << ")"
+  end
+  
 protected
+
+  SORTABLE_OPTION_KEYS = %w{
+    direction
+    tags
+    method
+    idParam
+    posParam
+    parseId
+  }
 
   XHR_OPTION_KEYS = %w{
     method
