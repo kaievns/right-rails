@@ -7,11 +7,6 @@ class DummyController
   attr_accessor :request
 end
 
-module Mime
-  JS   = 'text/javascript'
-  HTML = 'text/html'
-end
-
 describe RightRails::ControllerExtensions do
   before :each do
     @controller = DummyController.new

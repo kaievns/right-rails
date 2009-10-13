@@ -1,5 +1,4 @@
 require File.dirname(__FILE__) + "/../../../spec_helper.rb"
-require 'action_view'
 
 describe RightRails::Helpers::Basic do
   include RightRails::Helpers::Basic

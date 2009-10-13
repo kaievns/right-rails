@@ -3,5 +3,6 @@
 class ActionController::Base
   include RightRails::ControllerExtensions
   
-  helper RightRails::Helpers::Basic
+  helper RightRails::Helpers::Basic,
+         RightRails::Helpers::Rails
 end
