@@ -59,27 +59,10 @@ module RightRails::Helpers::Rails
     
     script = "new Sortable('#{id}'"
     
-    s_options = {}
-    s_options[:url] = "'#{escape_javascript(url_for(options[:url]))}'" if options[:url]
-    
-    options.each do |key, value|
-      if SORTABLE_OPTION_KEYS.include?(key.to_s)
-        s_options[key] = case value.class.name.to_sym
-          when :NilClass then 'null'
-          when :String   then "'#{value}'"
-          else                value.inspect
-        end
-      end
-    end
-    
-    pairs = s_options.collect do |key, value|
-      if !value || value == '' then nil
-      else
-        "#{key}:#{value}"
-      end
-    end.compact.sort
-    
-    script << ",{#{pairs.join(',')}}" unless pairs.empty?
+    # processing the options
+    options[:url] = escape_javascript(url_for(options[:url])) if options[:url]
+    s_options = rightjs_unit_options(options, SORTABLE_OPTION_KEYS)
+    script << ",#{s_options}" unless s_options == '{}'
     
     script << ")"
   end
@@ -87,6 +70,7 @@ module RightRails::Helpers::Rails
 protected
 
   SORTABLE_OPTION_KEYS = %w{
+    url
     direction
     tags
     method
@@ -126,6 +110,7 @@ protected
       if XHR_OPTION_KEYS.include?(key.to_s)
         xhr_options[key] = case value.class.name.to_sym
           when :NilClass then 'null'
+          when :Symbol   then "#{value}"
           when :String   then "'#{value}'"
           else                value.inspect
         end
