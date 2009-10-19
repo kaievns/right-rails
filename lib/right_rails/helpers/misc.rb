@@ -3,6 +3,16 @@
 #
 module RightRails::Helpers::Misc
   #
+  # Just a simple flashes generator, might be replaced in the application
+  #
+  def flashes
+    content_tag(:div, flash.collect{ |key, text|
+      content_tag(:div, text, :class => key)
+    }.sort, :id => :flashes, :style => (flash.empty? ? 'display: none' : nil))
+  end
+  
+  
+  #
   # the autocompletion list result
   #
   # USAGE:
@@ -29,12 +39,16 @@ module RightRails::Helpers::Misc
     }
   end
   
+  
   #
   # Generates a link that whil load the refered address in a lightbox
   #
   def link_to_lightbox(name, url={}, html_options=nil, &block)
+    rightjs_include_module 'lightbox'
+    
     html_options ||= {}
     html_options[:rel] = 'lightbox'
+    html_options[:rel] << "[roadtrip]" if html_options.delete(:roadtrip)
     
     link_to name, url, html_options, &block
   end

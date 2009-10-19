@@ -4,20 +4,6 @@ describe RightRails::Helpers::Basic do
   include RightRails::Helpers::Basic
   include ActionView::Helpers::TagHelper
   
-  it "should provide the basic #flashes builder" do
-    should_receive(:flash).any_number_of_times.and_return({
-      :warning => "Warning!",
-      :notice  => "Notice!",
-      :error   => "Error!"
-    })
-    
-    flashes.should == '<div id="flashes">'+
-      '<div class="error">Error!</div>'+
-      '<div class="notice">Notice!</div>'+
-      '<div class="warning">Warning!</div>'+
-    '</div>'
-  end
-  
   it "should build the basic javascript include tags" do
     should_receive(:javascript_include_tag).with(*%w{right right/rails})
     rightjs_scripts

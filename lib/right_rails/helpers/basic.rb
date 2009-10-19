@@ -2,14 +2,6 @@
 # Basic RightRails feature helpers container
 #
 module RightRails::Helpers::Basic
-  #
-  # Just a simple flashes generator, might be replaced in the application
-  #
-  def flashes
-    content_tag(:div, flash.collect{ |key, text|
-      content_tag(:div, text, :class => key)
-    }.sort, :id => :flashes, :style => (flash.empty? ? 'display: none' : nil))
-  end
   
   #
   # Automatically generates the javascript include tags

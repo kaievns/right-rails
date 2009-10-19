@@ -4,7 +4,22 @@ describe RightRails::Helpers::Misc do
   include ActionView::Helpers::UrlHelper
   include ActionView::Helpers::TagHelper
   include ActionView::Helpers::TextHelper
+  include RightRails::Helpers::Basic
   include RightRails::Helpers::Misc
+  
+  it "should provide the basic #flashes builder" do
+    should_receive(:flash).any_number_of_times.and_return({
+      :warning => "Warning!",
+      :notice  => "Notice!",
+      :error   => "Error!"
+    })
+    
+    flashes.should == '<div id="flashes">'+
+      '<div class="error">Error!</div>'+
+      '<div class="notice">Notice!</div>'+
+      '<div class="warning">Warning!</div>'+
+    '</div>'
+  end
   
   describe "#autocomplete_result" do
     it "should generate a simple result" do
@@ -49,6 +64,12 @@ describe RightRails::Helpers::Misc do
   describe "#link_to_lightbox" do
     it "should generate the link" do
       link_to_lightbox('boo', 'boo').should == '<a href="boo" rel="lightbox">boo</a>'
+      @_right_scripts.should == ['lightbox']
+    end
+    
+    it "should generate lightbox with roadtrip" do
+      link_to_lightbox('boo', 'boo', :roadtrip => true).should ==
+        %Q{<a href="boo" rel="lightbox[roadtrip]">boo</a>}
     end
   end
 end
