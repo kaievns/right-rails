@@ -5,5 +5,6 @@ class ActionController::Base
   
   helper RightRails::Helpers::Basic,
          RightRails::Helpers::Rails,
-         RightRails::Helpers::Forms
+         RightRails::Helpers::Forms,
+         RightRails::Helpers::Misc
 end
