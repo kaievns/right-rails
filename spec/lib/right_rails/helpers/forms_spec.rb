@@ -23,13 +23,13 @@ describe RightRails::Helpers::Forms do
   
   it "should generate a #autocomplete_field_tag" do
     autocomplete_field_tag('name', 'value', :url => '/foo').should ==
-      %Q{<input id="name" name="name" rel="autocompleter[/foo]" type="text" value="value" />}
+      %Q{<input autocomplete="off" id="name" name="name" rel="autocompleter[/foo]" type="text" value="value" />}
       
     @_right_scripts.should == ['autocompleter']
   end
   
   it "should generate a #autocomplete_field_tag with options" do
     autocomplete_field_tag('name', 'value', :url => '/foo', :spinner => 'spinner', :min_length => 2).should ==
-      %Q{<input data-autocompleter-options="{minLength:2,spinner:'spinner'}" id="name" name="name" rel="autocompleter[/foo]" type="text" value="value" />}
+      %Q{<input autocomplete="off" data-autocompleter-options="{minLength:2,spinner:'spinner'}" id="name" name="name" rel="autocompleter[/foo]" type="text" value="value" />}
   end
 end

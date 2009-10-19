@@ -80,6 +80,7 @@ private
     
     autocompleter_options = rightjs_unit_options(options, AUTOCOMPLETER_OPTION_KEYS)
     options['data-autocompleter-options'] = autocompleter_options unless autocompleter_options == '{}'
+    options['autocomplete'] = 'off'
     
     options
   end
