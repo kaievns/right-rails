@@ -1,8 +1,18 @@
 /**
- * The RubyOnRails hooks for RightJS
+ * Ruby On Rails common Ajax operations conventional wrapper
+ * and underscored aliases for core methods
+ *
+ *    http://github.com/MadRabbit/right-rails
+ *
+ * Copyright (C) Nikolay V. Nemshilov aka St.
+ */
+
+/**
+ * RR is the common ajax operations wrapper for ruby on rails
  *
  * Copyright (C) 2009 Nikolay V. Nemshilov aka St.
  */
+;
 var RR = {
   /**
    * Basic options
@@ -72,7 +82,7 @@ var RR = {
    * @return RR this
    */
   insert: function(where, what) {
-    return this.highlight($(where).insert(what).lastChild).hijack_links();
+    return this.highlight($(where).insert(what).lastChild).rescan();
   },
   
   /**
@@ -84,7 +94,7 @@ var RR = {
    */
   replace: function(id, source) {
     $(id).replace(source);
-    return this.highlight(id).hijack_links();
+    return this.highlight(id).rescan();
   },
   
   /**
@@ -134,7 +144,7 @@ var RR = {
       this.remotize_form(id);
     }
     
-    return this; 
+    return this.rescan();
   },
   
   /**
@@ -148,7 +158,7 @@ var RR = {
     $(id).select('form').each('remove'); // removing old forms
     $(id).insert(source);
     
-    return this.remotize_form($(id).first('form'));
+    return this.remotize_form($(id).first('form')).rescan();
   },
   
   /**
@@ -175,12 +185,86 @@ var RR = {
     }, this);
     
     return this;
+  },
+  
+  /**
+   * Scans for updated elements
+   *
+   * @return RR this
+   */
+  rescan: function() {
+    this.hijack_links();
+    
+    if (self.Lightbox) Lightbox.rescan();
+    if (self.Calendar) Calendar.rescan();
+    if (self.Autocompleter) Autocompleter.rescan();
+    if (self.Draggable) Draggable.rescan();
+    if (self.Droppable) Droppable.rescan();
+    if (self.Sortable)  Sortable.rescan();
+    
+    return this;
   }
 };
 
-
 // the document onload hook
 document.onReady(function() {
-  RR.hide_flash();
-  RR.hijack_links();
+  RR.hide_flash().rescan();
+});
+/**
+ * Underscored aliases for Ruby On Rails
+ *
+ * Copyright (C) 2009 Nikolay V. Nemshilov aka St.
+ */
+
+// the language and window level aliases
+[String.prototype, Array.prototype, Function.prototype, Object, Options, Observer, Observer.prototype, window, document].each(function(object) {
+  for (var key in object) {
+    try { // some keys are not accessable
+      
+      if (/[A-Z]/.test(key) && typeof(object[key]) == 'function') {
+        var u_key = key.underscored();
+        if (object[u_key] === null || object[u_key] === undefined) {
+          object[u_key] = object[key];
+        }
+      }
+    } catch (e) {}
+  }
+});
+
+
+// DOM package aliases
+[Element, Event, Form, Form.Element].each(function(object) {
+  var aliases = {}, methods = object.Methods;
+    
+  for (var key in methods) {
+    if (/[A-Z]/.test(key) && typeof(methods[key]) == 'function') {
+      aliases[key.underscored()] = methods[key];
+    }
+  }
+  
+  object.addMethods(aliases);
+});
+
+
+// various ruby-like method aliases
+$alias(String.prototype, {
+  index_of:      'indexOf',
+  last_index_of: 'lastIndexOf',
+  to_f:          'toFloat',
+  to_i:          'toInt',
+  gsub:          'replace',
+  downcase:      'toLowerCase',
+  upcase:        'toUpperCase',
+  index:         'indexOf',
+  rindex:        'lastIndexOf',
+  strip:         'trim'
+});
+
+$alias(Array.prototype, {
+  collect:       'map',
+  detect:        'filter',
+  index_of:      'indexOf',
+  last_index_of: 'lastIndexOf',
+  index:         'indexOf',
+  rindex:        'lastIndexOf'
 });
