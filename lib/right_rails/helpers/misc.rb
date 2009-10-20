@@ -43,6 +43,12 @@ module RightRails::Helpers::Misc
   #
   # Generates a link that whil load the refered address in a lightbox
   #
+  # USAGE:
+  #   Same as the #link_to method, plus you might specify the :roadtrip argument
+  #   to make it a link to a lightbox roadtrip
+  #
+  #   <%= link_to_lightbox image_tag('/image.thmb'), '/image.full', :roadtrip => true %>
+  #
   def link_to_lightbox(name, url={}, html_options=nil, &block)
     rightjs_include_module 'lightbox'
     

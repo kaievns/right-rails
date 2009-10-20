@@ -6,6 +6,13 @@ module RightRails::Helpers::Basic
   #
   # Automatically generates the javascript include tags
   #
+  # USAGE:
+  #   <%= rightjs_scripts %>
+  #
+  #   you can also predefine the list of modules to load
+  #
+  #   <%= rightjs_scripts 'lightbox', 'calendar' %>
+  #
   def rightjs_scripts(*modules)
     scripts = ['right']
     
@@ -30,17 +37,13 @@ module RightRails::Helpers::Basic
   end
   
   #
-  # Notifies the scripts collection that the user needs the module
-  #
-  def rightjs_include_module(*list)
-    @_right_scripts ||= []
-    list.each do |name|
-      @_right_scripts << name.to_s unless @_right_scripts.include?(name.to_s)
-    end
-  end
-  
-  #
   # The javascript generator access from the templates
+  #
+  # USAGE:
+  #   Might be used both directly or with a block
+  #
+  #   <%= link_to 'Delete', '#', :onclick => rjs[@record].hide('fade') %>
+  #   <%= link_to 'Delete', '#', :onclick => rjs{|page| page[@record].hide('fade') }
   #
   def rjs(&block)
     generator = RightRails::JavaScriptGenerator.new(self)
@@ -60,6 +63,18 @@ module RightRails::Helpers::Basic
   def rjs_tag(&block)
     javascript_tag do
       rjs(&block)
+    end
+  end
+  
+# protected
+  
+  #
+  # Notifies the scripts collection that the user needs the module
+  #
+  def rightjs_include_module(*list)
+    @_right_scripts ||= []
+    list.each do |name|
+      @_right_scripts << name.to_s unless @_right_scripts.include?(name.to_s)
     end
   end
   

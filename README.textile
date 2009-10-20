@@ -1,0 +1,50 @@
+h1. Welcome To RightRails
+
+RightRails is a RubyOnRails plugin for RightJS javascript framework.
+
+It works as a drop in replacement for all the Prototype/Scriptaculous
+methods, plus it brings some more sweets and routine ajax operations
+organization.
+
+
+h2. Features
+
+* Lightning fast RightJS library
+* Transparent Prototype/Scriptaculous helpers replacement
+* More powerful and flexible new JavaScript generator for RJS
+* Conventional JavaScript interface for the most common AJAX operations
+* Better controller level access to the rjs generator
+* New ajax-friendly scaffold generator
+* Remote files uploading organization
+* Automatic RightJS modules inclusion handling (including i18n modules)
+* Additional FormBuilder methods for calendar and autocomplete fields
+* Underscored and ruby-like aliases for RightJS core methods
+
+
+h2. Documentation
+
+See the wiki-pages for the documentation
+
+http://wiki.github.com/MadRabbit/right-rails
+
+
+h3. Usage
+
+Install the plugin to your rails application
+
+@script/plugin install git clone git://github.com/MadRabbit/right-rails.git@
+
+After that run the @right_rails@ generator, which will put all the JavaScripts in place
+
+@script/generate right_rails@
+
+You also will have an ajax-friendly scaffold generator
+
+@script/generate right_scaffold Zing@
+
+
+The rubygem is still coming soon.
+
+
+
+Copyright (c) 2009 Nikolay V. Nemshilov, released under the MIT license
