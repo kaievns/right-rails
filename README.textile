@@ -25,7 +25,7 @@ h2. Documentation
 
 See the wiki-pages for the documentation
 
-http://wiki.github.com/MadRabbit/right-rails
+<a href="http://wiki.github.com/MadRabbit/right-rails">http://wiki.github.com/MadRabbit/right-rails</a>
 
 
 h3. Usage
