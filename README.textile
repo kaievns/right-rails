@@ -32,7 +32,7 @@ h3. Usage
 
 Install the plugin to your rails application
 
-@script/plugin install git clone git://github.com/MadRabbit/right-rails.git@
+@script/plugin install git://github.com/MadRabbit/right-rails.git@
 
 After that run the @right_rails@ generator, which will put all the JavaScripts in place
 
