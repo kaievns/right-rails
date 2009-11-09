@@ -58,4 +58,107 @@ module RightRails::Helpers::Misc
     
     link_to name, url, html_options, &block
   end
+  
+  #
+  # Tabs container generator
+  #
+  # USAGE:
+  #
+  #   <% tabs do %>
+  #     <% tab "Tab 1", :id => :my-tab-1 do %>
+  #       content for tab 1
+  #     <% end -%>
+  #     <% tab "Tab 2", :url => tab2_path %>
+  #   <% end -%>
+  #
+  #  You also can use the :type option with :carousel or :harmonica value
+  #  and you can pass along any standard Tabs unit options along with it
+  #
+  #   <% tabs :type => :carousel, :url => '/tabs/%{id}', :cache => true do %>
+  #      <% tab image_tag(image1.thumb_url), :id => image1.id %>
+  #      <% tab image_tag(image2.thumb_url), :id => image2.id %>
+  #
+  def tabs(options={}, &block)
+    rightjs_include_module 'tabs'
+    @__tabs = []
+    yield()
+    
+    options.stringify_keys!
+    
+    tabs_type = options.delete('type')
+    options['id'] = options.delete('id') || "tabs-#{rand.to_s.split('.').last}"
+    
+    # checking for the carousel class
+    if tabs_type == :carousel
+      options['class'] ||= ''
+      options['class'] << (options['class'] == '' ? '' : ' ') + 'right-tabs-carousel'
+    end
+    
+    tabs_options = rightjs_unit_options(options, TABS_OPTION_KEYS)
+    options['data-tabs-options'] = tabs_options unless tabs_options == '{}'
+    
+    # extracting the tab id prefix option
+    tab_id_prefix = tabs_options.scan(/idPrefix:('|")(.+?)\1/)
+    tab_id_prefix = tab_id_prefix.size == 1 ? tab_id_prefix[0][1] : ''
+    
+    # simple tabs and carousels generator
+    content = if tabs_type != :harmonica
+      content_tag(:ul,
+        # tabs list
+        content_tag(:ul,
+          @__tabs.collect{ |tab|
+            content_tag(:li, content_tag(:a, tab[:title],
+              :href => tab[:options][:id] ? "##{tab[:options][:id]}" : tab[:options][:url]
+            ))
+          }.join("\n")
+        ) + "\n"+
+        
+        # contents list
+        @__tabs.collect{|tab|
+          tab[:content] ? content_tag(:li, tab[:content], :id => "#{tab_id_prefix}#{tab[:options][:id]}") + "\n" : ''
+        }.join(""),
+        options
+      )
+    else
+    # the harmonicas generator
+      content_tag(:dl,
+        @__tabs.collect{ |tab|
+          content_tag(:dt, content_tag(:a, tab[:title],
+            :href => tab[:options][:id] ? "##{tab[:options][:id]}" : tab[:options][:url]
+          )) + "\n" +
+          content_tag(:dd, tab[:content] || '', :id => tab[:options][:id] ? "#{tab_id_prefix}#{tab[:options][:id]}" : nil)
+        }.join("\n"),
+        options
+      )
+      
+    end
+    
+    concat(content + "\n" + javascript_tag("new Tabs('#{options['id']}');"))
+  end
+  
+  def tab(title, options={}, &block)
+    options[:id] = "tab-#{rand.to_s.split('.').last}" if !options[:id] && !options[:url]
+    
+    @__tabs << {
+      :title   => title,
+      :options => options,
+      :content => block_given? ? capture(&block) : nil
+    }
+  end
+  
+  TABS_OPTION_KEYS = %w{
+    idPrefix
+    resizeFx
+    resizeDuration
+    scrollTabs
+    scrollDuration
+    selected
+    disabled
+    closable
+    url
+    cache
+    Xhr
+    Cookie
+  }
+  
 end

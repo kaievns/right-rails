@@ -72,4 +72,49 @@ describe RightRails::Helpers::Misc do
         %Q{<a href="boo" rel="lightbox[roadtrip]">boo</a>}
     end
   end
+  
+  describe "#tabs generator" do
+    def capture(&block)
+      return yield()
+    end
+    
+    def concat(content)
+      content
+    end
+    
+    it "should generate simple tabs" do
+      tabs(:id => 'my-tabs') {
+        tab("Tab 1", :id => 'tab-1'){ 'content 1' }
+        tab("Tab 2", :id => 'tab-2'){ 'content 2' }
+      }.should == %Q{<ul id=\"my-tabs\"><ul><li><a href=\"#tab-1\">Tab 1</a></li>\n<li><a href=\"#tab-2\">Tab 2</a></li></ul>\n<li id=\"tab-1\">content 1</li>\n<li id=\"tab-2\">content 2</li>\n</ul>\n<script type=\"text/javascript\">\n//<![CDATA[\nnew Tabs('my-tabs');\n//]]>\n</script>}
+    end
+    
+    it "should generate tabs with id prefix" do
+      tabs(:id => 'my-tabs', :id_prefix => 'foo-') {
+        tab("Tab 1", :id => 'tab-1'){ 'content 1' }
+        tab("Tab 2", :id => 'tab-2'){ 'content 2' }
+      }.should == %Q{<ul data-tabs-options=\"{idPrefix:'foo-'}\" id=\"my-tabs\"><ul><li><a href=\"#tab-1\">Tab 1</a></li>\n<li><a href=\"#tab-2\">Tab 2</a></li></ul>\n<li id=\"foo-tab-1\">content 1</li>\n<li id=\"foo-tab-2\">content 2</li>\n</ul>\n<script type=\"text/javascript\">\n//<![CDATA[\nnew Tabs('my-tabs');\n//]]>\n</script>}
+    end
+    
+    it "should generate remote tabs" do
+      tabs(:id => 'my-tabs') {
+        tab("Tab 1", :url => '/tab/1')
+        tab("Tab 2", :url => '/tab/2')
+      }.should == %Q{<ul id=\"my-tabs\"><ul><li><a href=\"/tab/1\">Tab 1</a></li>\n<li><a href=\"/tab/2\">Tab 2</a></li></ul>\n</ul>\n<script type=\"text/javascript\">\n//<![CDATA[\nnew Tabs('my-tabs');\n//]]>\n</script>}
+    end
+    
+    it "should generate carousel tabs" do
+      tabs(:id => 'my-tabs', :type => :carousel) {
+        tab("Tab 1", :id => 'tab-1'){ 'content 1' }
+        tab("Tab 2", :id => 'tab-2'){ 'content 2' }
+      }.should == %Q{<ul class=\"right-tabs-carousel\" id=\"my-tabs\"><ul><li><a href=\"#tab-1\">Tab 1</a></li>\n<li><a href=\"#tab-2\">Tab 2</a></li></ul>\n<li id=\"tab-1\">content 1</li>\n<li id=\"tab-2\">content 2</li>\n</ul>\n<script type=\"text/javascript\">\n//<![CDATA[\nnew Tabs('my-tabs');\n//]]>\n</script>}
+    end
+    
+    it "should generate harmonica tabs" do
+      tabs(:id => 'my-tabs', :type => :harmonica) {
+        tab("Tab 1", :id => 'tab-1'){ 'content 1' }
+        tab("Tab 2", :id => 'tab-2'){ 'content 2' }
+      }.should == %Q{<dl id=\"my-tabs\"><dt><a href=\"#tab-1\">Tab 1</a></dt>\n<dd id=\"tab-1\">content 1</dd>\n<dt><a href=\"#tab-2\">Tab 2</a></dt>\n<dd id=\"tab-2\">content 2</dd></dl>\n<script type=\"text/javascript\">\n//<![CDATA[\nnew Tabs('my-tabs');\n//]]>\n</script>}
+    end
+  end
 end
