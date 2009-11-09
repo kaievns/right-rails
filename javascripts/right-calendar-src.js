@@ -34,17 +34,19 @@ var Calendar = new Class(Observer, {
     },
     
     Formats: {
-      ISO:    '%Y-%m-%d',
-      POSIX:  '%Y/%m/%d',
-      EUR:    '%d-%m-%Y',
-      US:     '%m/%d/%Y'
+      ISO:            '%Y-%m-%d',
+      POSIX:          '%Y/%m/%d',
+      EUR:            '%d-%m-%Y',
+      US:             '%m/%d/%Y'
     },
     
     i18n: {
-      Done:  'Done',
-      Now:   'Now',
-      Next:  'Next Month',
-      Prev:  'Previous Month',
+      Done:           'Done',
+      Now:            'Now',
+      Next:           'Next Month',
+      Prev:           'Previous Month',
+      NextYear:       'Next Year',
+      PrevYear:       'Prev Year',
       
       dayNames:        $w('Sunday Monday Tuesday Wednesday Thursday Friday Saturday'),
       dayNamesShort:   $w('Sun Mon Tue Wed Thu Fri Sat'),
@@ -215,7 +217,7 @@ Calendar.include({
   
   // updates the calendar view
   update: function(date) {
-    var date = new Date(date || this.date);
+    var date = new Date(date || this.date), options = this.options;
     
     var monthes     = this.element.select('div.right-calendar-month');
     var monthes_num = monthes.length;
@@ -229,11 +231,11 @@ Calendar.include({
     
     this.updateNextPrevMonthButtons(date, monthes_num);
     
-    if (this.options.showTime) {
-      this.hours.value = this.options.timePeriod < 60 ? date.getHours() :
-        (date.getHours()/(this.options.timePeriod/60)).round() * (this.options.timePeriod/60);
+    if (options.showTime) {
+      this.hours.value = options.timePeriod < 60 ? date.getHours() :
+        (date.getHours()/(options.timePeriod/60)).round() * (options.timePeriod/60);
       
-      this.minutes.value = (date.getMinutes() / (this.options.timePeriod % 60)).round() * this.options.timePeriod;
+      this.minutes.value = (date.getMinutes() / (options.timePeriod % 60)).round() * options.timePeriod;
     }
     
     return this;
@@ -256,6 +258,8 @@ Calendar.include({
       td.className = 'right-calendar-day-blank';
     });
     
+    var options = this.options;
+    
     for (var i=1; i <= days_number; i++) {
       date.setDate(i);
       var day_num = date.getDay();
@@ -267,7 +271,7 @@ Calendar.include({
       cells[day_num].innerHTML = ''+i;
       cells[day_num].className = cur_day == (date.getTime() / 86400000).ceil() ? 'right-calendar-day-selected' : '';
       
-      if ((this.options.minDate && this.options.minDate > date) || (this.options.maxDate && this.options.maxDate < date))
+      if ((options.minDate && options.minDate > date) || (options.maxDate && options.maxDate < date))
         cells[day_num].className = 'right-calendar-day-disabled';
         
       cells[day_num].date = new Date(date);
@@ -277,24 +281,31 @@ Calendar.include({
       }
     }
     
-    element.first('div.right-calendar-month-caption').update(this.options.i18n.monthNames[date.getMonth()]+" "+date.getFullYear());
+    var caption = (options.listYears ? options.i18n.monthNamesShort[date.getMonth()] + ',' :
+      options.i18n.monthNames[date.getMonth()])+' '+date.getFullYear();
+    
+    element.first('div.right-calendar-month-caption').update(caption);
   },
   
   updateNextPrevMonthButtons: function(date, monthes_num) {
-    if (this.options.minDate) {
+    var options = this.options;
+    if (options.minDate) {
       var beginning = new Date(date.getFullYear(),0,1,0,0,0);
-      beginning.setMonth(date.getMonth() - (monthes_num - monthes_num/2).ceil());
+      var min_date = new Date(options.minDate.getFullYear(),0,1,0,0,0);
       
-      var min_date = new Date(this.options.minDate.getFullYear(), this.options.minDate.getMonth(), 1, 0,0,0);
+      this.hasPrevYear = beginning > min_date;
+      
+      beginning.setMonth(date.getMonth() - (monthes_num - monthes_num/2).ceil());
+      min_date.setMonth(options.minDate.getMonth());
       
       this.hasPrevMonth = beginning >= min_date;
     } else {
-      this.hasPrevMonth = true;
+      this.hasPrevMonth = this.hasPrevYear = true;
     }
     
-    if (this.options.maxDate) {
+    if (options.maxDate) {
       var end = new Date(date);
-      var max_date = new Date(this.options.maxDate);
+      var max_date = new Date(options.maxDate);
       [end, max_date].each(function(date) {
         date.setDate(32);
         date.setMonth(date.getMonth() - 1);
@@ -306,12 +317,21 @@ Calendar.include({
       });
       
       this.hasNextMonth = end < max_date;
+      
+      // checking the next year
+      [end, max_date].each('setMonth', 0);
+      this.hasNextYear = end < max_date;
     } else {
-      this.hasNextMonth = true;
+      this.hasNextMonth = this.hasNextYear = true;
     }
     
     this.nextButton[this.hasNextMonth ? 'removeClass':'addClass']('right-ui-button-disabled');
     this.prevButton[this.hasPrevMonth ? 'removeClass':'addClass']('right-ui-button-disabled');
+    
+    if (this.nextYearButton) {
+      this.nextYearButton[this.hasNextYear ? 'removeClass':'addClass']('right-ui-button-disabled');
+      this.prevYearButton[this.hasPrevYear ? 'removeClass':'addClass']('right-ui-button-disabled');
+    }
   },
 
   // builds the calendar
@@ -320,16 +340,17 @@ Calendar.include({
     
     // building the calendars greed
     var greed = tbody = $E('table', {'class': 'right-calendar-greed'}).insertTo(this.element);
+    var options = this.options;
     if (Browser.OLD) tbody = $E('tbody').insertTo(greed);
     
-    for (var y=0; y < this.options.numberOfMonths[1]; y++) {
+    for (var y=0; y < options.numberOfMonths[1]; y++) {
       var row   = $E('tr').insertTo(tbody);
-      for (var x=0; x < this.options.numberOfMonths[0]; x++) {
+      for (var x=0; x < options.numberOfMonths[0]; x++) {
         $E('td').insertTo(row).insert(this.buildMonth());
       }
     }
     
-    if (this.options.showTime) this.buildTime();
+    if (options.showTime) this.buildTime();
     this.buildButtons();
     
     return this;
@@ -337,10 +358,19 @@ Calendar.include({
   
   // builds the monthes swapping buttons
   buildSwaps: function() {
+    var i18n = this.options.i18n;
+    
     this.prevButton = $E('div', {'class': 'right-ui-button right-calendar-prev-button',
-        html: '&lsaquo;', title: this.options.i18n.Prev}).insertTo(this.element);
+        html: '&lsaquo;', title: i18n.Prev}).insertTo(this.element);
     this.nextButton = $E('div', {'class': 'right-ui-button right-calendar-next-button',
-        html: '&rsaquo;', title: this.options.i18n.Next}).insertTo(this.element);
+        html: '&rsaquo;', title: i18n.Next}).insertTo(this.element);
+        
+    if (this.options.listYears) {
+      this.prevYearButton = $E('div', {'class': 'right-ui-button right-calendar-prev-year-button',
+        html: '&laquo;', title: i18n.PrevYear}).insertTo(this.prevButton, 'after');
+      this.nextYearButton = $E('div', {'class': 'right-ui-button right-calendar-next-year-button',
+        html: '&raquo;', title: i18n.NextYear}).insertTo(this.nextButton, 'before');
+    }
   },
   
   // builds a month block
@@ -357,19 +387,20 @@ Calendar.include({
   
   // builds the time selection block
   buildTime: function() {
+    var options = this.options;
     var time_picker = $E('div', {'class': 'right-calendar-time', html: ':'}).insertTo(this.element);
     
     this.hours = $E('select').insertTo(time_picker, 'top');
     this.minutes = $E('select').insertTo(time_picker);
     
-    var minutes_threshold = this.options.timePeriod < 60 ? this.options.timePeriod : 60;
-    var hours_threshold   = this.options.timePeriod < 60 ? 1 : (this.options.timePeriod / 60).ceil();
+    var minutes_threshold = options.timePeriod < 60 ? options.timePeriod : 60;
+    var hours_threshold   = options.timePeriod < 60 ? 1 : (options.timePeriod / 60).ceil();
     
     (60).times(function(i) {
       var caption = (i < 10 ? '0' : '') + i;
       
       if (i < 24 && i % hours_threshold == 0) {
-        if (this.options.twentyFourHour)
+        if (options.twentyFourHour)
           this.hours.insert($E('option', {value: i, html: caption}));
         else if (i < 12) {
           this.hours.insert($E('option', {value: i, html: i == 0 ? 12 : i}));
@@ -382,10 +413,10 @@ Calendar.include({
     }, this);
     
     // adding the meridian picker if it's a 12 am|pm picker
-    if (!this.options.twentyFourHour) {
+    if (!options.twentyFourHour) {
       this.meridian = $E('select').insertTo(time_picker);
       
-      (this.options.format.includes(/%P/) ? ['am', 'pm'] : ['AM', 'PM']).each(function(value) {
+      (options.format.includes(/%P/) ? ['am', 'pm'] : ['AM', 'PM']).each(function(value) {
         this.meridian.insert($E('option', {value: value.toLowerCase(), html: value}));
       }, this);
     }
@@ -483,6 +514,14 @@ Calendar.include({
     return this.changeDate({Month: -1});
   },
   
+  nextYear: function() {
+    return this.changeDate({FullYear: 1});
+  },
+  
+  prevYear: function() {
+    return this.changeDate({FullYear: -1});
+  },
+  
 // protected
 
   // changes the current date according to the hash
@@ -506,6 +545,10 @@ Calendar.include({
     // connecting the monthes swapping
     this.prevButton.onClick(this.prevMonth.bind(this));
     this.nextButton.onClick(this.nextMonth.bind(this));
+    if (this.nextYearButton) {
+      this.prevYearButton.onClick(this.prevYear.bind(this));
+      this.nextYearButton.onClick(this.nextYear.bind(this));
+    }
     
     // connecting the calendar day-cells
     this.element.select('div.right-calendar-month table tbody td').each(function(cell) {
@@ -808,4 +851,4 @@ Calendar.include({
 document.onReady(Calendar.rescan);
 
 
-document.write("<style type=\"text/css\">*.right-ui-button{display:inline-block;*display:inline;*zoom:1;height:1em;line-height:1em;padding:.2em .5em;text-align:center;border:1px solid #CCC;border-radius:.2em;-moz-border-radius:.2em;-webkit-border-radius:.2em;cursor:pointer;color:#555;background-color:#FFF}*.right-ui-button:hover{color:#222;border-color:#BA8;background-color:#FB6}*.right-ui-button-disabled,*.right-ui-button-disabled:hover{color:#888;background:#EEE;border-color:#CCC;cursor:default}*.right-ui-buttons{margin-top:.5em}div.right-calendar{position:absolute;height:auto;border:1px solid #BBB;position:relative;padding:.5em;border-radius:.3em;-moz-border-radius:.3em;-webkit-border-radius:.3em;cursor:default;background-color:#EEE;-moz-box-shadow:.2em .4em .8em #666;-webkit-box-shadow:.2em .4em .8em #666}div.right-calendar-inline{position:relative;display:inline-block;*display:inline;*zoom:1;-moz-box-shadow:none;-webkit-box-shadow:none}div.right-calendar-prev-button,div.right-calendar-next-button{position:absolute;float:left;width:1em;padding:.15em .4em}div.right-calendar-next-button{right:.5em}div.right-calendar-month-caption{text-align:center;height:1.2em;line-height:1.2em}table.right-calendar-greed{border-spacing:0px;border:none;background:none;width:auto}table.right-calendar-greed td{vertical-align:top;border:none;background:none;margin:0;padding:0;padding-right:.4em}table.right-calendar-greed td:last-child{padding:0}div.right-calendar-month table{margin:0;padding:0;border:none;width:auto;margin-top:.2em;border-spacing:1px;border-collapse:separate;border:none;background:none}div.right-calendar-month table th{color:#777;text-align:center;border:none;background:none;padding:0;margin:0}div.right-calendar-month table td,div.right-calendar-month table td:last-child{text-align:right;padding:.1em .3em;background-color:#FFF;border:1px solid #CCC;cursor:pointer;border-radius:.2em;-moz-border-radius:.2em;-webkit-border-radius:.2em}div.right-calendar-month table td:hover{background-color:#FB6;border-color:#BA8}div.right-calendar-month table td.right-calendar-day-blank{background:transparent;cursor:default;border:none}div.right-calendar-month table td.right-calendar-day-selected{background-color:#FB6;border-color:#BA8;color:brown}div.right-calendar-month table td.right-calendar-day-disabled{color:#888;background:#EEE;border-color:#CCC;cursor:default}div.right-calendar-time{border-top:1px solid #ccc;margin-top:.3em;padding-top:.5em;text-align:center}div.right-calendar-time select{margin:0 .4em}div.right-calendar-buttons div.right-ui-button{width:3.2em}div.right-calendar-done-button{position:absolute;right:.5em}</style>");
+document.write("<style type=\"text/css\">*.right-ui-button{display:inline-block;*display:inline;*zoom:1;height:1em;line-height:1em;padding:.2em .5em;text-align:center;border:1px solid #CCC;border-radius:.2em;-moz-border-radius:.2em;-webkit-border-radius:.2em;cursor:pointer;color:#555;background-color:#FFF}*.right-ui-button:hover{color:#222;border-color:#999;background-color:#CCC}*.right-ui-button-disabled,*.right-ui-button-disabled:hover{color:#888;background:#EEE;border-color:#CCC;cursor:default}*.right-ui-buttons{margin-top:.5em}div.right-calendar{position:absolute;height:auto;border:1px solid #BBB;position:relative;padding:.5em;border-radius:.3em;-moz-border-radius:.3em;-webkit-border-radius:.3em;cursor:default;background-color:#EEE;-moz-box-shadow:.2em .4em .8em #666;-webkit-box-shadow:.2em .4em .8em #666}div.right-calendar-inline{position:relative;display:inline-block;*display:inline;*zoom:1;-moz-box-shadow:none;-webkit-box-shadow:none}div.right-calendar-prev-button,div.right-calendar-next-button,div.right-calendar-prev-year-button,div.right-calendar-next-year-button{position:absolute;float:left;width:1em;padding:.15em .4em}div.right-calendar-next-button{right:.5em}div.right-calendar-prev-year-button{left:2.55em}div.right-calendar-next-year-button{right:2.55em}div.right-calendar-month-caption{text-align:center;height:1.2em;line-height:1.2em}table.right-calendar-greed{border-spacing:0px;border:none;background:none;width:auto}table.right-calendar-greed td{vertical-align:top;border:none;background:none;margin:0;padding:0;padding-right:.4em}table.right-calendar-greed td:last-child{padding:0}div.right-calendar-month table{margin:0;padding:0;border:none;width:auto;margin-top:.2em;border-spacing:1px;border-collapse:separate;border:none;background:none}div.right-calendar-month table th{color:#777;text-align:center;border:none;background:none;padding:0;margin:0}div.right-calendar-month table td,div.right-calendar-month table td:last-child{text-align:right;padding:.1em .3em;background-color:#FFF;border:1px solid #CCC;cursor:pointer;color:#555;border-radius:.2em;-moz-border-radius:.2em;-webkit-border-radius:.2em}div.right-calendar-month table td:hover{background-color:#CCC;border-color:#AAA;color:#000}div.right-calendar-month table td.right-calendar-day-blank{background:transparent;cursor:default;border:none}div.right-calendar-month table td.right-calendar-day-selected{background-color:#BBB;border-color:#AAA;color:#222;font-weight:bold;padding:.1em .2em}div.right-calendar-month table td.right-calendar-day-disabled{color:#888;background:#EEE;border-color:#CCC;cursor:default}div.right-calendar-time{border-top:1px solid #ccc;margin-top:.3em;padding-top:.5em;text-align:center}div.right-calendar-time select{margin:0 .4em}div.right-calendar-buttons div.right-ui-button{width:3.2em}div.right-calendar-done-button{position:absolute;right:.5em}</style>");
