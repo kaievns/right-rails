@@ -195,12 +195,11 @@ var RR = {
   rescan: function() {
     this.hijack_links();
     
-    if (self.Lightbox) Lightbox.rescan();
-    if (self.Calendar) Calendar.rescan();
-    if (self.Autocompleter) Autocompleter.rescan();
-    if (self.Draggable) Draggable.rescan();
-    if (self.Droppable) Droppable.rescan();
-    if (self.Sortable)  Sortable.rescan();
+    $w('Lightbox Calendar Autocompleter Draggable Droppable Sortable Tabs Slider Rater Selectable'
+    ).each(function(name) {
+      if (self[name]) self[name].rescan();
+    });
+    
     
     return this;
   }
