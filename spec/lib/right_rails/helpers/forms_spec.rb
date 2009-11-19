@@ -3,6 +3,7 @@ require File.dirname(__FILE__) + "/../../../spec_helper.rb"
 describe RightRails::Helpers::Forms do
   include ActionView::Helpers::TagHelper
   include ActionView::Helpers::FormTagHelper
+  include ActionView::Helpers::JavaScriptHelper
   include RightRails::Helpers::Basic
   include RightRails::Helpers::Forms
   
@@ -31,5 +32,10 @@ describe RightRails::Helpers::Forms do
   it "should generate a #autocomplete_field_tag with options" do
     autocomplete_field_tag('name', 'value', :url => '/foo', :spinner => 'spinner', :min_length => 2).should ==
       %Q{<input autocomplete="off" data-autocompleter-options="{minLength:2,spinner:'spinner'}" id="name" name="name" rel="autocompleter[/foo]" type="text" value="value" />}
+  end
+  
+  it "should generate a #slider_tag with options" do
+    slider_tag('some_field', 22, :min => 10, :max => 40).should ==
+      %Q{<input id="some_field" name="some_field" type="hidden" value="22" />\n<script type="text/javascript">\n//<![CDATA[\nnew Slider({max:40,min:10,value:22}).insertTo('some_field','after').assignTo('some_field');\n//]]>\n</script>}
   end
 end

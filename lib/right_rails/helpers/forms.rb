@@ -26,6 +26,16 @@ module RightRails::Helpers::Forms
     spinner
   }
   
+  SLIDER_OPTION_KEYS = %w{
+    min
+    max
+    snap
+    value
+    direction
+    update
+    round
+  }
+  
   #
   # Generates the calendar field tag
   #
@@ -60,6 +70,22 @@ module RightRails::Helpers::Forms
     ActionView::Helpers::InstanceTag.new(object_name, method, self, options.delete(:object)).to_autocomplete_field_tag(options)
   end
   
+  #
+  # The slider widget generator
+  #
+  def slider_tag(name, value=nil, options={})
+    hidden_field_tag(name, value, __add_slider_options(options)) + "\n" + __slider_generator(options.merge(:value => value), name)
+  end
+  
+  #
+  # The form_for level slider widget generator
+  #
+  def slider(object_name, method, options)
+    ActionView::Helpers::InstanceTag.new(object_name, method, self,
+      options.delete(:object)).to_slider_tag(__add_slider_options(options)) +
+      "\n" + __slider_generator(options, object_name, method)
+  end
+  
 private
 
   def __add_calendar_field_options(options={})
@@ -85,6 +111,23 @@ private
     options
   end
   
+  def __add_slider_options(options)
+    rightjs_include_module 'dnd', 'slider'
+    
+    options.reject { |key, value|
+      SLIDER_OPTION_KEYS.include?(key.to_s)
+    }
+  end
+  
+  def __slider_generator(options, name, method=nil)
+    value   = options[:value]
+    value ||= ActionView::Helpers::InstanceTag.value_before_type_cast(instance_variable_get("@#{name}"), method.to_s) if method
+    name    = "#{name}[#{method}]" if method
+    id      = options[:id] || sanitize_to_id(name)
+    options = rightjs_unit_options(options.merge(:value => value), SLIDER_OPTION_KEYS)
+    javascript_tag "new Slider(#{options}).insertTo('#{id}','after').assignTo('#{id}');"
+  end
+  
 ###################################################################################
 #
 # The ActiveView native form-builder extensions
@@ -98,6 +141,10 @@ private
     
     def autocomplete_field(name, options={})
       @template.autocomplete_field(@object_name, name, objectify_options(options))
+    end
+    
+    def slider(name, options={})
+      @template.slider(@object_name, name, objectify_options(options))
     end
   end
   
@@ -119,6 +166,10 @@ private
     
     def to_autocomplete_field_tag(options)
       to_input_field_tag('text', options)
+    end
+    
+    def to_slider_tag(options)
+      to_input_field_tag('hidden', options)
     end
   end
   
