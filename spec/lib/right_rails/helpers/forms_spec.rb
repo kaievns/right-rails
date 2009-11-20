@@ -38,4 +38,14 @@ describe RightRails::Helpers::Forms do
     slider_tag('some_field', 22, :min => 10, :max => 40).should ==
       %Q{<input id="some_field" name="some_field" type="hidden" value="22" />\n<script type="text/javascript">\n//<![CDATA[\nnew Slider({max:40,min:10,value:22}).insertTo('some_field','after').assignTo('some_field');\n//]]>\n</script>}
   end
+  
+  it "should generate a #rater_tag" do
+    rater_tag('some_field', 2).should ==
+      %Q{<input id="some_field" name="some_field" type="hidden" value="2" />\n<script type="text/javascript">\n//<![CDATA[\nnew Rater({value:2}).insertTo('some_field','after').assignTo('some_field');\n//]]>\n</script>}
+  end
+  
+  it "should generate the #rater_display tag" do
+    rater_display(4).should ==
+      %Q{<div class="right-rater right-rater-disabled"><div class="right-rater-glow">★</div><div class="right-rater-glow">★</div><div class="right-rater-glow">★</div><div class="right-rater-glow">★</div><div>★</div></div>}
+  end
 end
