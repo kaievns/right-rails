@@ -9,6 +9,7 @@ organization.
 
 h2. Features
 
+
 * Lightning fast RightJS library
 * Transparent Prototype/Scriptaculous helpers replacement
 * More powerful and flexible new JavaScript generator for RJS
@@ -42,8 +43,22 @@ You also will have an ajax-friendly scaffold generator
 
 @script/generate right_scaffold Zing@
 
+h4. Ruby Gem
 
-The rubygem is still coming soon.
+Ruby gem version is now also available. You need to add gemcutter to the list of sources
+
+<pre><code>gem sources -a http://gemcutter.org</code></pre>
+
+Install the gem:
+
+<pre><code>gem install right-rails</code></pre>
+
+Add the gem into your @config/environment.rb@ file
+
+<pre><code>Rails::Initializer.run do |config|
+  config.gem 'right-rails'
+end</code></pre>
+
 
 
 
