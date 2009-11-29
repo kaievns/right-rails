@@ -1,14 +1,15 @@
 Gem::Specification.new do |s|
   s.name    = 'right-rails'
-  s.version = '0.3.0'
-  s.date    = '2009-11-22'
+  s.version = '0.3.1'
+  s.date    = '2009-11-29'
   
   s.summary = "RightJS plugin for Rails"
-  s.description = "RightRails provides support of the RightJS framework for the native Rails/Prototype helpers, plus it has a new RJS processor, most common ajax operations interface, RightJS own feature support, remove files uploading handler, etc."
+  s.description = "RightRails provides support of the RightJS framework with transparent Rails/Prototype replacements, plus it has a new RJS processor, the most common ajax operations interface, RightJS own features support, remote files uploading handler, etc."
   
   s.authors  = ['Nikolay Nemshilov']
   s.email    = 'nemshilov@gmail.com'
   s.homepage = 'http://github.com/MadRabbit/right-rails'
+=begin
   s.post_install_message = %q{
 <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<< RIGHT RAILS >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
 
@@ -19,7 +20,7 @@ Gem::Specification.new do |s|
   Cheers!
   
   }
-  
+=end
   
   s.files = Dir['generators/**/*'] + Dir['javascripts/**/*'] + Dir['lib/**/*'] + Dir['spec/**/*']
   s.files+= %w(
