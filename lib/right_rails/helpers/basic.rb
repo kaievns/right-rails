@@ -97,7 +97,7 @@ module RightRails::Helpers::Basic
         
         value = case value.class.name.to_sym
           when :NilClass then 'null'
-          when :Symbol   then "#{value}"
+          when :Symbol   then c_key == 'method' ? "'#{value}'" : "#{value}"
           when :String   then "'#{value}'"
           else                value.inspect
         end

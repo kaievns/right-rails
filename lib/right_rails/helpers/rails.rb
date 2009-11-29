@@ -111,11 +111,8 @@ protected
         xhr_options[key] = case value.class.name.to_sym
           when :NilClass then 'null'
           when :String   then "'#{value}'"
-          when :Symbol   then case value
-                             when :get, :post, :put, :delete then "'#{value}'"
-                             else "#{value}"
-                             end
-          else            value.inspect
+          when :Symbol   then key.to_s == 'method' ? "'#{value}'" : "#{value}"
+          else           value.inspect
         end
       end
     end

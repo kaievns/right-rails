@@ -22,6 +22,11 @@ describe RightRails::Helpers::Rails do
         "Xhr.load('/foo',{method:'put'})"
     end
     
+    it "should accept the method parameter as a symbol too" do
+      remote_function(:url => '/foo', :method => :post).should ==
+        "Xhr.load('/foo',{method:'post'})"
+    end
+    
     it "should let you specify the spinners" do
       remote_function(:url => '/foo', :spinner => 'my-spinner').should ==
         "Xhr.load('/foo',{spinner:'my-spinner'})"
