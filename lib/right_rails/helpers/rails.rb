@@ -158,7 +158,7 @@ protected
     
     # forms sending adjustements
     xhr << ".send(#{options[:submit]})" if options[:submit]
-    xhr.gsub! /^.+?,/, '$(this).send('  if options[:form]
+    xhr.gsub! /^.+?(,|(\)))/, '$(this).send(\2'  if options[:form]
     
     xhr
   end

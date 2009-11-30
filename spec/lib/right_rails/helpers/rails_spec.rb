@@ -122,7 +122,12 @@ describe RightRails::Helpers::Rails do
   end
   
   describe "#form_remote_tag" do
-    it "should generate a proper remote form" do
+    it "should generate a simple remote form".should do
+      form_remote_tag(:url => '/boo').should ==
+        %Q{<form action="/boo" method="post" onsubmit="$(this).send(); return false;">}
+    end
+    
+    it "should generate a proper remote form with options" do
       form_remote_tag(:url => '/boo', :spinner => 'spinner').should ==
         %Q{<form action="/boo" method="post" onsubmit="$(this).send({spinner:'spinner'}); return false;">}
     end
