@@ -57,11 +57,11 @@ var Calendar = new Class(Observer, {
     },
     
     // scans for the auto-discoverable calendar inputs
-    rescan: function() {
+    rescan: function(scope) {
       var key       = Calendar.Options.relName;
       var rel_id_re = new RegExp(key+'\\[(.+?)\\]');
 
-      $$(Calendar.Options.checkTags+'[rel*='+key+']').each(function(element) {
+      ($(scope)||document).select(Calendar.Options.checkTags+'[rel*='+key+']').each(function(element) {
         var data     = element.get('data-'+key+'-options');
         var calendar = new Calendar(eval('('+data+')') || {});
         
@@ -849,7 +849,7 @@ Calendar.include({
  *
  * Copyright (C) 2009 Nikolay V. Nemshilov aka St.
  */
-document.onReady(Calendar.rescan);
+document.onReady(function() { Calendar.rescan(); });
 
 
 document.write("<style type=\"text/css\">*.right-ui-button{display:inline-block;*display:inline;*zoom:1;height:1em;line-height:1em;padding:.2em .5em;text-align:center;border:1px solid #CCC;border-radius:.2em;-moz-border-radius:.2em;-webkit-border-radius:.2em;cursor:pointer;color:#555;background-color:#FFF}*.right-ui-button:hover{color:#222;border-color:#999;background-color:#CCC}*.right-ui-button-disabled,*.right-ui-button-disabled:hover{color:#888;background:#EEE;border-color:#CCC;cursor:default}*.right-ui-buttons{margin-top:.5em}div.right-calendar{position:absolute;height:auto;border:1px solid #BBB;position:relative;padding:.5em;border-radius:.3em;-moz-border-radius:.3em;-webkit-border-radius:.3em;cursor:default;background-color:#EEE;-moz-box-shadow:.2em .4em .8em #666;-webkit-box-shadow:.2em .4em .8em #666}div.right-calendar-inline{position:relative;display:inline-block;vertical-align:top;*display:inline;*zoom:1;-moz-box-shadow:none;-webkit-box-shadow:none}div.right-calendar-prev-button,div.right-calendar-next-button,div.right-calendar-prev-year-button,div.right-calendar-next-year-button{position:absolute;float:left;width:1em;padding:.15em .4em}div.right-calendar-next-button{right:.5em}div.right-calendar-prev-year-button{left:2.55em}div.right-calendar-next-year-button{right:2.55em}div.right-calendar-month-caption{text-align:center;height:1.2em;line-height:1.2em}table.right-calendar-greed{border-spacing:0px;border:none;background:none;width:auto}table.right-calendar-greed td{vertical-align:top;border:none;background:none;margin:0;padding:0;padding-right:.4em}table.right-calendar-greed td:last-child{padding:0}div.right-calendar-month table{margin:0;padding:0;border:none;width:auto;margin-top:.2em;border-spacing:1px;border-collapse:separate;border:none;background:none}div.right-calendar-month table th{color:#777;text-align:center;border:none;background:none;padding:0;margin:0}div.right-calendar-month table td,div.right-calendar-month table td:last-child{text-align:right;padding:.1em .3em;background-color:#FFF;border:1px solid #CCC;cursor:pointer;color:#555;border-radius:.2em;-moz-border-radius:.2em;-webkit-border-radius:.2em}div.right-calendar-month table td:hover{background-color:#CCC;border-color:#AAA;color:#000}div.right-calendar-month table td.right-calendar-day-blank{background:transparent;cursor:default;border:none}div.right-calendar-month table td.right-calendar-day-selected{background-color:#BBB;border-color:#AAA;color:#222;font-weight:bold;padding:.1em .2em}div.right-calendar-month table td.right-calendar-day-disabled{color:#888;background:#EEE;border-color:#CCC;cursor:default}div.right-calendar-time{border-top:1px solid #ccc;margin-top:.3em;padding-top:.5em;text-align:center}div.right-calendar-time select{margin:0 .4em}div.right-calendar-buttons div.right-ui-button{width:3.2em}div.right-calendar-done-button{position:absolute;right:.5em}</style>");

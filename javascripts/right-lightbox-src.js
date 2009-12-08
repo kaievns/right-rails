@@ -26,7 +26,7 @@ var Lightbox = new Class({
     
     Options: {
       endOpacity:      0.8,
-      fxDuration:      200,
+      fxDuration:      300,
       hideOnEsc:       true,
       hideOnOutClick:  true,
       showCloseButton: true,
@@ -46,7 +46,7 @@ var Lightbox = new Class({
     boxes: [],
     
     // scans the page for auto-discoverable lighbox links
-    rescan: function() {
+    rescan: function(scope) {
       var key = Lightbox.Options.relName;
       var get_options = function(element) {
         var data = element.get('data-'+key+'-options');
@@ -54,7 +54,7 @@ var Lightbox = new Class({
       };
       
       // grabbing the singles
-      $$('a[rel='+key+']').each(function(a) {
+      ($(scope)||document).select('a[rel='+key+']').each(function(a) {
         if (!a.showLightbox) {
           var options = get_options(a);
           a.showLightbox = function(event) {
@@ -250,8 +250,10 @@ var Lightbox = new Class({
       
       this.boxResize();
       
-      this.locker.morph({opacity: this.options.endOpacity}, {duration: this.options.fxDuration});
-      this.dialog.morph({opacity: 1},                       {duration: this.options.fxDuration});
+      var options = {duration: this.options.fxDuration, fps:  Fx.Options.fps * 0.5};
+      
+      this.locker.morph({opacity: this.options.endOpacity}, options);
+      this.dialog.morph({opacity: 1},                       options);
       
       callback.delay(this.options.fxDuration);
     } else {
@@ -331,7 +333,7 @@ var Lightbox = new Class({
     var body   = this.body;
     var dialog = this.dialog;
     
-    $ext(new Fx(this.dialog, {duration: this.options.fxDuration}), {
+    $ext(new Fx(this.dialog, {duration: this.options.fxDuration, fps: Fx.Options.fps * 0.6}), {
       render: function(delta) {
         body.style.width  = (body_start_width  + (body_end_width  - body_start_width)  * delta) + 'px';
         body.style.height = (body_start_height + (body_end_height - body_start_height) * delta) + 'px';
@@ -592,6 +594,6 @@ Lightbox.extend({
  *
  * @copyright (C) 2009 Nikolay V. Nemshilov aka St.
  */
-document.onReady(Lightbox.rescan);
+document.onReady(function() { Lightbox.rescan(); });
 
-document.write("<style type=\"text/css\">div.lightbox{position:fixed;top:0px;left:0px;width:100%;text-align:center}div.lightbox div{line-height:normal}div.lightbox-locker{position:absolute;top:0px;left:0px;width:100%;height:100%;background-color:black}div.lightbox-dialog{display:inline-block;*display:inline;*zoom:1;position:relative;text-align:left;padding-bottom:1.6em}div.lightbox-body-wrap{background-color:white;padding:1em;border-radius:.6em;-moz-border-radius:.6em;-webkit-border-radius:.6em}div.lightbox-body{position:relative;height:10em;width:10em;min-height:10em;min-width:10em;overflow:hidden;*background-color:white}div.lightbox-content{position:absolute;*background-color:white}div.lightbox-body-lock{background-color:white;position:absolute;left:0px;top:0px;width:100%;height:100%;text-align:center}div.lightbox-body-lock-spinner{display:none;position:absolute;bottom:0;right:0}div.lightbox-body-lock-spinner div{float:left;width:.5em;height:.9em;background:#AAA;margin-left:.1em;-moz-border-radius:.15em;-webkit-border-radius:.15em}div.lightbox-body-lock-spinner div.glow{background:#666;height:1em;margin-top:-0.05em}div.lightbox-body-lock-loading div.lightbox-body-lock-spinner{display:inline-block;*display:inline;*zoom:1}div.lightbox-body-lock-transparent{background:none}div.lightbox-caption{height:1.2em;margin:0 .7em;margin-bottom:.1em;white-space:nowrap;color:#DDD;font-weight:bold;font-size:1.6em;font-family:Helvetica;text-shadow:black 2px 2px 2px}div.lightbox-close-button,div.lightbox-prev-link,div.lightbox-next-link{position:absolute;bottom:0;color:#888;cursor:pointer;font-size:150%;font-weight:bold}div.lightbox-close-button:hover,div.lightbox-prev-link:hover,div.lightbox-next-link:hover{color:white}div.lightbox-close-button{right:.5em}div.lightbox-prev-link,div.lightbox-next-link{padding:0 .2em;font-size:180%}div.lightbox-prev-link{left:.3em}div.lightbox-next-link{left:2em}div.lightbox-image div.lightbox-body-wrap{padding:0;border:1px solid #777;border-radius:0px;-moz-border-radius:0px;-webkit-border-radius:0px}div.lightbox-image div.lightbox-content img{vertical-align:middle}div.lightbox-image div.lightbox-caption{margin-left:.2em}div.lightbox-image div.lightbox-body-wrap,div.lightbox-image div.lightbox-body-lock{background-color:#DDD}div.lightbox-image div.lightbox-body-lock-spinner{bottom:1em;right:1em}div.lightbox-image div.lightbox-close-button{right:.2em}div.lightbox-image div.lightbox-prev-link{left:0}</style>");
+document.write("<style type=\"text/css\">div.lightbox{position:fixed;top:0px;left:0px;width:100%;text-align:center}div.lightbox div{line-height:normal}div.lightbox-locker{position:absolute;top:0px;left:0px;width:100%;height:100%;background-color:black}div.lightbox-dialog{display:inline-block;*display:inline;*zoom:1;position:relative;text-align:left;padding-bottom:1.6em}div.lightbox-body-wrap{background-color:white;padding:1em;border-radius:.6em;-moz-border-radius:.6em;-webkit-border-radius:.6em;-moz-box-shadow:#111 .1em .1em .4em;-webkit-box-shadow:#111 .1em .1em .4em}div.lightbox-body{position:relative;height:10em;width:10em;min-height:10em;min-width:10em;overflow:hidden;*background-color:white}div.lightbox-content{position:absolute;*background-color:white}div.lightbox-body-lock{background-color:white;position:absolute;left:0px;top:0px;width:100%;height:100%;text-align:center}div.lightbox-body-lock-spinner{display:none;position:absolute;bottom:0;right:0}div.lightbox-body-lock-spinner div{float:left;width:.5em;height:.9em;background:#AAA;margin-left:.1em;-moz-border-radius:.15em;-webkit-border-radius:.15em}div.lightbox-body-lock-spinner div.glow{background:#666;height:1em;margin-top:-0.05em}div.lightbox-body-lock-loading div.lightbox-body-lock-spinner{display:inline-block;*display:inline;*zoom:1}div.lightbox-body-lock-transparent{background:none}div.lightbox-caption{height:1.2em;margin:0 .7em;margin-bottom:.1em;white-space:nowrap;color:#DDD;font-weight:bold;font-size:1.6em;font-family:Helvetica;text-shadow:black 2px 2px 2px}div.lightbox-close-button,div.lightbox-prev-link,div.lightbox-next-link{position:absolute;bottom:0;color:#888;cursor:pointer;font-size:150%;font-weight:bold;font-family:Arial}div.lightbox-close-button:hover,div.lightbox-prev-link:hover,div.lightbox-next-link:hover{color:white}div.lightbox-close-button{right:.5em}div.lightbox-prev-link,div.lightbox-next-link{padding:0 .2em;bottom:2px}div.lightbox-prev-link{left:.2em}div.lightbox-next-link{left:2em}div.lightbox-image div.lightbox-body-wrap{padding:0;border:1px solid #777;border-radius:0px;-moz-border-radius:0px;-webkit-border-radius:0px}div.lightbox-image div.lightbox-content img{vertical-align:middle}div.lightbox-image div.lightbox-caption{margin-left:.2em}div.lightbox-image div.lightbox-body-wrap,div.lightbox-image div.lightbox-body-lock{background-color:#DDD}div.lightbox-image div.lightbox-body-lock-spinner{bottom:1em;right:1em}div.lightbox-image div.lightbox-close-button{right:.2em}div.lightbox-image div.lightbox-prev-link{left:0}</style>");

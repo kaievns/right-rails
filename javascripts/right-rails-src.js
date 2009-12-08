@@ -29,7 +29,9 @@ var RR = {
     
     highlightUpdates: true,
     
-    removeFx:         'fade'
+    removeFx:         'fade',
+    
+    rescanWithScopes: true       // if it should rescan only updated elements
   },
   
   /**
@@ -82,7 +84,7 @@ var RR = {
    * @return RR this
    */
   insert: function(where, what) {
-    return this.highlight($(where).insert(what).lastChild).rescan();
+    return this.highlight($(where).insert(what).lastChild).rescan(where);
   },
   
   /**
@@ -94,7 +96,7 @@ var RR = {
    */
   replace: function(id, source) {
     $(id).replace(source);
-    return this.highlight(id).rescan();
+    return this.highlight(id).rescan(id);
   },
   
   /**
@@ -106,12 +108,12 @@ var RR = {
   remove: function(id) {
     var element = $(id);
     if (element) {
+      var remove_element = element.remove.bind(element).chain(Lightbox.rescan);
+      
       if (this.Options.removeFx) {
-        element.hide(this.Options.removeFx, {
-          onFinish: element.remove.bind(element)
-        });
+        element.hide(this.Options.removeFx, {onFinish: remove_element});
       } else {
-        element.remove();
+        remove_element;
       }
     }
   },
@@ -144,7 +146,7 @@ var RR = {
       this.remotize_form(id);
     }
     
-    return this.rescan();
+    return this.rescan(id);
   },
   
   /**
@@ -158,7 +160,7 @@ var RR = {
     $(id).select('form').each('remove'); // removing old forms
     $(id).insert(source);
     
-    return this.remotize_form($(id).first('form')).rescan();
+    return this.remotize_form($(id).first('form')).rescan(id);
   },
   
   /**
@@ -192,13 +194,13 @@ var RR = {
    *
    * @return RR this
    */
-  rescan: function() {
+  rescan: function(scope) {
     this.hijack_links();
     
     $w('Lightbox Calendar Autocompleter Draggable Droppable Sortable Tabs Slider Rater Selectable'
     ).each(function(name) {
-      if (self[name]) self[name].rescan();
-    });
+      if (self[name]) self[name].rescan(this.Options.rescanWithScopes ? scope : null);
+    }, this);
     
     
     return this;

@@ -42,9 +42,10 @@ var Draggable = new Class(Observer, {
     current: null,
     
     // scans the document for auto-processed draggables with the rel="draggable" attribute
-    rescan: function() {
+    rescan: function(scope) {
       var key = this.Options.relName;
-      $$('*[rel^="'+key+'"]').each(function(element) {
+      
+      ($(scope)||document).select('*[rel^="'+key+'"]').each(function(element) {
         if (!element._draggable) {
           var data = element.get('data-'+key+'-options');
           new this(element, eval('('+data+')') || {});

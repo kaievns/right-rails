@@ -49,6 +49,27 @@ var Behavior = new Class({
     },
     
     /**
+     * Events handling delegation method
+     *
+     * USAGE:
+     *  ".something".behave('click', Behavior.delegate({
+     *    ".foo": function() { return 'foo'; },
+     *    ".bar": function() { return 'bar'; }
+     *  }));
+     *
+     * @param Object delegations description
+     * @return Object delegated event handlers
+     */
+    delegate: function(rules) {
+      return function(event) {
+          var element = $(event.target);
+          for (var selector in rules)
+            if (element.match(selector))
+              return rules[selector].apply(this, arguments);
+        }
+    },
+    
+    /**
      * applies all the active behaviors to the page
      *
      * @return void

@@ -15,7 +15,7 @@ class RightRailsGenerator < Rails::Generator::Base
       # copying the javascript files
       Dir.open(options[:source]).each do |file|
         unless ['.', '..'].include?(file)
-          destination = if ['right.js', 'right-src.js'].include?(file)
+          destination = if ['right.js', 'right-src.js', 'right-olds.js', 'right-olds-src.js'].include?(file)
             file
           elsif file.include?('ui-i18n')
             file.gsub('right-', 'right/').gsub('ui-i18n-', 'i18n/')

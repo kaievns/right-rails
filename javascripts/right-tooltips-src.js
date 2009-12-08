@@ -30,9 +30,9 @@ var Tooltip = new Class({
     current: null, // currently active tooltip reference
     
     // scans the page for auto-discoverable tooltiped elements
-    rescan: function() {
+    rescan: function(scope) {
       var key = Tooltip.Options.relName;
-      $$(Tooltip.Options.checkTags+'[rel='+key+']').each(function(element) {
+      ($(scope) || document).select(Tooltip.Options.checkTags+'[rel='+key+']').each(function(element) {
         var text = element.get('title') || element.get('alt');
         if (text) {
           var data = element.get('data-'+key+'-options');
@@ -118,7 +118,7 @@ var Tooltip = new Class({
  * Copyright (C) 2009 Nikolay V. Nemshilov aka St.
  */
 document.on({
-  ready: Tooltip.rescan,
+  ready: function() { Tooltip.rescan(); },
   
   mousemove: function(event) {
     if (Tooltip.current) {

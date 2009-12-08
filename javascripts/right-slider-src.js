@@ -24,8 +24,8 @@ var Slider = new Class(Observer, {
       round:     0      // the number of symbols after the decimal pointer
     },
     
-    rescan: function() {
-      $$('div.right-slider').each(function(element) {
+    rescan: function(scope) {
+      ($(scope) || document).select('div.right-slider').each(function(element) {
         if (!element._slider) {
           new Slider(element);
         }
@@ -284,8 +284,8 @@ var Slider = new Class(Observer, {
 /**
  * Document onReady hook for sliders
  *
- * Copyright (C) Nikolay V. Nemshilov aka St.
+ * Copyright (C) 2009 Nikolay V. Nemshilov aka St.
  */
-document.onReady(Slider.rescan);
+document.onReady(function() { Slider.rescan(); });
 
 document.write("<style type=\"text/css\">div.right-slider,div.right-slider-handle{margin:0;padding:0;border:none;background:none}div.right-slider{height:0.4em;width:20em;border:1px solid #CCC;background:#EEE;-moz-border-radius:.2em;-webkit-border-radius:.2em;position:relative;margin:.6em 0;display:inline-block;*display:inline;*zoom:1;vertical-align:middle}div.right-slider-handle{position:absolute;left:0;top:0;cursor:pointer;width:4pt;height:1em;margin-top:-0.4em;margin-left:0.1em;background:#CCC;border:1px solid #AAA;-moz-border-radius:.2em;-webkit-border-radius:.2em}div.right-slider-vertical{height:10em;width:0.4em;margin:0 .3em}div.right-slider-vertical div.right-slider-handle{margin:0;margin-left:-0.4em;margin-top:0.1em;height:4pt;width:1em}</style>");

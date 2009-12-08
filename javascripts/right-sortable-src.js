@@ -34,11 +34,11 @@ var Sortable = new Class(Observer, {
     },
     
     // scans through the page for auto-discoverable sortables
-    rescan: function() {
+    rescan: function(scope) {
       var key = Sortable.Options.relName;
       var reg = new RegExp('^'+key+'\\[(.+?)\\]');
       
-      $$('ul[rel^="'+key+'"], ol[rel^="'+key+'"]').each(function(element) {
+      ($(scope) || document).select('ul[rel^="'+key+'"], ol[rel^="'+key+'"]').each(function(element) {
         if (!element._sortable) {
           var data    = element.get('data-'+key+'-options');
           var options = eval('('+data+')') || {};
@@ -89,6 +89,9 @@ var Sortable = new Class(Observer, {
         item.current_position = index;
       });
     }
+    
+    // resetting the left/top positions so it didn't jump next time
+    element.setStyle({left:'auto', top: 'auto'});
   },
   
   // tries to send an Xhr request about the element relocation
@@ -152,19 +155,21 @@ var Sortable = new Class(Observer, {
       // the droppable options
       var drop_options = {
         overlap:      direction,
-        containtment: items,
+        containment:  items,
         onHover: function(draggable) {
-          // calculating the swapping direction
-          var drag_dims = draggable.element.dimensions();
-          var this_dims = this.element.dimensions();
-          
-          var before = draggable.axisY ? (
-              drag_dims.top > this_dims.top
-            ) : (
-              drag_dims.left > this_dims.left
-            );
-          
-          this.element.insert(draggable.clone, before ? 'before' : 'after');
+          if (items.include(draggable.element)) {
+            // calculating the swapping direction
+            var drag_dims = draggable.element.dimensions();
+            var this_dims = this.element.dimensions();
+
+            var before = draggable.axisY ? (
+                drag_dims.top > this_dims.top
+              ) : (
+                drag_dims.left > this_dims.left
+              );
+
+            this.element.insert(draggable.clone, before ? 'before' : 'after');
+          }
         }
       };
       
@@ -188,9 +193,9 @@ var Sortable = new Class(Observer, {
 /**
  * Document level hooks for sortables
  *
- * Copyright (C) Nikolay V. Nemshilov aka St.
+ * Copyright (C) 2009 Nikolay V. Nemshilov aka St.
  */
-document.onReady(Sortable.rescan);
+document.onReady(function() { Sortable.rescan(); });
 
 /**
  * Element level features for the Sortable unit

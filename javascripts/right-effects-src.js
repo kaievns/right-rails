@@ -112,8 +112,8 @@ Fx.Zoom = new Class(Fx.Move, {
         $E('div', {style: "visibility:hidden;float:left;height:0;width:0"}).insertTo(document.body)
       ).setStyle(size).sizes();
       
-      if ('height' in size) size = sizes.y / this.element.sizes().y;
-      else                  size = sizes.x / this.element.sizes().x;
+      if (size.height) size = sizes.y / this.element.sizes().y;
+      else             size = sizes.x / this.element.sizes().x;
     } else if (isString(size)) {
       size  = size.endsWith('%') ? size.toFloat() / 100 : size.toFloat();
     }
@@ -123,17 +123,21 @@ Fx.Zoom = new Class(Fx.Move, {
   
   // getting the basic end style
   _getBasicStyle: function(proportion) {
-    var style = this._getStyle(this.element, this.PROPERTIES);
-    
-    this._cleanStyle(style);
+    var style = this._cloneStyle(this.element, this.PROPERTIES), re = /([\d\.]+)/g;
+    style.width  = style.width  || (this.element.offsetWidth  + 'px');
+    style.height = style.height || (this.element.offsetHeight + 'px');
     
     for (var key in style) {
-      if (style[key][0] > 0) {
-        style[key] = (proportion * style[key][0]) + style[key][1];
+      if (key == 'width' || key == 'height') style[key] = style[key] || this.element[offset+key.capitalize()];
+      if (re.test(style[key])) {
+        style[key] = style[key].replace(re, function(m) {
+          return ''+ (m.toFloat() * proportion);
+        });
       } else {
         delete(style[key]);
       }
     }
+    
     // preventing the border disappearance
     if (style.borderWidth && style.borderWidth.toFloat() < 1) {
       style.borderWidth = '1px';
@@ -326,26 +330,34 @@ Fx.Puff = new Class(Fx.Zoom, {
  * Copyright (C) Nikolay V. Nemshilov aka St.
  */
 Fx.CSS = new Class(Fx.Morph, {
-  // the list of styles to watch
-  STYLES: $w('width height lineHeight opacity borderWidth borderColor padding margin color fontSize backgroundColor marginTop marginLeft marginRight marginBottom top left right bottom'),
+  STYLES: $w('width height lineHeight opacity border padding margin color fontSize background top left right bottom'),
   
 // protected
   
   prepare: function(add_class, remove_class) {
-    // grabbing the end style
-    var dummy = this._dummy().addClass(add_class||'').removeClass(remove_class||'');
-    var style = this._getStyle(dummy, this.STYLES);
-    dummy.remove();
-    
-    // Opera 10 has some trash in the borderWidth style if it was not set
-    if (Browser.Opera && !/^\d+[a-z]+/.test(style.borderWidth))
-      delete(style.borderWidth);
+    this.addClass    = add_class    || '';
+    this.removeClass = remove_class || '';
     
     // wiring the classes add/remove on-finish
     if (add_class)    this.onFinish(this.element.addClass.bind(this.element, add_class));
     if (remove_class) this.onFinish(this.element.removeClass.bind(this.element, remove_class));
     
-    return this.$super(style);
+    return this.$super({});
+  },
+  
+  // hacking the old method to make it apply the classes
+  _endStyle: eval("({f:"+Fx.Morph.prototype._endStyle.toString().replace(/(\.setStyle\(\w+\))/,
+    '$1.addClass(this.addClass).removeClass(this.removeClass)'
+  )+"})").f,
+  
+  // replacing the old method to make it return our own list of properties
+  _styleKeys: function() {
+    var hash = {};
+    this.STYLES.each(function(name) {
+      hash[name] = 1;
+    });
+    
+    return this.$super(hash);
   }
 });
 /**
