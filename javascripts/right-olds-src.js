@@ -80,6 +80,16 @@ if (Browser.OLD) {
       return element;
     }
   });
+  
+  Element.addMethods((function() {
+    var old_collect = Element.Methods.rCollect;
+    
+    return {
+      rCollect: function(attr, css_rule) {
+        return old_collect.call(this, attr, css_rule).each(Element.prepare);
+      }
+    }
+  })());
 }
 
 /**
@@ -87,11 +97,6 @@ if (Browser.OLD) {
  *
  * Copyright (C) 2009 Nikolay V. Nemshilov aka St.
  */
-// Konqueror 3 patch for the isHash function
-if (navigator.userAgent.indexOf('Konqueror/3') != -1) {
-  eval(isHash.toString().replace(';', '&&!(arguments[0] instanceof HTMLElement);'));
-}
-
 
 /**
  * manual position calculator, it works for Konqueror and also
