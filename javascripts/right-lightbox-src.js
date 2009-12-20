@@ -61,7 +61,7 @@ var Lightbox = new Class({
             event.stop();
             new Lightbox(options).show(this);
           };
-          a.onClick('showLightbox');
+          a.onClick(a.showLightbox);
         }
       });
 
