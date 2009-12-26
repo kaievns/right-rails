@@ -1,7 +1,7 @@
 Gem::Specification.new do |s|
   s.name    = 'right-rails'
-  s.version = '0.4.2'
-  s.date    = '2009-12-08'
+  s.version = '0.4.3'
+  s.date    = '2009-12-26'
   
   s.summary = "RightJS plugin for Rails"
   s.description = "RightRails provides support of the RightJS framework with transparent Rails/Prototype replacements, plus it has a new RJS processor, the most common ajax operations interface, RightJS own features support, remote files uploading handler, etc."
@@ -25,6 +25,7 @@ Gem::Specification.new do |s|
   s.files = Dir['generators/**/*'] + Dir['javascripts/**/*'] + Dir['lib/**/*'] + Dir['spec/**/*']
   s.files+= %w(
     README.textile
+    CHANGELOG
     MIT-LICENSE
     Rakefile
     init.rb

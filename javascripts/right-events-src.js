@@ -9,30 +9,7 @@
  *
  * Copyright (C) 2008-2009 Nikolay V. Nemshilov aka St. <nemshilov#gma-il>
  */
-Event.extend((function() {
-  var old_ext = Event.ext;
-
-return {
-  /**
-   * extends a native object with additional functionality
-   *
-   * @param Event event
-   * @return Event same event but extended
-   */
-  ext: function(event) {
-    if (!event.stop) {
-      old_ext.call(Event, event);
-      
-      if (Event.Mouse.NAMES.includes(event.type)) {
-        Event.Mouse.ext(event);
-      } else if (defined(event.keyCode)){
-        Event.Keyboard.ext(event);
-      }
-    }
-    
-    return event;
-  },
-  
+Event.extend({
   // keyboard key codes
   KEYS: {
     BACKSPACE:  8,
@@ -63,7 +40,7 @@ return {
     RIGHT:  2
   }
   
-}})());
+});
 
 Event.include({
   /**
@@ -90,6 +67,7 @@ Event.include({
     
     return Event.ext(event);
   }
+  
 });
 /**
  * presents the basic events class
@@ -177,19 +155,12 @@ Event.Mouse = new Class(Event.Base, {
 
       isRightClick : function() {
         return this.which == 3;
+      },
+
+      over: function(element) {
+        var dims = $(element).dimensions(), x = this.pageX, y = this.pageY;
+        return !(x < dims.left || x > (dims.left + dims.width) || y < dims.top || y > (dims.top + dims.height));
       }
-    },
-    
-    /**
-     * proceses the event extending as if it's a mouse event
-     *
-     * @param Event new event
-     * @return Event extended event
-     */
-    ext: function(event) {
-      $ext(event, this.Methods, true);
-            
-      return event;
     }
   },
   
@@ -230,11 +201,7 @@ Event.Mouse = new Class(Event.Base, {
   }
 });
 
-try {
-  // boosting up the native events by preextending the prototype if available
-  $ext(Event.parent.prototype, Event.Mouse.Methods, true);
-} catch(e) {};
-
+Event.addMethods(Event.Mouse.Methods);
 /**
  * presents the keyboard events class
  *
@@ -255,19 +222,7 @@ Event.Keyboard = new Class(Event.Base, {
      * isEnter()
      * etc
      */
-    Methods: {}, // generated at the end of the file
-    
-    /**
-     * processes the event extending as a keyboard event
-     *
-     * @param Event before extending
-     * @return Event after extending
-     */
-    ext: function(event) {
-      $ext(event, this.Methods, true);
-      
-      return event;
-    }
+    Methods: {} // generated at the end of the file
   },
   
   // default keyboard related events options
@@ -337,10 +292,8 @@ Event.Keyboard = new Class(Event.Base, {
       };
     })(key, Event.KEYS[key]);
   };
-  try {
-    // boosting up the native events by preextending the prototype if available
-    $ext(Event.parent.prototype, Event.Keyboard.Methods, true);
-  } catch(e) {};
+  
+  Event.addMethods(Event.Keyboard.Methods);
 })();
 
 /**
