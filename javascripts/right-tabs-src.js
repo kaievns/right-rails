@@ -314,7 +314,7 @@ Tabs.Panel = new Class(Observer, {
     
     var controller = this.tab.controller;
     var options    = controller.options;
-    var prev_panel = controller.element.subNodes().first('hasClass', 'right-tabs-panel-current');
+    var prev_panel = controller.element.first('.right-tabs-panel-current');
     var this_panel = this.element;
     var swapping   = prev_panel != this_panel;
     var loading    = this.element.first('div.right-tabs-panel-locker');
@@ -347,18 +347,22 @@ Tabs.Panel = new Class(Observer, {
         // wrapping the element with an overflowed element to visualize the resize
         var fx_wrapper = $E('div', {'class': 'right-tabs-resizer'});
         var set_back = fx_wrapper.replace.bind(fx_wrapper, this_panel);
-        this_panel.wrap(fx_wrapper);
-        fx_wrapper.setHeight(prev_panel_height);
+        fx_wrapper.style.height = prev_panel_height + 'px';
         
         // in case of harmonica nicely hidding the previous panel
         if (controller.isHarmonica && swapping) {
           prev_panel.addClass('right-tabs-panel-current');
-          var hide_wrapper = $E('div', {'class': 'right-tabs-resizer'}).setHeight(prev_panel.offsetHeight);
+          var hide_wrapper = $E('div', {'class': 'right-tabs-resizer'});
+          hide_wrapper.style.height = prev_panel.offsetHeight + 'px';
           var prev_back = function() {
             hide_wrapper.replace(prev_panel.removeClass('right-tabs-panel-current'));
           };
           prev_panel.wrap(hide_wrapper);
+          
+          fx_wrapper.style.height = '0px';
         }
+        
+        this_panel.wrap(fx_wrapper);
         
         // getting back the auto-size so we could resize it
         controller.element.style.height = 'auto';
@@ -794,20 +798,17 @@ return {
    * @return Tabs this
    */
   startLoop: function(delay) {
-    if (isNumber(delay)) this.options.loop = delay;
+    if (!delay && !this.options.loop) return this;
     
     // attaching the loop pause feature
     if (this.options.loopPause) {
-      this._stopLoop  = this._stopLoop  || this.stopLoop.bind(this);
-      this._startLoop = this._startLoop || this.startLoop.bind(this);
+      this._stopLoop  = this._stopLoop  || this.stopLoop.bind(this, true);
+      this._startLoop = this._startLoop || this.startLoop.bind(this, delay);
       
-      this.element
-        .stopObserving('mouseover', this._stopLoop)
-        .stopObserving('mouseout', this._startLoop)
-        .on({
-          mouseover: this._stopLoop,
-          mouseout:  this._startLoop
-        });
+      this.forgetHovers().on({
+        mouseover: this._stopLoop,
+        mouseout:  this._startLoop
+      });
     }
     
     if (this.timer) this.timer.stop();
@@ -819,7 +820,7 @@ return {
       
       this.show(next || enabled.first());
       
-    }.bind(this).periodical(this.options.loop);
+    }.bind(this).periodical(this.options.loop || delay);
     
     return this;
   },
@@ -829,12 +830,22 @@ return {
    *
    * @return Tabs this
    */
-  stopLoop: function() {
+  stopLoop: function(event, pause) {
     if (this.timer) {
       this.timer.stop();
       this.timer = null;
     }
+    if (!pause && this._startLoop)
+      this.forgetHovers();
+  },
+  
+// private
+  forgetHovers: function() {
+    return this.element
+      .stopObserving('mouseover', this._stopLoop)
+      .stopObserving('mouseout', this._startLoop);
   }
+  
   
 }})());
 

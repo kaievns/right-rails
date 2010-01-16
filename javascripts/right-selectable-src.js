@@ -27,6 +27,8 @@ var Selectable = new Class(Observer, {
       update:     null,    // a field to be assigned to
       parseIds:   false,   // if it should parse integer ids out of the keys
       
+      hCont  :   '&bull;', // single-selectable handle content
+      
       refresh:    true     // a flag if it should automatically refresh the items list
     },
     
@@ -58,7 +60,14 @@ var Selectable = new Class(Observer, {
     if (args[0] && !isHash(args[0])) this.element = $(args[0]);
     this.$super(isHash(args.last()) ? args.last() : this.element ?
       eval('('+this.element.get('data-selectable-options')+')') : null);
-    if (!this.element) this.element = this.build();
+      
+    if (!this.element)
+      this.element = this.build();
+    else if (this.element.tagName == 'SELECT') {
+      this.selectbox = this.harvestOptions(this.element);
+      this.element   = this.build().insertTo(this.selectbox, 'before');
+      this.assignTo(this.hideOriginal(this.selectbox));
+    }
     
     this.element._selectable = this.init();
   },
@@ -128,7 +137,7 @@ var Selectable = new Class(Observer, {
     var assign  = function(element, value) {
       if (element = $(element)) {
         if (value === undefined || value === null) value = '';
-        element[element.setValue ? 'setValue' : 'update'](''+value);
+        element[element.setValue ? 'setValue' : 'update'](element.type == 'select-multiple' ? value : ''+value);
       }
     }.curry(element);
     
@@ -451,7 +460,7 @@ var Selectable = new Class(Observer, {
   // builds a container for a single-select
   buildSingle: function() {
     this.container = $E('div', {'class': this.containerClass})
-      .insert([$E('div', {'html': '&bull;', 'class': 'right-selectable-handle'}), $E('ul')])
+      .insert([$E('div', {'html': this.options.hCont, 'class': 'right-selectable-handle'}), $E('ul')])
       .insertTo(this.element, 'before')
       .onClick(this.showList.bind(this));
       
@@ -494,6 +503,33 @@ var Selectable = new Class(Observer, {
   // shows the item in the main view of a single-selector
   showItem: function(item) {
     this.container.first('ul').update(item ? item.cloneNode(true) : '<li>&nbsp;</li>');
+  },
+  
+  // harvests options from a selectbox element
+  harvestOptions: function(box) {
+    var options = this.options;
+    if (box) {
+      options.multiple = box.has('multiple');
+      options.options  = {};
+      options.selected = [];
+      options.disabled = [];
+      
+      $A(box.getElementsByTagName('OPTION')).each(function(option, index) {
+        options.options[option.get('value') || option.innerHTML] = option.innerHTML;
+        
+        if (option.selected) options.selected.push(index);
+        if (option.disabled) options.disabled.push(index);
+      });
+      
+      if (options.selected.empty()) options.selected = 0;
+    }
+    return box;
+  },
+  
+  hideOriginal: function(element) {
+    return element.wrap($E('div', {
+      style: 'position:absolute;z-index:-1;visibility:hidden;width:0;height:0;overflow:hidden'
+    }));
   }
 });
 

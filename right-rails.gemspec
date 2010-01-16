@@ -1,7 +1,7 @@
 Gem::Specification.new do |s|
   s.name    = 'right-rails'
-  s.version = '0.4.3'
-  s.date    = '2009-12-26'
+  s.version = '0.4.4'
+  s.date    = '2010-01-16'
   
   s.summary = "RightJS plugin for Rails"
   s.description = "RightRails provides support of the RightJS framework with transparent Rails/Prototype replacements, plus it has a new RJS processor, the most common ajax operations interface, RightJS own features support, remote files uploading handler, etc."
@@ -11,14 +11,13 @@ Gem::Specification.new do |s|
   s.homepage = 'http://github.com/MadRabbit/right-rails'
 
   s.post_install_message = %q{
-<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<< RIGHT RAILS >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
+<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<< RIGHT RAILS >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
 
   Please run the following command to copy RightJS scripts and modules in place
   
   script/generate right_rails
 
-  Cheers!
-  
+<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<< RIGHT RAILS >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
   }
 
   
