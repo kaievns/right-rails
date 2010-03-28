@@ -28,9 +28,9 @@ module RightRails::Helpers::Basic
     end
     
     # include the localization script if available
-    if defined?(I18n) && defined?(RAILS_ROOT)
+    if defined?(I18n) && defined?(Rails.root)
       locale_file = "right/i18n/#{I18n.locale.to_s.downcase}"
-      scripts << locale_file if File.exists? "#{RAILS_ROOT}/public/javascripts/#{locale_file}.js"
+      scripts << locale_file if File.exists? "#{Rails.root}/public/javascripts/#{locale_file}.js"
     end
     
     javascript_include_tag *scripts
@@ -64,6 +64,14 @@ module RightRails::Helpers::Basic
     javascript_tag do
       rjs(&block)
     end
+  end
+  
+  #
+  # Replacing the prototype's javascript generator with our own javascript generator
+  # so that the #link_to_function method was working properly
+  #
+  def update_page(&block)
+    rjs(&block)
   end
   
 # protected

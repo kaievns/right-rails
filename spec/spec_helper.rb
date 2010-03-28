@@ -13,3 +13,11 @@ require 'right_rails/helpers/basic'
 require 'right_rails/helpers/rails'
 require 'right_rails/helpers/forms'
 require 'right_rails/helpers/misc'
+
+module Rails
+  class << self
+    def root
+      'rails-root'
+    end
+  end
+end

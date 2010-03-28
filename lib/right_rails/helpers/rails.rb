@@ -2,13 +2,6 @@
 # This module contains the ruby-on-rails native (Prototype) helper replacements
 #
 module RightRails::Helpers::Rails
-  #
-  # Replacing the prototype's javascript generator with our own javascript generator
-  # so that the #link_to_function method was working properly
-  #
-  def update_page(&block)
-    rjs(&block)
-  end
   
   def remote_function(options)
     cmd = build_xhr_request(options)

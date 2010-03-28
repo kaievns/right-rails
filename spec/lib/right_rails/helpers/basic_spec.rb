@@ -27,7 +27,6 @@ describe RightRails::Helpers::Basic do
     should_receive(:javascript_include_tag).with(*%w{right right/rails right/i18n/ru})
     
     I18n.locale = 'ru'
-    RAILS_ROOT = "rails-root"
     File.should_receive(:exists?).with("rails-root/public/javascripts/right/i18n/ru.js").and_return(true)
     
     rightjs_scripts

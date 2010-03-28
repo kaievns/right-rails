@@ -1,8 +1,32 @@
 require File.dirname(__FILE__) + "/../../../spec_helper.rb"
 
+module ActionView::Helpers::RailsLegacyHelper
+  if ''.respond_to?(:html_safe) # oops
+    def form_remote_tag(options = {}, &block)
+      options[:form] = true
+    
+      options[:html] ||= {}
+      options[:html][:onsubmit] =
+        (options[:html][:onsubmit] ? options[:html][:onsubmit] + "; " : "") +
+        "#{remote_function(options)}; return false;"
+    
+      form_tag(options[:html].delete(:action) || url_for(options[:url]), options[:html], &block)
+    end
+    
+    def link_to_remote(name, options = {}, html_options = nil)
+      link_to_function(name, remote_function(options), html_options || options.delete(:html))
+    end
+    
+    def button_to_remote(name, options = {}, html_options = {})
+      button_to_function(name, remote_function(options), html_options)
+    end
+  end
+end
+
 describe RightRails::Helpers::Rails do
   include ActionView::Helpers::TagHelper
   include ActionView::Helpers::JavaScriptHelper
+  include ActionView::Helpers::RailsLegacyHelper
   include ActionView::Helpers::ScriptaculousHelper
   include ActionView::Helpers::FormTagHelper
   include RightRails::Helpers::Basic
