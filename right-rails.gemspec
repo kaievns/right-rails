@@ -1,7 +1,7 @@
 Gem::Specification.new do |s|
   s.name    = 'right-rails'
-  s.version = '0.4.4'
-  s.date    = '2010-01-16'
+  s.version = '0.5.0'
+  s.date    = '2010-03-28'
   
   s.summary = "RightJS plugin for Rails"
   s.description = "RightRails provides support of the RightJS framework with transparent Rails/Prototype replacements, plus it has a new RJS processor, the most common ajax operations interface, RightJS own features support, remote files uploading handler, etc."
