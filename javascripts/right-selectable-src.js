@@ -1,14 +1,14 @@
 /**
  * Selectable unit for RightJS (http://rightjs.org/ui/selectable)
  *
- * Copyright (C) 2009 Nikolay V. Nemshilov aka St.
+ * Copyright (C) 2009 Nikolay V. Nemshilov
  */
 if (!self.RightJS) throw "Gimme RightJS";
 
 /**
  * Selectable unit main script
  *
- * Copyright (C) 2009 Nikolay V. Nemshilov aka St.
+ * Copyright (C) 2009 Nikolay V. Nemshilov
  */
 var Selectable = new Class(Observer, {
   extend: {
@@ -536,7 +536,7 @@ var Selectable = new Class(Observer, {
 /**
  * The document on-load hook for Selectable
  *
- * Copyright (C) 2009 Nikolay V. Nemshilov aka St.
+ * Copyright (C) 2009 Nikolay V. Nemshilov
  */
 document.onReady(function() { Selectable.rescan(); });
 

@@ -3,7 +3,7 @@
  *
  * See http://rightjs.org/goods/behave for more details
  *
- * Copyright (C) 2009 Nikolay V. Nemshilov aka St.
+ * Copyright (C) 2009-2010 Nikolay V. Nemshilov
  */
 
 /**
@@ -14,7 +14,7 @@
  * on the page, and will watch any updates on the page
  * and refresh the behaves automatically
  *
- * Copyright (C) 2009 Nikolay V. Nemshilov aka St.
+ * Copyright (C) 2009-2010 Nikolay V. Nemshilov
  */
 var Behavior = new Class({
   extend: {
@@ -207,9 +207,9 @@ document.onReady(Behavior.refresh);
 /**
  * The Element unit wrapups for automaticall behaves processing on the page updates
  *
- * Copyright (C) 2009 Nikolay V. Nemshilov aka St.
+ * Copyright (C) 2009-2010 Nikolay V. Nemshilov
  */
-Element.addMethods((function(old_methods) {
+Element.include((function(old_methods) {
   var old_insert = old_methods.insert;
   var old_update = old_methods.update;
   
@@ -238,7 +238,7 @@ return {
  *
  *   "div#sidebar ul li".stopBehave('click', function() {...});
  *
- * Copyright (C) 2009 Nikolay V Nemshilov aka St.
+ * Copyright (C) 2009-2010 Nikolay V Nemshilov
  */
 $ext(String.prototype, {
   /**

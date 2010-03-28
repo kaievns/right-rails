@@ -3,14 +3,14 @@
  *
  * See http://rightjs.org/goods/drag-n-drop
  *
- * Copyright (C) Nikolay V. Nemshilov aka St.
+ * Copyright (C) 2009-2010 Nikolay V. Nemshilov
  */
 if (!RightJS) throw "Gimme RightJS";
 
 /**
  * Draggable unit
  *
- * Copyright (C) Nikolay V. Nemshilov aka St.
+ * Copyright (C) 2009-2010 Nikolay V. Nemshilov
  */
 var Draggable = new Class(Observer, {
   extend: {
@@ -262,7 +262,7 @@ var Draggable = new Class(Observer, {
           width:    this.clone.getStyle('width'),
           height:   this.clone.getStyle('height'),
           position: this.clone.getStyle('position'),
-          zIndex:   this.clone.getStyle('zIndex')
+          zIndex:   this.clone.getStyle('zIndex') || ''
         }), 'before'
       ).remove();
     }
@@ -310,7 +310,7 @@ var Draggable = new Class(Observer, {
 /**
  * Droppable unit
  *
- * Copyright (C) Nikolay V. Nemshilov aka St.
+ * Copyright (C) 2009-2010 Nikolay V. Nemshilov
  */
 var Droppable = new Class(Observer, {
   extend: {
@@ -503,7 +503,7 @@ var Droppable = new Class(Observer, {
 /**
  * The document events hooker
  *
- * Copyright (C) 2009 Nikolay V. Nemshilov aka St.
+ * Copyright (C) 2009-2010 Nikolay V. Nemshilov
  */
 document.on({
   // parocesses the automatically discovered elements
@@ -530,9 +530,9 @@ document.on({
 /**
  * Element level hooks for drag'n'drops
  *
- * Copyright (C) Nikolay V. Nemshilov aka St.
+ * Copyright (C) 2009-2010 Nikolay V. Nemshilov
  */
-Element.addMethods({
+Element.include({
   
   makeDraggable: function(options) {
     new Draggable(this, options);

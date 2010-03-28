@@ -1,13 +1,13 @@
 /**
  * Unified tabs engine for RightJS (http://rightjs.org/ui/tabs)
  *
- * Copyright (C) 2009 Nikolay V. Nemshilov aka St.
+ * Copyright (C) 2009-2010 Nikolay V. Nemshilov
  */
 if (!RightJS) throw "Gimme RightJS";
 /**
  * The basic tabs handling engine
  *
- * Copyright (C) 2009 Nikolay V. Nemshilov aka St.
+ * Copyright (C) 2009-2010 Nikolay V. Nemshilov
  */
 var Tabs = new Class(Observer, {
   extend: {
@@ -151,7 +151,7 @@ var Tabs = new Class(Observer, {
 /**
  * A single tab handling object
  *
- * Copyright (C) 2009 Nikolay V. Nemshilov aka St.
+ * Copyright (C) 2009-2010 Nikolay V. Nemshilov
  */
 Tabs.Tab = new Class({
   extend: {
@@ -261,7 +261,7 @@ Tabs.Tab = new Class({
 /**
  * The tab panels behavior logic
  *
- * Copyright (C) Nikolay V. Nemshilov aka St.
+ * Copyright (C) 2009-2010 Nikolay V. Nemshilov
  */
 Tabs.Panel = new Class(Observer, {
   
@@ -274,15 +274,26 @@ Tabs.Panel = new Class(Observer, {
   // shows the panel
   show: function() {
     return this.resizing(function() {
-      this.element.radioClass('right-tabs-panel-current');
+      this.tab.controller.tabs.each(function(tab) {
+        var element = tab.panel.element;
+        element[element == this.element ?
+          'addClass' : 'removeClass']('right-tabs-panel-current');
+      }, this);
     });
   },
   
   // updates the panel content
   update: function(content) {
-    return this.resizing(function() {
+    // don't use resize if it's some other hidden tab was loaded asynch
+    if (this.tab.current()) {
+      this.resizing(function() {
+        this.element.update(content||'');
+      });
+    } else {
       this.element.update(content||'');
-    });
+    }
+    
+    return this;
   },
   
   // removes the pannel
@@ -293,34 +304,28 @@ Tabs.Panel = new Class(Observer, {
   
   // locks the panel with a spinner locker
   lock: function() {
-    var locker  = $E('div', {'class': 'right-tabs-panel-locker'});
-    var spinner = $E('div', {'class': 'right-tabs-panel-locker-spinner'}).insertTo(locker);
-    var dots    = '1234'.split('').map(function(i) {
-      return $E('div', {'class': i == 1 ? 'glow':null}).insertTo(spinner);
-    });
-    
-    (function() {
-      spinner.insert(dots.last(), 'top');
-      dots.unshift(dots.pop());
-    }).periodical(400);
-    
-    this.element.insert(locker, 'top');
+    this.element.insert(this.locker(), 'top');
   },
   
 // protected
   
   resizing: function(callback) {
-    if (Tabs.__working) return this.resizing.bind(this, callback).delay(20);
-    
     var controller = this.tab.controller;
+    
+    if (controller.__working) return this.resizing.bind(this, callback).delay(100);
+    
     var options    = controller.options;
     var prev_panel = controller.element.first('.right-tabs-panel-current');
     var this_panel = this.element;
     var swapping   = prev_panel != this_panel;
     var loading    = this.element.first('div.right-tabs-panel-locker');
     
+    // sometimes it looses the parent on remote tabs
+    if (this_panel.parentNode.hasClass('right-tabs-resizer')) this_panel.insertTo(prev_panel.parentNode);
+    
     if (options.resizeFx && self.Fx && prev_panel && (swapping || loading)) {
-      Tabs.__working = true;
+      controller.__working = true;
+      var unlock = function() { controller.__working = false; };
       
       // calculating the visual effects durations
       var fx_name  = (options.resizeFx == 'both' && loading) ? 'slide' : options.resizeFx;
@@ -339,15 +344,17 @@ Tabs.Panel = new Class(Observer, {
       
       // getting the new size
       var new_panel_height  = this_panel.offsetHeight;
+      var fx_wrapper = null;
       
       if (fx_name != 'fade' && prev_panel_height != new_panel_height) {
         // preserving the whole element size so it didn't jump when we are tossing the tabs around
         controller.element.style.height = controller.element.offsetHeight + 'px';
         
         // wrapping the element with an overflowed element to visualize the resize
-        var fx_wrapper = $E('div', {'class': 'right-tabs-resizer'});
-        var set_back = fx_wrapper.replace.bind(fx_wrapper, this_panel);
-        fx_wrapper.style.height = prev_panel_height + 'px';
+        fx_wrapper = $E('div', {
+          'class': 'right-tabs-resizer',
+          'style': 'height: '+ prev_panel_height + 'px'
+        });
         
         // in case of harmonica nicely hidding the previous panel
         if (controller.isHarmonica && swapping) {
@@ -367,24 +374,64 @@ Tabs.Panel = new Class(Observer, {
         // getting back the auto-size so we could resize it
         controller.element.style.height = 'auto';
         
-        if (hide_wrapper) hide_wrapper.morph({height: '0px'}, {duration: resize_duration, onFinish: prev_back});
-        fx_wrapper.morph({height: new_panel_height + 'px'}, {duration: resize_duration, onFinish: set_back });
       } else {
         // removing the resize duration out of the equasion
         rezise_duration = 0;
         duration = fade_duration;
       }
       
-      if (fx_name != 'slide')
-        this_panel.morph.bind(this_panel, {opacity: 1}, {duration: fade_duration}).delay(resize_duration);
+      var counter = 0;
+      var set_back = function() {
+        if (fx_wrapper) {
+          if (fx_name == 'both' && !counter)
+            return counter ++;
+            
+          fx_wrapper.replace(this_panel);
+        }
+        
+        unlock();
+      };
       
-      // removing the working marker
-      (function() { Tabs.__working = false; }).bind(this).delay(duration);
+      if (hide_wrapper)
+        hide_wrapper.morph({height: '0px'}, 
+          {duration: resize_duration, onFinish: prev_back});
+      
+      if (fx_wrapper)
+        fx_wrapper.morph({height: new_panel_height + 'px'},
+          {duration: resize_duration, onFinish: set_back});
+      
+      if (fx_name != 'slide')
+        this_panel.morph.bind(this_panel, {opacity: 1},
+          {duration: fade_duration, onFinish: set_back}
+            ).delay(resize_duration);
+            
+      if (!fx_wrapper && fx_name == 'slide')
+        set_back();
+        
     } else {
       callback.call(this);
     }
     
     return this;
+  },
+  
+  // builds the locker element
+  locker: function() {
+    if (!this._locker) {
+      var locker  = $E('div', {'class': 'right-tabs-panel-locker'});
+      var spinner = $E('div', {'class': 'right-tabs-panel-locker-spinner'}).insertTo(locker);
+      var dots    = '1234'.split('').map(function(i) {
+        return $E('div', {'class': i == 1 ? 'glow':null}).insertTo(spinner);
+      });
+
+      (function() {
+        spinner.insert(dots.last(), 'top');
+        dots.unshift(dots.pop());
+      }).periodical(400);
+      
+      this._locker = locker;
+    }
+    return this._locker;
   }
   
 });
@@ -397,7 +444,7 @@ Tabs.Panel = new Class(Observer, {
  *       any tab. But the carousel tabs scrolls to the next/previous
  *       tabs on the list.
  *
- * Copyright (C) Nikolay V. Nemshilov aka St.
+ * Copyright (C) 2009-2010 Nikolay V. Nemshilov
  */
 Tabs.include((function() {
   var old_init = Tabs.prototype.init;
@@ -565,7 +612,7 @@ return {
 /**
  * This module handles the current tab state saving/restoring processes
  *
- * Copyright (C) Nikolay V. Nemshilov aka St.
+ * Copyright (C) 2009-2010 Nikolay V. Nemshilov
  */
 Tabs.include((function() {
   var old_initialize = Tabs.prototype.initialize;
@@ -649,7 +696,7 @@ return {
 /**
  * This module handles the tabs cration and removing processes   
  *
- * Copyright (C) 2009 Nikolay V. Nemshilov aka St.
+ * Copyright (C) 2009-2010 Nikolay V. Nemshilov
  */
 Tabs.include({
   /**
@@ -730,7 +777,7 @@ Tabs.include({
 /**
  * This module contains the remote tabs loading logic
  *
- * Copyright (C) 2009 Nikolay V. Nemshilov aka St.
+ * Copyright (C) 2009-2010 Nikolay V. Nemshilov
  */
 Tabs.Tab.include((function() {
   var old_show = Tabs.Tab.prototype.show;
@@ -739,6 +786,8 @@ return {
   
   // wrapping the show mehtod, to catch the remote requests
   show: function() {
+    if (this.dogPiling(arguments)) return this;
+    
     var result  = old_show.apply(this, arguments);
     var url     = this.link.href;
     var options = this.controller.options;
@@ -752,20 +801,42 @@ return {
       this.panel.lock();
       
       try { // basically that's for the development tests, so the IE browsers didn't get screwed on the test page
-        
-        this.request = Xhr.load(url, options.Xhr).onComplete(function(response) {
-          this.panel.update(response.text);
+      
+        this.request = new Xhr(url, Object.merge({method: 'get'}, options.Xhr))
+          .onComplete(function(response) {
+            if (this.controller.__working)
+              return arguments.callee.bind(this, response).delay(100);
+            
+            this.panel.update(response.text);
 
-          this.request = null; // removing the request marker so it could be rerun
-          if (options.cache) this.cache = true;
+            this.request = null; // removing the request marker so it could be rerun
+            if (options.cache) this.cache = true;
 
-          this.fire('load');
-        }.bind(this));
+            this.fire('load');
+          }.bind(this)
+        ).send();
         
       } catch(e) { if (!Browser.OLD) throw(e) }
     }
     
     return result;
+  },
+  
+// protected
+
+  dogPiling: function(args) {
+    if (this.controller.__working) {
+      if (this.controller.__timeout)
+        this.controller.__timeout.cancel();
+      
+      this.controller.__timeout = (function(args) {
+        this.show.apply(this, args);
+      }).bind(this, args).delay(100);
+      
+      return true;
+    }
+    
+    return this.controller.__timeout = null;
   }
   
 }})());
@@ -773,7 +844,7 @@ return {
 /**
  * This module handles the slide-show loop feature for the Tabs
  *
- * Copyright (C) 2009 Nikolay V. Nemshilov aka St.
+ * Copyright (C) 2009-2010 Nikolay V. Nemshilov
  */
 Tabs.include((function() {
   var old_initialize = Tabs.prototype.initialize;
@@ -852,7 +923,7 @@ return {
 /**
  * The document level hooks for the tabs-egnine
  *
- * Copyright (C) 2009 Nikolay V. Nemshilov aka St.
+ * Copyright (C) 2009-2010 Nikolay V. Nemshilov
  */
 document.onReady(function() {
   Tabs.rescan();

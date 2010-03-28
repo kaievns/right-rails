@@ -3,15 +3,14 @@
  *
  * Home page: http://rightjs.org/ui/calendar
  *
- * @copyright (C) 2009 Nikolay V. Nemshilov aka St.
+ * @copyright (C) 2009-2010 Nikolay V. Nemshilov
  */
 if (!RightJS) { throw "Gimme RightJS. Please." };
 
 /**
  * The calendar widget for RightJS
  *
- *
- * Copyright (C) 2009 Nikolay V. Nemshilov aka St.
+ * Copyright (C) 2009-2010 Nikolay V. Nemshilov
  */
 var Calendar = new Class(Observer, {
   extend: {
@@ -28,10 +27,11 @@ var Calendar = new Class(Observer, {
       fxDuration:     200,
       numberOfMonths: 1,      // a number or [x, y] greed definition
       timePeriod:     1,      // the timepicker minimal periods (in minutes, might be bigger than 60)
-      checkTags:      '*',
-      relName:        'calendar',
+      
       twentyFourHour: null,   // null for automatic, or true|false to enforce
-      listYears:      false   // show/hide the years listing buttons
+      listYears:      false,  // show/hide the years listing buttons
+      
+      cssRule:        '[rel^=calendar]' // css rule for calendar related elements
     },
     
     Formats: {
@@ -47,7 +47,7 @@ var Calendar = new Class(Observer, {
       Next:           'Next Month',
       Prev:           'Previous Month',
       NextYear:       'Next Year',
-      PrevYear:       'Prev Year',
+      PrevYear:       'Previous Year',
       
       dayNames:        $w('Sunday Monday Tuesday Wednesday Thursday Friday Saturday'),
       dayNamesShort:   $w('Sun Mon Tue Wed Thu Fri Sat'),
@@ -56,26 +56,22 @@ var Calendar = new Class(Observer, {
       monthNamesShort: $w('Jan Feb Mar Apr May Jun Jul Aug Sep Oct Nov Dec')
     },
     
-    // scans for the auto-discoverable calendar inputs
-    rescan: function(scope) {
-      var key       = Calendar.Options.relName;
-      var rel_id_re = new RegExp(key+'\\[(.+?)\\]');
-
-      ($(scope)||document).select(Calendar.Options.checkTags+'[rel*='+key+']').each(function(element) {
-        var data     = element.get('data-'+key+'-options');
-        var calendar = new Calendar(eval('('+data+')') || {});
-        
-        var rel_id   = element.get('rel').match(rel_id_re);
-        if (rel_id) {
-          var input = $(rel_id[1]);
-          if (input) {
-            calendar.assignTo(input, element);
-          }
-        } else {
-          calendar.assignTo(element);
-        }
-      });
-    }
+    current: null, // marker to the currently visible calendar
+    instances: {}, // list of registered instances
+    
+    // finds and/or instanciates a Calendar related to the event target
+    find: function(event) {
+      var element = event.target;
+      
+      if (isElement(element) && element.match(Calendar.Options.cssRule)) {
+        var uid      = $uid(element);
+        return Calendar.instances[uid] = Calendar.instances[uid] ||
+          new Calendar(eval('('+element.get('data-calendar-options')+')'));
+      }
+    },
+    
+    // DEPRECATED scans for the auto-discoverable calendar inputs
+    rescan: function(scope) { }
   },
   
   /**
@@ -190,8 +186,7 @@ var Calendar = new Class(Observer, {
    */
   show: function(position) {
     this.element.show(this.options.fxName, {duration: this.options.fxDuration});
-    Calendar.current = this;
-    return this;
+    return Calendar.current = this;
   },
   
   /**
@@ -210,7 +205,7 @@ var Calendar = new Class(Observer, {
 /**
  * This module handles the calendar elemnts building/updating processes
  *
- * Copyright (C) 2009 Nikolay V. Nemshilov aka St.
+ * Copyright (C) 2009-2010 Nikolay V. Nemshilov
  */
 Calendar.include({
   
@@ -440,35 +435,8 @@ Calendar.include({
 /**
  * This module handles the events connection
  *
- * Copyright (C) 2009 Nikolay V. Nemshilov aka St.
- */
- 
-// the document keybindings hookup
-document.onKeydown(function(event) {
- if (Calendar.current) {
-   var name;
-
-   switch(event.keyCode) {
-     case 27: name = 'hide';      break;
-     case 37: name = 'prevDay';   break;
-     case 39: name = 'nextDay';   break;
-     case 38: name = 'prevWeek';  break;
-     case 40: name = 'nextWeek';  break;
-     case 34: name = 'nextMonth'; break;
-     case 33: name = 'prevMonth'; break;
-     case 13:
-        Calendar.current.select(Calendar.current.date);
-        name = 'done';
-        break;
-   }
-
-   if (name) {
-     Calendar.current[name]();
-     event.stop();
-   }
- }
-});
- 
+ * Copyright (C) 2009-2010 Nikolay V. Nemshilov
+ */ 
 Calendar.include({
   /**
    * Initiates the 'select' event on the object
@@ -607,7 +575,7 @@ Calendar.include({
 /**
  * This module handles the calendar assignment to an input field
  *
- * Copyright (C) 2009 Nikolay V. Nemshilov aka St.
+ * Copyright (C) 2009-2010 Nikolay V. Nemshilov
  */
 Calendar.include({
   /**
@@ -634,15 +602,19 @@ Calendar.include({
     } else {
       input.on({
         focus: this.showAt.bind(this, input),
-        click: function(e) { e.stop(); if (this.element.hidden()) this.showAt(input); }.bind(this),
+        
+        click: function(e) {
+          e.stop();
+          if (this.element.hidden())
+            this.showAt(input);
+        }.bind(this),
+        
         keyDown: function(e) {
           if (e.keyCode == 9 && this.element.visible())
             this.hide();
         }.bind(this)
       });
     }
-    
-    document.onClick(this.hide.bind(this));
     
     return this;
   },
@@ -728,7 +700,7 @@ Calendar.include({
  *   %S - Second of the minute (00..60)
  *   %% - Literal ``%'' character
  *
- * Copyright (C) 2009 Nikolay V. Nemshilov aka St.
+ * Copyright (C) 2009-2010 Nikolay V. Nemshilov
  */
 Calendar.include({
 
@@ -794,7 +766,7 @@ Calendar.include({
       date = new Date();
     }
     
-    return date;
+    return isNaN(date.getTime()) ? new Date : date;
   },  
   
   /**
@@ -848,9 +820,109 @@ Calendar.include({
 /**
  * Calendar fields autodiscovery via the rel="calendar" attribute
  *
- * Copyright (C) 2009 Nikolay V. Nemshilov aka St.
+ * Copyright (C) 2009-2010 Nikolay V. Nemshilov
  */
-document.onReady(function() { Calendar.rescan(); });
+
+
+(function() {
+  // shows a calendar by an event
+  var show_calendar = function(event) {
+    var calendar = Calendar.find(Event.ext(event));
+    
+    if (calendar) {
+      var input     = event.target;
+      var rule      = Calendar.Options.cssRule.split('[').last();
+      var key       = rule.split('=').last().split(']').first();
+      var rel_id_re = new RegExp(key+'\\[(.+?)\\]');
+      var rel_id    = input.get(rule.split('^=')[0]);
+      
+      if (rel_id && (rel_id = rel_id.match(rel_id_re))) {
+        input = $(rel_id[1]);
+        event.stop();
+      }
+      
+      calendar.showAt(input);
+    }
+  };
+  
+  // on-click handler
+  var on_mousedown = function(event) {
+    show_calendar(event);
+    
+    var target = event.target;
+    if ([target].concat(target.parents()).first('hasClass', 'right-calendar')) event.stop();
+  };
+  
+  var on_click = function(event) {
+    var target = event.target;
+    
+    if (Calendar.find(event)) {
+      if (target.tagName == 'A')
+        event.stop();
+    } else if (Calendar.current) {
+      if (![target].concat(target.parents()).first('hasClass', 'right-calendar'))
+        Calendar.current.hide();
+    }
+  };
+  
+  // on-focus handler
+  var on_focus = function(event) {
+    show_calendar(event);
+  };
+  
+  // on-blur handler
+  var on_blur = function(event) {
+    var calendar = Calendar.find(Event.ext(event));
+    
+    if (calendar)
+      calendar.hide();
+  };
+  
+  var on_keydown = function(event) {
+    if (Calendar.current) {
+      var name;
+
+      switch(event.keyCode) {
+        case 27: name = 'hide';      break;
+        case 37: name = 'prevDay';   break;
+        case 39: name = 'nextDay';   break;
+        case 38: name = 'prevWeek';  break;
+        case 40: name = 'nextWeek';  break;
+        case 34: name = 'nextMonth'; break;
+        case 33: name = 'prevMonth'; break;
+        case 13:
+           Calendar.current.select(Calendar.current.date);
+           name = 'done';
+           break;
+      }
+
+      if (name) {
+        Calendar.current[name]();
+        event.stop();
+      }
+    }
+  };
+  
+  
+  document.on({
+    mousedown: on_mousedown,
+    click:     on_click,
+    keydown:   on_keydown
+  });
+  
+  // the focus and blur events need some extra care
+  if (Browser.IE) {
+    // IE version
+    document.attachEvent('onfocusin', on_focus);
+    document.attachEvent('onfocusout', on_blur);
+  } else {
+    // W3C version
+    document.addEventListener('focus', on_focus, true);
+    document.addEventListener('blur',  on_blur,  true);
+  }
+})();
+
+
 
 
 document.write("<style type=\"text/css\">div.right-calendar,div.right-calendar table,div.right-calendar table tr,div.right-calendar table th,div.right-calendar table td,div.right-calendar table tbody,div.right-calendar table thead{background:none;border:none;width:auto;height:auto;margin:0;padding:0}*.right-ui-button{display:inline-block;*display:inline;*zoom:1;height:1em;line-height:1em;padding:.2em .5em;text-align:center;border:1px solid #CCC;border-radius:.2em;-moz-border-radius:.2em;-webkit-border-radius:.2em;cursor:pointer;color:#555;background-color:#FFF}*.right-ui-button:hover{color:#222;border-color:#999;background-color:#CCC}*.right-ui-button-disabled,*.right-ui-button-disabled:hover{color:#888;background:#EEE;border-color:#CCC;cursor:default}*.right-ui-buttons{margin-top:.5em}div.right-calendar{position:absolute;height:auto;border:1px solid #BBB;position:relative;padding:.5em;border-radius:.3em;-moz-border-radius:.3em;-webkit-border-radius:.3em;cursor:default;background-color:#EEE;-moz-box-shadow:.2em .4em .8em #666;-webkit-box-shadow:.2em .4em .8em #666}div.right-calendar-inline{position:relative;display:inline-block;vertical-align:top;*display:inline;*zoom:1;-moz-box-shadow:none;-webkit-box-shadow:none}div.right-calendar-prev-button,div.right-calendar-next-button,div.right-calendar-prev-year-button,div.right-calendar-next-year-button{position:absolute;float:left;width:1em;padding:.15em .4em}div.right-calendar-next-button{right:.5em}div.right-calendar-prev-year-button{left:2.55em}div.right-calendar-next-year-button{right:2.55em}div.right-calendar-month-caption{text-align:center;height:1.2em;line-height:1.2em}table.right-calendar-greed{border-spacing:0px}table.right-calendar-greed td{vertical-align:top;padding-right:.4em}table.right-calendar-greed>tbody>td:last-child{padding:0}div.right-calendar-month table{margin-top:.2em;border-spacing:1px;border-collapse:separate}div.right-calendar-month table th{color:#777;text-align:center}div.right-calendar-month table td{text-align:right;padding:.1em .3em;background-color:#FFF;border:1px solid #CCC;cursor:pointer;color:#555;border-radius:.2em;-moz-border-radius:.2em;-webkit-border-radius:.2em}div.right-calendar-month table td:hover{background-color:#CCC;border-color:#AAA;color:#000}div.right-calendar-month table td.right-calendar-day-blank{background:transparent;cursor:default;border:none}div.right-calendar-month table td.right-calendar-day-selected{background-color:#BBB;border-color:#AAA;color:#222;font-weight:bold;padding:.1em .2em}div.right-calendar-month table td.right-calendar-day-disabled{color:#888;background:#EEE;border-color:#CCC;cursor:default}div.right-calendar-time{border-top:1px solid #ccc;margin-top:.3em;padding-top:.5em;text-align:center}div.right-calendar-time select{margin:0 .4em}div.right-calendar-buttons div.right-ui-button{width:3.2em}div.right-calendar-done-button{position:absolute;right:.5em}</style>");

@@ -1,13 +1,13 @@
 /**
  * Advanced dom events handling module
  *
- * Copyright (C) 2008-2009 Nikolay V. Nemshilov aka St. <nemshilov#gma-il>
+ * Copyright (C) 2008-2010 Nikolay V. Nemshilov
  */
 
 /**
  * The Event class additional functionality
  *
- * Copyright (C) 2008-2009 Nikolay V. Nemshilov aka St. <nemshilov#gma-il>
+ * Copyright (C) 2008-2010 Nikolay V. Nemshilov
  */
 Event.extend({
   // keyboard key codes
@@ -71,7 +71,7 @@ Event.prototype.initialize = function() {
 /**
  * presents the basic events class
  *
- * Copyright (C) 2008-2009 Nikolay V. Nemshilov aka St. <nemshilov#gma-ilc-om>
+ * Copyright (C) 2008-2010 Nikolay V. Nemshilov
  */
 Event.Base = new Class({
   extend: {
@@ -140,7 +140,7 @@ Event.Base = new Class({
  *       unextended mouse event.
  *       Use the Event general constructor, if you need a usual extened event.
  *
- * Copyright (C) 2008-2009 Nikolay V. Nemshilov aka St. <nemshilov#gma-ilc-om>
+ * Copyright (C) 2008-2010 Nikolay V. Nemshilov
  */
 Event.Mouse = new Class(Event.Base, {
   
@@ -200,7 +200,7 @@ Event.Mouse = new Class(Event.Base, {
   }
 });
 
-Event.addMethods(Event.Mouse.Methods);
+Event.include(Event.Mouse.Methods);
 /**
  * presents the keyboard events class
  *
@@ -208,7 +208,7 @@ Event.addMethods(Event.Mouse.Methods);
  *       unextended mouse event.
  *       Use the Event general constructor, if you need a usual extened event.
  *
- * Copyright (C) 2008-2009 Nikolay V. Nemshilov aka St. <nemshilov#gma-ilc-om>
+ * Copyright (C) 2008-2010 Nikolay V. Nemshilov
  */
 Event.Keyboard = new Class(Event.Base, {
   
@@ -292,13 +292,13 @@ Event.Keyboard = new Class(Event.Base, {
     })(key, Event.KEYS[key]);
   };
   
-  Event.addMethods(Event.Keyboard.Methods);
+  Event.include(Event.Keyboard.Methods);
 })();
 
 /**
  * Reassigning the element #fire method to support the native events dispatching
  *
- * @copyright 2009 Nikolay V. Nemshilov aka St.
+ * @copyright 2009-2010 Nikolay V. Nemshilov
  */
 Element.include({
   fire: function() {

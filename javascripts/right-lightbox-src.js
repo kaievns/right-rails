@@ -3,9 +3,9 @@
  *
  * Home page: http://rightjs.org/ui/lightbox
  *
- * @copyright (C) 2009 Nikolay V. Nemshilov aka St.
+ * Copyright (C) 2009-2010 Nikolay V. Nemshilov
  */
-if (!RightJS || !Fx) { throw "Gimme RightJS with Fx. Please." };
+if (!RightJS) { throw "Gimme RightJS please." };
 
 /**
  * The lightbox widget
@@ -15,7 +15,7 @@ if (!RightJS || !Fx) { throw "Gimme RightJS with Fx. Please." };
  *    -- http://www.huddletogether.com/projects/lightbox2/ 
  *      Copyright (C) Lokesh Dhakar
  *
- * @copyright (C) 2009 Nikolay V. Nemshilov aka St.
+ * Copyright (C) 2009-2010 Nikolay V. Nemshilov
  */
 Browser.IE6 = navigator.userAgent.indexOf("MSIE 6") != -1;
 var Lightbox = new Class({
@@ -26,12 +26,17 @@ var Lightbox = new Class({
     
     Options: {
       endOpacity:      0.8,
-      fxDuration:      300,
+      fxDuration:      200,
+      
       hideOnEsc:       true,
       hideOnOutClick:  true,
       showCloseButton: true,
       blockContent:    false,
-      relName:         'lightbox'
+      
+      cssRule:         "a[rel^=lightbox]",             // all lightbox links css-rule
+      
+      mediaWidth:      425,  // video links default size
+      mediaHeight:     350
     },
     
     i18n: {
@@ -43,46 +48,17 @@ var Lightbox = new Class({
       NextTitle:  'Next Image'
     },
     
+    // media content sources
+    Medias: [
+      [/(http:\/\/.*?youtube\.[a-z]+)\/watch\?v=([^&]+)/,       '$1/v/$2',                      'swf'],
+      [/(http:\/\/video.google.com)\/videoplay\?docid=([^&]+)/, '$1/googleplayer.swf?docId=$2', 'swf'],
+      [/(http:\/\/vimeo\.[a-z]+)\/([0-9]+).*?/,                 '$1/moogaloop.swf?clip_id=$2',  'swf']
+    ],
+    
     boxes: [],
     
-    // scans the page for auto-discoverable lighbox links
-    rescan: function(scope) {
-      var key = Lightbox.Options.relName;
-      var get_options = function(element) {
-        var data = element.get('data-'+key+'-options');
-        return eval('('+data+')') || {};
-      };
-      
-      // grabbing the singles
-      ($(scope)||document).select('a[rel='+key+']').each(function(a) {
-        if (!a.showLightbox) {
-          var options = get_options(a);
-          a.showLightbox = function(event) {
-            event.stop();
-            new Lightbox(options).show(this);
-          };
-          a.onClick(a.showLightbox);
-        }
-      });
-
-      // grabbing the roadtrip
-      var roadtrip = $$('a[rel="'+key+'[roadtrip]"]');
-      roadtrip.each(function(a) {
-        // removing the listener case the roadmap might get changed
-        if (a.showLightbox) {
-          a.stopObserving(a.showLightbox);
-        }
-        
-        var options = get_options(a);
-
-        a.roadtrip = roadtrip;
-        a.showLightbox = function(event) {
-          event.stop();
-          new Lightbox(options).show(this);
-        };
-        a.onClick(a.showLightbox);
-      });
-    }
+    // DEPRECATED: we use events delegation now, there's no need to call this function any more
+    rescan: function() {}
   },
   
   /**
@@ -102,13 +78,10 @@ var Lightbox = new Class({
    * @param mixed string or element or somethin'
    * @return Lighbox self
    */
-  setTitle: function(txt) {
-    this.caption.fade('out', {
-      duration: this.options.fxDuration/2,
-      onFinish: function() {
-        this.caption.update(txt).fade('in', {duration: this.options.fxDuration/2});
-      }.bind(this)
-    });
+  setTitle: function(text) {
+    (function() {
+      this.caption.update(text)
+    }).bind(this).delay(this.options.fxDuration);
     
     return this;
   },
@@ -243,22 +216,13 @@ var Lightbox = new Class({
     Lightbox.boxes.without(this).each('hide');
     
     if (this.element.hidden()) {
-      this.locker.setStyle('opacity:0');
-      this.dialog.setStyle('opacity:0');
-      
       this.element.insertTo(document.body).show();
       
       this.boxResize();
-      
-      var options = {duration: this.options.fxDuration};
-      
-      this.locker.morph({opacity: this.options.endOpacity}, options);
-      this.dialog.morph({opacity: 1},                       options);
-      
-      callback.delay(this.options.fxDuration);
-    } else {
-      callback();
     }
+    
+    callback();
+    
     return this;
   },
   
@@ -330,17 +294,17 @@ var Lightbox = new Class({
     var dialog_end_top     = dialog_style.top.toInt();
     var dialog_start_width = this.dialog.sizes().x;
     var dialog_end_width   = (dialog_style.width || '0').toInt();
-    var body   = this.body;
-    var dialog = this.dialog;
+    var body_style         = this.body.style;
+    var dialog_style       = this.dialog.style;
     
     $ext(new Fx(this.dialog, {duration: this.options.fxDuration}), {
       render: function(delta) {
-        body.style.width  = (body_start_width  + (body_end_width  - body_start_width)  * delta) + 'px';
-        body.style.height = (body_start_height + (body_end_height - body_start_height) * delta) + 'px';
-        dialog.style.top  = (dialog_start_top  + (dialog_end_top  - dialog_start_top)  * delta) + 'px';
+        body_style.width  = (body_start_width  + (body_end_width  - body_start_width)  * delta) + 'px';
+        body_style.height = (body_start_height + (body_end_height - body_start_height) * delta) + 'px';
+        dialog_style.top  = (dialog_start_top  + (dialog_end_top  - dialog_start_top)  * delta) + 'px';
         
         if (Browser.IE6) {
-          dialog.style.width  = (dialog_start_width  + (dialog_end_width  - dialog_start_width)  * delta) + 'px';
+          dialog_style.width  = (dialog_start_width  + (dialog_end_width  - dialog_start_width)  * delta) + 'px';
         }
       }
     }).onFinish(this.resizeUnlock.bind(this)).start();
@@ -359,11 +323,11 @@ var Lightbox = new Class({
 /**
  * Ajax loading support module
  *
- * @copyright (C) 2009 Nikolay V. Nemshilov aka St.
+ * Copyright (C) 2009-2010 Nikolay V. Nemshilov
  */
-Lightbox.include((function() {
-  var old_show = Lightbox.prototype.show;
-  var old_build = Lightbox.prototype.build;
+Lightbox.include((function(proto) {
+  var old_show  = proto.show;
+  var old_build = proto.build;
   
   return {
     // hightjacking the links
@@ -371,7 +335,9 @@ Lightbox.include((function() {
       if (content && content.href) {
         return this.load(content.href, {
           onComplete: function(request) {
-            this.setTitle(content.title).content.update(request.responseText);
+            this.checkTheRoad(content)
+              .setTitle(content.title)
+              .content.update(request.responseText);
           }.bind(this)
         });
       } else {
@@ -438,17 +404,17 @@ Lightbox.include((function() {
       return res;
     }
   };
-})());
+})(Lightbox.prototype));
 
 /**
  * Roadtrips support module for the lightbox
  *
- * @copyright (C) 2009 Nikolay V. Nemshilov aka St.
+ * Copyright (C) 2009-2010 Nikolay V. Nemshilov
  */
-Lightbox.include((function() {
-  var old_show  = Lightbox.prototype.show;
-  var old_build = Lightbox.prototype.build;
-  var old_event = Lightbox.prototype.connectEvents;
+Lightbox.include((function(proto) {
+  var old_show  = proto.show;
+  var old_build = proto.build;
+  var old_event = proto.connectEvents;
   
   return {
     // highjacking a roadtrip content
@@ -512,14 +478,31 @@ Lightbox.include((function() {
     // checks if there is a next image link
     hasNext: function() {
       return this.roadLink && this.roadLink.roadtrip && this.roadLink.roadtrip.last() != this.roadLink;
+    },
+    
+    // updates the roadtrip links list
+    checkTheRoad: function(link) {
+      if (isElement(link)) {
+        var rule = this.options.cssRule.split('[').last(),
+            value = link.get(rule.split('^=').first()) || '',
+            match = value.match(/\[(.+?)\]/);
+        
+        if (match) {
+          var marker = rule.split('^=').last().split(']').first();
+          link.roadtrip = $$(this.options.cssRule.replace(marker, "'"+marker+"["+match[1]+"]'"));
+        }
+      }
+      this.roadLink = link;
+      
+      return this;
     }
   };
-})());
+})(Lightbox.prototype));
 
 /**
  * The images displaying functionality module
  *
- * @copyright (C) 2009 Nikolay V. Nemshilov aka St.
+ * Copyright (C) 2009-2010 Nikolay V. Nemshilov
  */
 Lightbox.include((function() {
   var old_show = Lightbox.prototype.show;
@@ -535,7 +518,7 @@ Lightbox.include((function() {
       
       if (content && content.href && this.isImageUrl(content.href)) {
         return this.showingSelf(function() {
-          this.loadLock().roadLink = content;
+          this.checkTheRoad(content).loadLock();
           
           // using the iframed request to make the browser cache work
           var image = new Image();
@@ -564,9 +547,70 @@ Lightbox.include((function() {
 })());
 
 /**
+ * This module handles media-links, like youtube, vimeo etc.
+ *
+ * Copyright (C) 2010 Nikolay V. Nemshilov
+ */
+Lightbox.include((function(proto) {
+  var old_show = proto.show;
+  
+  var media_types = {
+    swf: [
+      'D27CDB6E-AE6D-11cf-96B8-444553540000',
+  		'http://download.macromedia.com/pub/shockwave/cabs/flash/swflash.cab#version=6,0,40,0',
+  		'application/x-shockwave-flash'
+    ]
+  };
+  
+  // builds the actual embedded tag
+  function build_embedded(addr, type) {
+    var sizes = ' width="'+ this.options.mediaWidth + '" height="'+ this.options.mediaHeight + '"';
+    
+    return '<object classid="clsid:' + media_types[type][0] +
+      '" codebase="' + media_types[type][1] + '"'+ sizes + '>' +
+      '<param name="src" value="'+addr+'" />'+
+      '<embed src="'+ addr +'" type="'+ media_types[type][2]+'"'+ sizes + ' />' +
+    '</object>';
+  };
+  
+  // checks and builds an embedded object content if necessary
+  function build_media_content(link) {
+    if (isElement(link) && link.href) {
+      var addr = link.href;
+      
+      return Lightbox.Medias.map(function(desc) {
+        return addr.match(desc[0]) ? build_embedded.call(this, addr.replace(desc[0], desc[1]), desc[2]) : null;
+      }, this).compact()[0];
+    }
+  }
+  
+return {
+  
+  // stubbs the show method to hijack the media links
+  show: function(link) {
+    var media_content = build_media_content.call(this, link);
+    
+    this.element[media_content ? 'addClass' : 'removeClass']('lightbox-media');
+    
+    if (media_content) {
+      this.content.update(media_content);
+      return this.showingSelf(function() {
+        this
+          .checkTheRoad(link)
+          .setTitle(link.title);
+          
+      }.bind(this));
+    }
+    
+    return old_show.apply(this, arguments);
+  }
+  
+}})(Lightbox.prototype));
+
+/**
  * The class level interface
  *
- * @copyright (C) 2009 Nikolay V. Nemshilov aka St.
+ * @copyright (C) 2009 Nikolay V. Nemshilov
  */
 Lightbox.extend({
   hide: function() {
@@ -592,8 +636,19 @@ Lightbox.extend({
 /**
  * document on-load rescan
  *
- * @copyright (C) 2009 Nikolay V. Nemshilov aka St.
+ * Copyright (C) 2009-2010 Nikolay V. Nemshilov
  */
-document.onReady(function() { Lightbox.rescan(); });
+$(document.documentElement).onClick(function(event) {
+  var target = $(event.target);
+  var suspects = [target].concat(target.parents());
+  
+  // we chop off the HTML and BODY element from the end of the list
+  var link = suspects.slice(0, suspects.length-2).first('match', Lightbox.Options.cssRule);
+  
+  if (link) {
+    event.stop();
+    new Lightbox(eval('('+link.get('data-lightbox-options')+')')).show(link);
+  }
+});
 
-document.write("<style type=\"text/css\">div.lightbox{position:fixed;top:0px;left:0px;width:100%;text-align:center;z-index:9999}div.lightbox div{line-height:normal}div.lightbox-locker{position:absolute;top:0px;left:0px;width:100%;height:100%;background-color:black}div.lightbox-dialog{display:inline-block;*display:inline;*zoom:1;position:relative;text-align:left;padding-bottom:1.6em}div.lightbox-body-wrap{background-color:white;padding:1em;border-radius:.6em;-moz-border-radius:.6em;-webkit-border-radius:.6em;-moz-box-shadow:#111 .1em .1em .4em;-webkit-box-shadow:#111 .1em .1em .4em}div.lightbox-body{position:relative;height:10em;width:10em;min-height:10em;min-width:10em;overflow:hidden;*background-color:white}div.lightbox-content{position:absolute;*background-color:white}div.lightbox-body-lock{background-color:white;position:absolute;left:0px;top:0px;width:100%;height:100%;text-align:center}div.lightbox-body-lock-spinner{display:none;position:absolute;bottom:0;right:0}div.lightbox-body-lock-spinner div{float:left;width:.5em;height:.9em;background:#AAA;margin-left:.1em;-moz-border-radius:.15em;-webkit-border-radius:.15em}div.lightbox-body-lock-spinner div.glow{background:#666;height:1em;margin-top:-0.05em}div.lightbox-body-lock-loading div.lightbox-body-lock-spinner{display:inline-block;*display:inline;*zoom:1}div.lightbox-body-lock-transparent{background:none}div.lightbox-caption{height:1.2em;margin:0 .7em;margin-bottom:.1em;white-space:nowrap;color:#DDD;font-weight:bold;font-size:1.6em;font-family:Helvetica;text-shadow:black 2px 2px 2px}div.lightbox-close-button,div.lightbox-prev-link,div.lightbox-next-link{position:absolute;bottom:0;color:#888;cursor:pointer;font-size:150%;font-weight:bold;font-family:Arial}div.lightbox-close-button:hover,div.lightbox-prev-link:hover,div.lightbox-next-link:hover{color:white}div.lightbox-close-button{right:.5em}div.lightbox-prev-link,div.lightbox-next-link{padding:0 .2em;bottom:2px}div.lightbox-prev-link{left:.2em}div.lightbox-next-link{left:2em}div.lightbox-image div.lightbox-body-wrap{padding:0;border:1px solid #777;border-radius:0px;-moz-border-radius:0px;-webkit-border-radius:0px}div.lightbox-image div.lightbox-content img{vertical-align:middle}div.lightbox-image div.lightbox-caption{margin-left:.2em}div.lightbox-image div.lightbox-body-wrap,div.lightbox-image div.lightbox-body-lock{background-color:#DDD}div.lightbox-image div.lightbox-body-lock-spinner{bottom:1em;right:1em}div.lightbox-image div.lightbox-close-button{right:.2em}div.lightbox-image div.lightbox-prev-link{left:0}</style>");
+document.write("<style type=\"text/css\">div.lightbox{position:fixed;top:0px;left:0px;width:100%;text-align:center;z-index:9999}div.lightbox div{line-height:normal}div.lightbox-locker{position:absolute;top:0px;left:0px;width:100%;height:100%;background-color:#000;opacity:0.84;filter:alpha(opacity=84)}div.lightbox-dialog{display:inline-block;*display:inline;*zoom:1;position:relative;text-align:left;padding-bottom:1.6em}div.lightbox-body-wrap{background-color:white;padding:1em;border-radius:.6em;-moz-border-radius:.6em;-webkit-border-radius:.6em}div.lightbox-body{position:relative;height:10em;width:10em;min-height:10em;min-width:10em;overflow:hidden;*background-color:white}div.lightbox-content{position:absolute;*background-color:white}div.lightbox-body-lock{background-color:white;position:absolute;left:0px;top:0px;width:100%;height:100%;text-align:center}div.lightbox-body-lock-spinner{display:none;position:absolute;bottom:0;right:0}div.lightbox-body-lock-spinner div{float:left;width:.5em;height:.9em;background:#AAA;margin-left:.1em;-moz-border-radius:.15em;-webkit-border-radius:.15em}div.lightbox-body-lock-spinner div.glow{background:#666;height:1em;margin-top:-0.05em}div.lightbox-body-lock-loading div.lightbox-body-lock-spinner{display:inline-block;*display:inline;*zoom:1}div.lightbox-body-lock-transparent{background:none}div.lightbox-caption{height:1.2em;margin:0 .7em;margin-bottom:.1em;white-space:nowrap;color:#DDD;font-weight:bold;font-size:1.6em;font-family:Helvetica}div.lightbox-close-button,div.lightbox-prev-link,div.lightbox-next-link{position:absolute;bottom:0;color:#888;cursor:pointer;font-size:150%;font-weight:bold;font-family:Arial}div.lightbox-close-button:hover,div.lightbox-prev-link:hover,div.lightbox-next-link:hover{color:white}div.lightbox-close-button{right:.5em}div.lightbox-prev-link,div.lightbox-next-link{padding:0 .2em;bottom:2px}div.lightbox-prev-link{left:.2em}div.lightbox-next-link{left:2em}div.lightbox-image div.lightbox-body-wrap,div.lightbox-media div.lightbox-body-wrap{padding:0;border:1px solid #777;border-radius:0px;-moz-border-radius:0px;-webkit-border-radius:0px}div.lightbox-image div.lightbox-content img{vertical-align:middle}div.lightbox-image div.lightbox-caption,div.lightbox-media div.lightbox-caption{margin-left:.2em}div.lightbox-image div.lightbox-body-wrap,div.lightbox-image div.lightbox-body-lock,div.lightbox-media div.lightbox-body-wrap,div.lightbox-media div.lightbox-body-lock{background-color:#DDD}div.lightbox-image div.lightbox-body-lock-spinner{bottom:1em;right:1em}div.lightbox-image div.lightbox-close-button{right:.2em}div.lightbox-image div.lightbox-prev-link{left:0}</style>");

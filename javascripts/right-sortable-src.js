@@ -3,14 +3,14 @@
  *
  * See http://rightjs.org/ui/sortable
  *
- * Copyright (C) Nikolay V. Nemshilov aka St.
+ * Copyright (C) 2009-2010 Nikolay V. Nemshilov
  */
 if (!Draggable) throw "Gimme Draggable";
 
 /**
  * The Sortable unit
  *
- * Copyright (C) Nikolay V. Nemshilov aka St.
+ * Copyright (C) 2009-2010 Nikolay V. Nemshilov
  */
 var Sortable = new Class(Observer, {
   extend: {
@@ -29,29 +29,12 @@ var Sortable = new Class(Observer, {
       idParam:    'id',       // the id value name
       posParam:   'position', // the position value name
       parseId:    true,       // if the id attribute should be converted into an integer before sending
-                  
-      relName:    'sortable'  // the auto-discovery feature key
+      
+      cssRule:    '[rel^=sortable]' // css-rule for automatically processable sortables
     },
     
-    // scans through the page for auto-discoverable sortables
-    rescan: function(scope) {
-      var key = Sortable.Options.relName;
-      var reg = new RegExp('^'+key+'\\[(.+?)\\]');
-      
-      ($(scope) || document).select('ul[rel^="'+key+'"], ol[rel^="'+key+'"]').each(function(element) {
-        if (!element._sortable) {
-          var data    = element.get('data-'+key+'-options');
-          var options = eval('('+data+')') || {};
-          
-          var url  = element.get('rel').match(reg);
-          if (url) {
-            options.url = url[1];
-          }
-          
-          new Sortable(element, options);
-        }
-      });
-    }
+    // DEPRECATED: scans through the page for auto-discoverable sortables
+    rescan: function(scope) { }
   },
   
   /**
@@ -62,7 +45,14 @@ var Sortable = new Class(Observer, {
    */
   initialize: function(element, options) {
     this.element = $(element);
-    this.$super(options);
+    this.$super(Object.merge(options, eval('('+this.element.get('data-sortable-options')+')')));
+    
+    // trying to get the embedded Xhr url address
+    var rule = this.options.cssRule.split('[').last(),
+        attr = this.element.get(rule.split('^=').first()) || '',
+        url  = attr.match(/\[(.+?)\]/);
+        
+    if (url) this.options.url = url[1];
     
     this.element._sortable = this.init().onUpdate('tryXhr');
   },
@@ -193,16 +183,26 @@ var Sortable = new Class(Observer, {
 /**
  * Document level hooks for sortables
  *
- * Copyright (C) 2009 Nikolay V. Nemshilov aka St.
+ * Copyright (C) 2009-2010 Nikolay V. Nemshilov
  */
-document.onReady(function() { Sortable.rescan(); });
+document.onMousedown(function(event) {
+  var target = event.target, element = [target].concat(target.parents()).first('match', Sortable.Options.cssRule);
+  
+  if (element) {
+    var sortable = element._srotable || new Sortable(element);
+    
+    if (target._draggable) {
+      target._draggable.dragStart(event);
+    }
+  };
+});
 
 /**
  * Element level features for the Sortable unit
  *
- * Copyright (C) Nikolay V. Nemshilov aka St.
+ * Copyright (C) 2009-2010 Nikolay V. Nemshilov
  */
-Element.addMethods({
+Element.include({
   /**
    * Tries to make a sortable unit out of the element
    *

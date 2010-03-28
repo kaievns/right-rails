@@ -2,39 +2,17 @@
  * RightJS, http://rightjs.org
  * Released under the MIT license
  *
- * Custom build with options: no-olds
- *
- * Copyright (C) 2008-2009 Nikolay Nemshilov
+ * Copyright (C) 2008-2010 Nikolay Nemshilov
  */
 /**
  * The framework description object
  *
- * Copyright (C) 2008-2009 Nikolay V. Nemshilov aka St. <nemshilov#gma-ilc-om>
+ * Copyright (C) 2008-2010 Nikolay V. Nemshilov
  */
-var RightJS = {
-  version: "1.5.3",
-  modules: ["core", "form", "cookie", "xhr", "fx"]
+RightJS = {
+  version: "1.5.6",
+  modules: ["core", "dom", "form", "cookie", "xhr", "fx"]
 };
-
-/**
- * this object will contain info about the current browser
- *
- * Copyright (C) 2008 Nikolay V. Nemshilov aka St. <nemshilov#gma-il>
- */
-var Browser = (function(agent) {
-  return   {
-    IE:           !!(window.attachEvent && !window.opera),
-    Opera:        !!window.opera,
-    WebKit:       agent.indexOf('AppleWebKit/') > -1,
-    Gecko:        agent.indexOf('Gecko') > -1 && agent.indexOf('KHTML') < 0,
-    MobileSafari: !!agent.match(/Apple.*Mobile.*Safari/),
-    Konqueror:    agent.indexOf('Konqueror') > -1,
-
-    // marker for the browsers which don't give access to the HTMLElement unit
-    OLD:          agent.indexOf('MSIE 6') > -1 || agent.indexOf('MSIE 7') > -1,
-    IE8:          agent.indexOf('MSIE 8') > -1
-  }
-})(navigator.userAgent);
 
 /**
  * There are some util methods
@@ -44,7 +22,7 @@ var Browser = (function(agent) {
  *     - Prototype (http://prototypejs.org)   Copyright (C) Sam Stephenson
  *     - MooTools  (http://mootools.net)      Copyright (C) Valerio Proietti
  *
- * Copyright (C) 2008-2009 Nikolay V. Nemshilov aka St. <nemshilov#gma-il>
+ * Copyright (C) 2008-2010 Nikolay V. Nemshilov
  */
  
 /**
@@ -59,10 +37,10 @@ var Browser = (function(agent) {
  * @return Objecte extended destination object
  */
 function $ext(dest, src, dont_overwrite) { 
-  var src = src || {};
+  var src = src || {}, key;
 
-  for (var key in src)
-    if (dont_overwrite === undefined || dest[key] === undefined)
+  for (key in src)
+    if (dont_overwrite !== true || typeof(dest[key]) === 'undefined')
       dest[key] = src[key];
 
   return dest;
@@ -85,7 +63,7 @@ function $try() {
   }
 };
 
-/**
+/** !#server
  * evals the given javascript text in the context of the current window
  *
  * @param String javascript
@@ -142,23 +120,9 @@ function $alias(object, names) {
  * @return boolean check result
  */
 function defined(value) {
-  return value !== undefined;
+  return typeof(value) !== 'undefined';
 };
 
-/**
- * checks if the given value is a hash-like object
- *
- * @param mixed value
- * @return boolean check result
- */
-function isHash(value) {
-  return typeof(value) === 'object' && value !== null && value.constructor === Object;
-};
-
-// Opera 10.00 and Konqueror 3 heed some extra care with that
-if (isHash(document.createElement('p'))) {
-  eval(isHash.toString().replace(';', '&&!(arguments[0] instanceof HTMLElement);'));
-}
 
 /**
  * checks if the given value is a function
@@ -180,15 +144,6 @@ function isString(value) {
   return typeof(value) === 'string';
 };
 
-/**
- * checks if the given value is an array
- *
- * @param mixed value to check
- * @return boolean check result
- */
-function isArray(value) {
-  return value instanceof Array;
-};
 
 /**
  * checks if the given value is a number
@@ -200,7 +155,7 @@ function isNumber(value) {
   return typeof(value) === 'number';
 };
 
-/**
+/** !#server
  * checks if the given value is an element
  *
  * @param mixed value to check
@@ -210,7 +165,7 @@ function isElement(value) {
   return value && value.tagName;
 };
 
-/**
+/** !#server
  * checks if the given value is a DOM-node
  *
  * @param mixed value to check
@@ -220,25 +175,7 @@ function isNode(value) {
   return value && value.nodeType;
 };
 
-/**
- * converts any iterables into an array
- *
- * @param Object iterable
- * @return Array list
- */
-var $A = (function(slice) {
-  return function (it) {
-    try {
-      return slice.call(it);
-    } catch(e) {
-      for (var a=[], i=0, length = it.length; i < length; i++)
-        a[i] = it[i];
-      return a;
-    }
-  };
-})(Array.prototype.slice);
-
-/**
+/** !#server
  * shortcut to instance new elements
  *
  * @param String tag name
@@ -249,7 +186,7 @@ function $E(tag_name, options) {
   return new Element(tag_name, options);
 };
 
-/**
+/** !#server
  * searches an element by id and/or extends it with the framework extentions
  *
  * @param String element id or Element to extend
@@ -259,7 +196,7 @@ function $(element) {
   return typeof(element) === 'string' ? document.getElementById(element) : element;
 };
 
-/**
+/** !#server
  * searches for elements in the document which matches the given css-rule
  *
  * @param String css-rule
@@ -277,19 +214,81 @@ function $$(css_rule) {
  */
 function $w(string) {
   return string.trim().split(/\s+/);
-}
+};
 
-/**
- * generates an unique id for an object
- *
- * @param Object object
- * @return Integer uniq id
- */
-var $uid = (function(UID) {
-  return function(item) {
+// we need to generate those functions in an anonymous scope
+(function() {
+  var to_s = Object.prototype.toString, slice = Array.prototype.slice, UID = 1;
+  
+  /**
+   * checks if the given value is a hash-like object
+   *
+   * @param mixed value
+   * @return boolean check result
+   */
+  isHash = function(value) {
+    return to_s.call(value) === '[object Object]';
+  };
+  
+  /** !#server
+   * Internet Explorer needs some additional mumbo-jumbo in here
+   */
+  if (isHash(document.documentElement)) {
+    isHash = function(value) {
+      return to_s.call(value) === '[object Object]' &&
+        value !== null && typeof(value) !== 'undefined' &&
+        typeof(value.hasOwnProperty) !== 'undefined';
+    };
+  }
+
+  /**
+   * checks if the given value is an array
+   *
+   * @param mixed value to check
+   * @return boolean check result
+   */
+  isArray = function(value) {
+    return to_s.call(value) === '[object Array]';
+  };
+  
+  /**
+   * converts any iterables into an array
+   *
+   * @param Object iterable
+   * @return Array list
+   */
+  $A = function (it) {
+    try {
+      return slice.call(it);
+    } catch(e) {
+      for (var a=[], i=0, length = it.length; i < length; i++)
+        a[i] = it[i];
+      return a;
+    }
+  };
+
+  /**
+   * generates an unique id for an object
+   *
+   * @param Object object
+   * @return Integer uniq id
+   */
+  $uid = function(item) {
     return item.uid || (item.uid = UID++);
   };
-})(1);
+  
+  /**
+   * Generating methods for native units extending
+   */
+  for (var i=0, natives = [Array, Function, Number, String, Date, RegExp]; i < natives.length; i++) {
+    natives[i].include = function(module, dont_overwrite) {
+      $ext(this.prototype, module, dont_overwrite);
+      return this;
+    };
+  }
+})();
+
+
 
 
 /**
@@ -299,7 +298,7 @@ var $uid = (function(UID) {
  *   Some functionality is inspired by
  *     - Prototype (http://prototypejs.org)   Copyright (C) Sam Stephenson
  *
- * Copyright (C) 2008-2009 Nikolay V. Nemshilov aka St. <nemshilov#gma-il>
+ * Copyright (C) 2008-2010 Nikolay V. Nemshilov
  */
 $ext(Object, {
   /**
@@ -309,8 +308,8 @@ $ext(Object, {
    * @return Array keys list
    */
   keys: function(object) {
-    var keys = [];
-    for (var key in object)
+    var keys = [], key;
+    for (key in object)
       keys.push(key);
     return keys;
   },
@@ -322,8 +321,8 @@ $ext(Object, {
    * @return Array values list
    */
   values: function(object) {
-    var values = [];
-    for (var key in object)
+    var values = [], key;
+    for (key in object)
       values.push(object[key]);
     return values;
   },
@@ -350,9 +349,9 @@ $ext(Object, {
    * @return Object filtered copy
    */
   without: function() {
-    var filter = $A(arguments), object = filter.shift(), copy = {};
+    var filter = $A(arguments), object = filter.shift(), copy = {}, key;
     
-    for (var key in object)
+    for (key in object)
       if (!filter.includes(key))
         copy[key] = object[key];
     
@@ -371,9 +370,10 @@ $ext(Object, {
    * @return Object filtered copy
    */
   only: function() {
-    var filter = $A(arguments), object = filter.shift(), copy = {};
+    var filter = $A(arguments), object = filter.shift(), copy = {},
+        i=0, length = filter.length;
     
-    for (var i=0, length = filter.length; i < length; i++) {
+    for (; i < length; i++) {
       if (defined(object[filter[i]]))
         copy[filter[i]] = object[filter[i]];
     }
@@ -395,8 +395,8 @@ $ext(Object, {
    * @return Object merged object
    */
   merge: function() {
-    var object = {};
-    for (var i=0, length = arguments.length; i < length; i++) {
+    var object = {}, i=0, length = arguments.length;
+    for (; i < length; i++) {
       if (isHash(arguments[i])) {
         $ext(object, arguments[i]);
       }
@@ -411,13 +411,13 @@ $ext(Object, {
    * @return String query
    */
   toQueryString: function(object) {
-    var tokens = [];
-    for (var key in object) {
+    var tokens = [], key;
+    for (key in object) {
       tokens.push(key+'='+encodeURIComponent(object[key]))
     }
     return tokens.join('&');
   }
-});
+}, true);
 
 /**
  * here are the starndard Math object extends
@@ -426,7 +426,7 @@ $ext(Object, {
  *   The idea of random mehtod is taken from
  *     - Ruby      (http://www.ruby-lang.org) Copyright (C) Yukihiro Matsumoto
  *
- * Copyright (C) 2008 Nikolay V. Nemshilov aka St. <nemshilov#gma-il>
+ * Copyright (C) 2008 Nikolay V. Nemshilov
  */
 $ext(Math, {
   /**
@@ -462,9 +462,9 @@ $ext(Math, {
  *     - Prototype (http://prototypejs.org)   Copyright (C) Sam Stephenson
  *     - Ruby      (http://www.ruby-lang.org) Copyright (C) Yukihiro Matsumoto
  *
- * Copyright (C) 2008-2009 Nikolay V. Nemshilov aka St. <nemshilov#gma-il>
+ * Copyright (C) 2008-2010 Nikolay V. Nemshilov
  */
-$ext(Array.prototype, (function(A_proto) {
+(function(A_proto) {
   
   // JavaScript 1.6 methods recatching up or faking
   var for_each = A_proto.forEach || function(callback, scope) {
@@ -503,20 +503,20 @@ $ext(Array.prototype, (function(A_proto) {
     return true;
   };
   
-  var first = function(callback, scope) {
+  function first(callback, scope) {
     for (var i=0, length = this.length; i < length; i++) {
       if (callback.call(scope, this[i], i, this))
         return this[i];
     }
-    return undefined;
+    return this._$u; // <- undefined, see #191
   };
   
-  var last = function(callback, scope) {
+  function last(callback, scope) {
     for (var i=this.length-1; i > -1; i--) {
       if (callback.call(scope, this[i], i, this))
         return this[i];
     }
-    return undefined;
+    return this._$u; // <- undefined, see #191
   };
   
   
@@ -525,7 +525,7 @@ $ext(Array.prototype, (function(A_proto) {
   //
   
   // prepares a correct callback function
-  var guess_callback = function(args, array) {
+  function guess_callback(args, array) {
     var callback = args[0], args = A_proto.slice.call(args, 1), scope = array;
     
     if (isString(callback)) {
@@ -543,13 +543,18 @@ $ext(Array.prototype, (function(A_proto) {
   };
   
   // calls the given method with preprocessing the arguments
-  var call_method = function(func, scope, args) {
+  function call_method(func, scope, args) {
     try {
       return func.apply(scope, guess_callback(args, scope));
     } catch(e) { if (!(e instanceof Break)) throw(e); }
   };
   
-return {
+  // checks the value as a boolean
+  function boolean_check(i) {
+    return !!i;
+  };
+  
+Array.include({
   /**
    * IE fix
    * returns the index of the value in the array
@@ -684,8 +689,8 @@ return {
    * @param Object optional scope for the callback
    * @return boolean check result
    */
-  some: function() {
-    return call_method(some, this, arguments.length ? arguments : [function(i) { return !!i; }]);
+  some: function(value) {
+    return call_method(some, this, value ? arguments : [boolean_check]);
   },
   
   /**
@@ -695,8 +700,8 @@ return {
    * @param Object optional scope for the callback
    * @return Boolean check result
    */
-  every: function() {
-    return call_method(every, this, arguments.length ? arguments : [function(i) { return !!i; }]);
+  every: function(value) {
+    return call_method(every, this, value ? arguments : [boolean_check]);
   },
   
   /**
@@ -721,10 +726,10 @@ return {
    * @return Array new merged
    */
   merge: function() {
-    for (var copy = this.clone(), arg, i=0, length = arguments.length; i < length; i++) {
+    for (var copy = this.clone(), arg, i=0, j, length = arguments.length; i < length; i++) {
       arg = arguments[i];
       if (isArray(arg)) {
-        for (var j=0; j < arg.length; j++) {
+        for (j=0; j < arg.length; j++) {
           if (copy.indexOf(arg[j]) == -1)
             copy.push(arg[j]);
         }  
@@ -758,7 +763,7 @@ return {
    * @return Array filtered version
    */
   compact: function() {
-    return this.without(null, undefined);
+    return this.without(null, this._$u); // <- this._u === undefined, see #191
   },
   
   /**
@@ -805,10 +810,9 @@ return {
    * @return Array shuffled version
    */
   shuffle: function() {
-    var shuff = this.clone();
+    var shuff = this.clone(), j, x, i = shuff.length;
     
-    for (var j, x, i = shuff.length; i;
-       j = Math.random(i-1), x = shuff[--i], shuff[i] = shuff[j], shuff[j] = x);
+    for (; i; j = Math.random(i-1), x = shuff[--i], shuff[i] = shuff[j], shuff[j] = x);
     
     return shuff;
   },
@@ -831,13 +835,17 @@ return {
       return a.value > b.value ? 1 : a.value < b.value ? -1 : 0;
     }).map('item');
   }
-}})(Array.prototype));
+});
 
-$alias(Array.prototype, {
+$alias(A_proto, {
   include: 'includes',
   all: 'every',
   any: 'some'
 });
+
+})(Array.prototype);
+
+
 
 /**
  * The String class extentions
@@ -848,9 +856,9 @@ $alias(Array.prototype, {
  *   The trim function taken from work of Steven Levithan
  *     - http://blog.stevenlevithan.com/archives/faster-trim-javascript
  *
- * Copyright (C) 2008-2010 Nikolay V. Nemshilov aka St. <nemshilov#gma-il>
+ * Copyright (C) 2008-2010 Nikolay V. Nemshilov
  */
-$ext(String.prototype, {
+String.include({
   /**
    * checks if the string is an empty string
    *
@@ -925,7 +933,7 @@ $ext(String.prototype, {
    * @return String self (unchanged version with scripts still in their place)
    */
   evalScripts: function() {
-    $eval(this.extractScripts());
+    this.stripScripts(true);
     return this;
   },
   
@@ -1027,13 +1035,9 @@ $alias(String.prototype, {include: 'includes'});
  *   Some of the functionality inspired by
  *     - Prototype (http://prototypejs.org)   Copyright (C) Sam Stephenson
  *
- * Copyright (C) 2008 Nikolay V. Nemshilov aka St. <nemshilov#gma-il>
+ * Copyright (C) 2008-2010 Nikolay V. Nemshilov
  */
-$ext(Function.prototype, (function() {
-  // creating a local reference to the method for a faster access
-  var _A = Array.prototype.slice;
-  
-return {
+Function.include({
   /**
    * binds the function to be executed in the given scope
    *
@@ -1043,11 +1047,9 @@ return {
    * @return Function binded function
    */
   bind: function() {
-    if (arguments.length < 2 && !arguments[0]) return this;
-
-    var slice = _A, args = slice.call(arguments), scope = args.shift(), func = this;
+    var args = $A(arguments), scope = args.shift(), func = this;
     return function() {
-      return func.apply(scope, (args.length != 0 || arguments.length != 0) ? args.concat(slice.call(arguments)) : args);
+      return func.apply(scope, (args.length || arguments.length) ? args.concat($A(arguments)) : args);
     };
   },
 
@@ -1060,9 +1062,9 @@ return {
    * @return Function binded function
    */
   bindAsEventListener: function() {
-    var slice = _A, args = slice.call(arguments), scope = args.shift(), func = this;
+    var args = $A(arguments), scope = args.shift(), func = this;
     return function(event) {
-      return func.apply(scope, [event || window.event].concat(args).concat(slice.call(arguments)));
+      return func.apply(scope, [event || window.event].concat(args).concat($A(arguments)));
     };
   },
 
@@ -1074,7 +1076,7 @@ return {
    * @return Function curried function
    */
   curry: function() {
-    return this.bind.apply(this, [this].concat(_A.call(arguments)));
+    return this.bind.apply(this, [this].concat($A(arguments)));
   },
   
   /**
@@ -1085,9 +1087,9 @@ return {
    * @return Function curried function
    */
   rcurry: function() {
-    var curry = _A.call(arguments), func = this;
+    var curry = $A(arguments), func = this;
     return function() {
-      return func.apply(func, _A.call(arguments).concat(curry));
+      return func.apply(func, $A(arguments).concat(curry));
     }
   },
 
@@ -1100,8 +1102,8 @@ return {
    * @return Integer timeout marker
    */
   delay: function() {
-    var args  = _A.call(arguments), timeout = args.shift();
-    var timer = new Number(window.setTimeout(this.bind.apply(this, [this].concat(args)), timeout));
+    var args  = $A(arguments), timeout = args.shift(),
+        timer = new Number(window.setTimeout(this.bind.apply(this, [this].concat(args)), timeout));
 
     timer.cancel = function() { window.clearTimeout(this); };
 
@@ -1117,8 +1119,8 @@ return {
    * @return Ineger interval marker
    */
   periodical: function() {
-    var args  = _A.call(arguments), timeout = args.shift();
-    var timer = new Number(window.setInterval(this.bind.apply(this, [this].concat(args)), timeout));
+    var args  = $A(arguments), timeout = args.shift(),
+        timer = new Number(window.setInterval(this.bind.apply(this, [this].concat(args)), timeout));
 
     timer.stop = function() { window.clearInterval(this); };
 
@@ -1134,14 +1136,14 @@ return {
    * @return Function chained function
    */
   chain: function() {
-    var args = _A.call(arguments), func = args.shift(), current = this;
+    var args = $A(arguments), func = args.shift(), current = this;
     return function() {
       var result = current.apply(current, arguments);
       func.apply(func, args);
       return result;
     };
   }
-}})());
+});
 
 /**
  * The Number class extentions
@@ -1150,9 +1152,9 @@ return {
  *   Some methods inspired by
  *     - Ruby      (http://www.ruby-lang.org) Copyright (C) Yukihiro Matsumoto
  *
- * Copyright (C) 2008 Nikolay V. Nemshilov aka St. <nemshilov#gma-il>
+ * Copyright (C) 2008-2010 Nikolay V. Nemshilov
  */
-$ext(Number.prototype, {
+Number.include({
   /**
    * executes the given callback the given number of times
    *
@@ -1207,19 +1209,19 @@ $ext(Number.prototype, {
  *   Inspired by
  *     - Prototype (http://prototypejs.org)   Copyright (C) Sam Stephenson
  *
- * Copyright (C) 2008-2009 Nikolay V. Nemshilov aka St. <nemshilov#gma-il>
+ * Copyright (C) 2008-2010 Nikolay V. Nemshilov
  */
-$ext(RegExp, {
-  /**
-   * Escapes the string for safely use as a regular expression
-   *
-   * @param String raw string
-   * @return String escaped string
-   */
-  escape: function(string) {
-    return String(string).replace(/([.*+?^=!:${}()|[\]\/\\])/g, '\\$1');
-  }
-});
+
+
+ /**
+  * Escapes the string for safely use as a regular expression
+  *
+  * @param String raw string
+  * @return String escaped string
+  */
+RegExp.escape = function(string) {
+  return (''+string).replace(/([.*+?^=!:${}()|[\]\/\\])/g, '\\$1');
+};
 
 /**
  * The basic Class unit
@@ -1230,21 +1232,21 @@ $ext(RegExp, {
  *     - MooTools  (http://mootools.net)      Copyright (C) Valerio Proietti
  *     - Ruby      (http://www.ruby-lang.org) Copyright (C) Yukihiro Matsumoto
  *
- * Copyright (C) 2008 Nikolay V. Nemshilov aka St. <nemshilov#gma-ilc-om>
+ * Copyright (C) 2008-2010 Nikolay V. Nemshilov
  */
 var Class = function() {
   var args = $A(arguments), properties = args.pop() || {}, parent = args.pop();
+  
+  // basic class object definition
+  function klass() {
+    return this.initialize ? this.initialize.apply(this, arguments) : this;
+  };
 
   // if only the parent class has been specified
   if (!args.length && !isHash(properties)) {
     parent = properties; properties = {};
   }
-
-  // basic class object definition
-  var klass = function() {
-    return this.initialize ? this.initialize.apply(this, arguments) : this;
-  };
-
+  
   // attaching main class-level methods
   $ext(klass, Class.Methods).inherit(parent);
   
@@ -1275,7 +1277,7 @@ var Class = function() {
 Class.findSet = function(object, property) {
   var upcased = property.toUpperCase(), capcased = property.capitalize(),
     candidates = [object, object.constructor].concat(object.constructor.ancestors),
-    holder = candidates.first(function(o) { return o[upcased] || o[capcased]});
+    holder = candidates.first(function(o) { return o && (o[upcased] || o[capcased]) });
     
   return holder ? holder[upcased] || holder[capcased] : null;
 };
@@ -1285,14 +1287,14 @@ Class.findSet = function(object, property) {
  * will be extended. It provides basic and standard way to work
  * with the classes.
  *
- * Copyright (C) 2008-2009 Nikolay V. Nemshilov aka St. <nemshilov#gma-ilc-om>
+ * Copyright (C) 2008-2010 Nikolay V. Nemshilov
  */
 Class.Methods = (function() {
-  var commons = $w('selfExtended self_extended selfIncluded self_included');
-  var extend  = commons.concat($w('prototype parent extend include'));
-  var include = commons.concat(['constructor']);
+  var commons = $w('selfExtended self_extended selfIncluded self_included'),
+      extend  = commons.concat($w('prototype parent extend include')),
+      include = commons.concat(['constructor']);
   
-  var clean_module = function(module, what) {
+  function clean_module(module, what) {
     return Object.without.apply(Object, [module].concat(what == 'e' ? extend : include));
   };
   
@@ -1394,9 +1396,9 @@ return {
  *   The idea of the module is inspired by
  *     - MooTools  (http://mootools.net)      Copyright (C) Valerio Proietti
  *
- * Copyright (C) 2008-2009 Nikolay V. Nemshilov aka St. <nemshilov#gma-ilc-om>
+ * Copyright (C) 2008-2010 Nikolay V. Nemshilov
  */
-var Options = {
+Options = {
   /**
    * assigns the options by merging them with the default ones
    *
@@ -1404,12 +1406,11 @@ var Options = {
    * @return Object current instance
    */
   setOptions: function(options) {
-    var options = this.options = Object.merge(Class.findSet(this, 'options'), options);
+    var options = this.options = Object.merge(Class.findSet(this, 'options'), options), match, key;
     
     // hooking up the observer options
     if (isFunction(this.on)) {
-      var match;
-      for (var key in options) {
+      for (key in options) {
         if (match = key.match(/on([A-Z][A-Za-z]+)/)) {
           this.on(match[1].toLowerCase(), options[key]);
           delete(options[key]);
@@ -1444,9 +1445,9 @@ var Options = {
  *   The naming principle is inspired by
  *     - Prototype (http://prototypejs.org)   Copyright (C) Sam Stephenson
  *
- * Copyright (C) 2008-2010 Nikolay V. Nemshilov aka St. <nemshilov#gma-il>
+ * Copyright (C) 2008-2010 Nikolay V. Nemshilov
  */
-var Observer = new Class({
+Observer = new Class({
   include: Options,
   
   /**
@@ -1496,18 +1497,18 @@ var Observer = new Class({
 
         default:
           if (isArray(callback)) {
-            callback.each(function(params) {
-              this.observe.apply(this, [event].concat(
-                isArray(params) ? params : [params]
+            for (var i=0; i < callback.length; i++) {
+              this.on.apply(this, [event].concat(
+                isArray(callback[i]) ? callback[i] : [callback[i]]
               ).concat(args));
-            }, this);
+            }
           }
       }
       
     } else {
       // assuming it's a hash of key-value pairs
       for (var name in event) {
-        this.observe.apply(this, [name].concat(
+        this.on.apply(this, [name].concat(
           isArray(event[name]) ? event[name] : [event[name]]
         ).concat(args));
       }
@@ -1529,17 +1530,13 @@ var Observer = new Class({
    * @retun boolean check result
    */
   observes: function(event, callback) {
-    if (this.$listeners) {
-      if (!isString(event)) { callback = event; event = null; }
-      if (isString(callback)) callback = this[callback];
-      
-      return this.$listeners.some(function(i) {
-        return (event && callback) ? i.e == event && i.f == callback :
-          event ? i.e == event : i.f == callback;
-      });
-    }
+    if (!isString(event)) { callback = event; event = null; }
+    if (isString(callback)) callback = this[callback];
     
-    return false;
+    return (this.$listeners || []).some(function(i) {
+      return (event && callback) ? i.e === event && i.f === callback :
+        event ? i.e === event : i.f === callback;
+    });
   },
   
   /**
@@ -1553,11 +1550,15 @@ var Observer = new Class({
    * @return Observer self
    */
   stopObserving: function(event, callback) {
-    if (this.$listeners) {
+    if (isHash(event)) {
+      for (var key in event) {
+        this.stopObserving(key, event[key]);
+      }
+    } else {
       if (!isString(event)) { callback = event; event = null; }
       if (isString(callback)) callback = this[callback];
       
-      this.$listeners = this.$listeners.filter(function(i) {
+      this.$listeners = (this.$listeners || []).filter(function(i) {
         return (event && callback) ? (i.e !== event || i.f !== callback) :
           (event ? i.e !== event : i.f !== callback);
       }, this);
@@ -1639,11 +1640,30 @@ $alias(Observer.prototype, { observe: 'on' });
 /**
  * iterators in-callbacks break exception
  *
- * Copyright (C) 2009 Nikolay V. Nemshilov aka St. <nemshilov#gma-il>
+ * Copyright (C) 2009-2010 Nikolay V. Nemshilov
  */
-var Break = new Class(Error, {
+Break = new Class(Error, {
   message: "Manual iterator break"
 });
+
+/**
+ * this object will contain info about the current browser
+ *
+ * Copyright (C) 2008-2010 Nikolay V. Nemshilov
+ */
+Browser = (function(agent) {
+  return   {
+    IE:           !!(window.attachEvent && !window.opera),
+    Opera:        !!window.opera,
+    WebKit:       agent.indexOf('AppleWebKit/') > -1,
+    Gecko:        agent.indexOf('Gecko') > -1 && agent.indexOf('KHTML') < 0,
+    MobileSafari: !!agent.match(/Apple.*Mobile.*Safari/),
+    Konqueror:    agent.indexOf('Konqueror') > -1,
+
+    // marker for the browsers which don't give access to the HTMLElement unit
+    OLD:          !!(window.attachEvent && !window.opera) && !document.querySelector
+  }
+})(navigator.userAgent);
 
 /**
  * represents some additional functionality for the Event class
@@ -1654,9 +1674,9 @@ var Break = new Class(Error, {
  *   The additional method names are inspired by
  *     - Prototype (http://prototypejs.org)   Copyright (C) Sam Stephenson
  *
- * Copyright (C) 2008-2010 Nikolay V. Nemshilov aka St. <nemshilov#gma-ilc-om>
+ * Copyright (C) 2008-2010 Nikolay V. Nemshilov
  */
-var Event = new Class(Event, {
+Event = new Class(window.Event, {
   extend: {
     /**
      * extends a native object with additional functionality
@@ -1668,25 +1688,25 @@ var Event = new Class(Event, {
     ext: function(event, bound_element) {
       if (!event.stop) {
         $ext(event, this.Methods, true);
+      }
+      
+      if (!event.target && event.srcElement) {
+        // faking the which button
+        event.which = event.button == 2 ? 3 : event.button == 4 ? 2 : 1;
         
-        if (Browser.IE) {
-          // faking the which button
-          event.which = event.button == 2 ? 3 : event.button == 4 ? 2 : 1;
-          
-          // faking the mouse position
-          var scrolls = window.scrolls();
+        // faking the mouse position
+        var scrolls = window.scrolls();
 
-          event.pageX = event.clientX + scrolls.x;
-          event.pageY = event.clientY + scrolls.y;
-          
-          // faking the target property  
-          event.target = event.srcElement || bound_element;
-          
-          // faking the relatedTarget, currentTarget and other targets
-          event.relatedTarget = event[(event.target == event.fromElement ? 'to' : 'from') + 'Element'];
-          event.currentTarget = bound_element;
-          event.eventPhase    = 3; // bubbling phase
-        }
+        event.pageX = event.clientX + scrolls.x;
+        event.pageY = event.clientY + scrolls.y;
+        
+        // faking the target property  
+        event.target = $(event.srcElement) || bound_element;
+        
+        // faking the relatedTarget, currentTarget and other targets
+        event.relatedTarget = event.target === event.fromElement ? $(event.toElement) : event.target;
+        event.currentTarget = bound_element;
+        event.eventPhase    = 3; // bubbling phase
       }
       
       // Safari bug fix
@@ -1744,7 +1764,7 @@ var Event = new Class(Event, {
  * @param Object methods
  * @return void
  */
-Event.addMethods = Event.include = function(methods) {
+Event.include = function(methods) {
   $ext(this.Methods, methods);
   
   try { // extending the events prototype
@@ -1779,7 +1799,7 @@ Event.include({
 /**
  * custom events unit, used as a mediator for the artificial events handling in the generic observer
  *
- * Copyright (C) 2008-2009 Nikolay V. Nemshilov aka St. <nemshilov#gma-ilc-om>
+ * Copyright (C) 2008-2010 Nikolay V. Nemshilov
  */
 Event.Custom = function(name, options) {
   this.type = name;
@@ -1788,23 +1808,176 @@ Event.Custom = function(name, options) {
 };
 
 /**
+ * This module contains the basic events-delegation feature support
+ *
+ * Copyright (C) 2010 Nikolay V. Nemshilov
+ */
+Event.extend({
+  /**
+   * Creates an event delegation handler
+   *
+   * USAGE:
+   *
+   *   var delegation = Event.delegate({
+   *     "css_rule_1": function() { do_something_usual(); },
+   *     "css_rule_2": function() { do_something_another(); },
+   *     
+   *     // us also can use references by name with or without options
+   *     "css_rule_3": ['addClass', 'that-class'],
+   *     "css_rule_4": 'hide'
+   *   });
+   *
+   *   $(element).on('click', delegation);
+   *
+   * NOTE:
+   *   your delegation handler will be called in contexts of matching _targets_
+   *   not in the context of the element where it was attached
+   *
+   * @param Object delegation rules
+   * @return Function delegation handler
+   */
+  delegate: function(options) {
+    return function(event) {
+      var target = event.target, css_rule, args, callback;
+
+      for (css_rule in options) {
+        if ($(this).select(css_rule).include(target)) {
+          args = options[css_rule];
+          args = isArray(args) ? args : [args];
+          callback = args[0];
+          args = args.slice(1);
+
+          if (isString(callback))
+            target[callback].apply(target, args);
+          else
+            callback.apply(target, [event].concat(args));
+        }
+      }
+    };
+  },
+  
+  /**
+   * Creates a document-level events delegations catcher
+   *
+   * USAGE:
+   *   Event.behave("ul#main-menu li", "click", function() { alert('clicked'); });
+   *   Event.behave("ul#main-menu li", "mouseover", "addClass", "hovered");
+   *   Event.behave("ul#main-menu li", {
+   *     click:     function() { alert('clicked'); },
+   *     mouseover: ['addClass',    'hovered'],
+   *     mouseout:  ['removeClass', 'hovered'],
+   *     dblclick:  'hide'
+   *   });
+   *
+   * @param String css-rule
+   * @param mixed String event name or a Hash of events
+   * @param mixed Function callback or String method name
+   * @param mixed optional curried arguments
+   * @return Object with event handlers description the document.on() function will receive
+   */
+  behave: function(css_rule, options) {
+    var events = {}, hash = {}, args = $A(arguments).slice(1),
+      focus = 'focus', blur = 'blur', focus_blur = [focus, blur];
+    
+    if (isString(options)) {
+      hash[args.shift()] = args;
+      options = hash;
+    }
+    
+    for (var event in options) {
+      var hash = {}; hash[css_rule] = options[event];
+      
+      if (Browser.IE) {
+        // fancy IE browsers have different names for bubbling versions of those events
+        if (event == focus) event = focus + 'in';
+        if (event == blur)  event = focus + 'out';
+      }
+      
+      events[event] = Event.delegate(hash);
+      
+      if (focus_blur.include(event) && !Browser.IE) {
+        // HACK! HACK! HACK!
+        // by default, method #on uses a non-captive events attachment
+        // but for focus and blur effects we need the opposite
+        // so we calling the method directly and pushing the listeners manually
+        
+        document.addEventListener(event, events[event], true);
+        
+        (document.$listeners = document.$listeners || []).push({
+          e: event, f: events[event], a: []
+        });
+        
+      } else {
+        document.on(event, events[event]);
+      }
+    }
+    
+    return events;
+  }
+});
+
+
+String.include({
+  /**
+   * A shortcut for document-level events delegation handler attaching
+   *
+   * USAGE:
+   *
+   *   "ul#main-menu li".on("click", function() { alert('clicked'); });
+   *   "ul#main-menu li".on("mouseover", "addClass", "hovered");
+   *   "ul#main-menu li".on("mouseout", "removeClass", "hovered");
+   *
+   *   // or like that in a shash
+   *   "ul#main-menu li".on({
+   *     click:     function() { alert('clicked'); },
+   *     mouseover: ['addClass',    'hovered'],
+   *     mouseout:  ['removeClass', 'hovered'],
+   *     dblclick:  'hide'
+   *   });
+   *
+   * ...
+   * @return String this
+   */
+  on: function() {
+    Event.behave.apply(Event, [''+this].concat($A(arguments)));
+    return this;
+  }
+});
+
+$alias(String.prototype, {behave: 'on'});
+
+
+/**
  * The DOM Element unit handling
  *
- * Copyright (C) 2008-2010 Nikolay V. Nemshilov aka St. <nemshilov#gma-ilc-om>
+ * Copyright (C) 2008-2010 Nikolay V. Nemshilov
  */
-self.Element = (function(old_Element) {
+Element = (function(old_Element) {
   
-  var new_Element = function(tag, options) {
-    var element = document.createElement(tag), options = options || {};
+  // Element constructor options mapper
+  var options_map = {
+    id:      ['id',        0],
+    html:    ['innerHTML', 0],
+    'class': ['className', 0],
+    style:   ['setStyle',  1],
+    observe: ['on',        1],
+    on:      ['on',        1]
+  };
+  
+  function new_Element(tag, options) {
+    var element = document.createElement(tag);
     
-    if (options.id)       { element.id = options.id;              delete(options.id);       }
-    if (options.html)     { element.innerHTML = options.html;     delete(options.html);     }
-    if (options['class']) { element.className = options['class']; delete(options['class']); }
-    if (options.style)    { element.setStyle(options.style);      delete(options.style);    }
-    if (options.observe)  { element.observe(options.observe);     delete(options.observe);  }
+    if (options) {
+      for (var key in options) {
+        if (options_map[key]) {
+          if (options_map[key][1]) element[options_map[key][0]](options[key]);
+          else element[options_map[key][0]] = options[key];
+        } else {
+          element.set(key, options[key]);
+        }
+      }
+    }
     
-    for (var key in options) // a filter in case there is no keys in the options left
-      return element.set(options);
     return element;
   };
   
@@ -1815,9 +1988,9 @@ self.Element = (function(old_Element) {
     // and we kinda hacking the Element constructor so that
     // it affected IE browsers only
     //
-    new_Element = eval('({f:'+new_Element.toString().replace(/(\((\w+), (\w+)\) \{)/,
-      '$1if($2=="input"&&$3&&$3.checked)$2="<input checked=true/>";'
-    )+'})').f;
+    new_Element = eval('['+new_Element.toString().replace(/(\((\w+),\s*(\w+)\)\s*\{)/,
+      '$1if($2==="input"&&$3)$2="<input name="+$3.name+" type="+$3.type+($3.checked?" checked":"")+"/>";'
+    )+']')[0];
   }
   
   // connecting the old Element instance to the new one for IE browsers
@@ -1827,13 +2000,13 @@ self.Element = (function(old_Element) {
   }
   
   return new_Element;
-})(self.Element);
+})(window.Element);
 
 
 $ext(Element, {
   /**
    * registeres the methods on the custom element methods list
-   * will add them to prototype and will generate a non extensive static mirror
+   * will add them to prototype and register at the Element.Methods hash
    * 
    * USAGE:
    *  Element.include({
@@ -1841,7 +2014,6 @@ $ext(Element, {
    *  });
    *
    *  $(element).foo(bar);
-   *  Element.foo(element, bar);
    *
    * @param Object new methods list
    * @param Boolean flag if the method should keep the existing methods alive
@@ -1851,21 +2023,14 @@ $ext(Element, {
     $ext(this.Methods, methods, dont_overwrite);
     
     try { // busting up the basic element prototypes
-      $ext(HTMLElement.prototype, methods, dont_overwrite);
-    } catch(e) {
-      try { // IE8 native element extension
-        $ext(this.parent.prototype, methods, dont_overwrite);
-      } catch(e) {}
-    }
+      $ext((window.HTMLElement || this.parent).prototype, methods, dont_overwrite);
+    } catch(e) {}
     
     return this;
   },
   
   Methods: {} // DO NOT Extend this object manually unless you really need it, use Element#include
 });
-
-// the old interface alias, NOTE will be nuked
-Element.addMethods = Element.include;
 
 /**
  * The DOM Element unit structures handling module
@@ -1876,15 +2041,13 @@ Element.addMethods = Element.include;
  * NOTE: if a css-rule was specified then the result of the method
  *       will be filtered/adjusted depends on the rule
  *
- *       the css-rule might be a string or a Selector instance
- *
  * Credits:
  *   The naming principle and most of the names are taken from
  *     - Prototype (http://prototypejs.org)   Copyright (C) Sam Stephenson
  *   The insertions system implementation is inspired by
  *     - MooTools  (http://mootools.net)      Copyright (C) Valerio Proietti
  *
- * Copyright (C) 2008-2010 Nikolay V. Nemshilov aka St. <nemshilov#gma-ilc-om>
+ * Copyright (C) 2008-2010 Nikolay V. Nemshilov
  */
 Element.include({
   parent: function(css_rule) {
@@ -1896,9 +2059,9 @@ Element.include({
   },
   
   subNodes: function(css_rule) {
-    var first_child = $(this.firstChild);
-    return first_child ? (first_child.tagName && (!css_rule || first_child.match(css_rule)) ? [first_child] : []
-      ).concat(this.rCollect.call(first_child, 'nextSibling', css_rule)) : [];
+    return this.select(css_rule).filter(function(element) {
+      return element.parentNode === this;
+    }, this);
   },
   
   siblings: function(css_rule) {
@@ -2000,7 +2163,7 @@ Element.include({
    * @return Element self
    */
   update: function(content) {
-    if (isString(content) || isNumber(content)) {
+    if ((isString(content) || isNumber(content)) && !Element.insertions.wraps[this.tagName]) {
       var scripts;
       this.innerHTML = (''+content).stripScripts(function(s) { scripts = s; });
       if (scripts) $eval(scripts);
@@ -2155,7 +2318,7 @@ $alias(Element.insertions.wraps, {
  *     - MooTools  (http://mootools.net)      Copyright (C) Valerio Proietti
  *     - Dojo      (www.dojotoolkit.org)      Copyright (C) The Dojo Foundation
  *
- * Copyright (C) 2008-2010 Nikolay V. Nemshilov aka St. <nemshilov#gma-ilc-om>
+ * Copyright (C) 2008-2010 Nikolay V. Nemshilov
  */
 Element.include({
   /**
@@ -2168,9 +2331,10 @@ Element.include({
    * @return Element self
    */
   setStyle: function(hash, value) {
-    if (value) { var style = {}; style[hash] = value; hash = style; }
+    var key, c_key, style = {};
+    
+    if (value) { style[hash] = value; hash = style; }
     else if(isString(hash)) {
-      var style = {};
       hash.split(';').each(function(option) {
         var els = option.split(':').map('trim');
         if (els[0] && els[1]) {
@@ -2180,15 +2344,15 @@ Element.include({
       hash = style;
     }
     
-    var c_key;
-    for (var key in hash) {
+    
+    for (key in hash) {
       c_key = key.indexOf('-') != -1 ? key.camelize() : key;
       
       if (key === 'opacity') {
         if (Browser.IE) {
-          this.style.filter = 'alpha(opacity='+ value * 100 +')';
+          this.style.filter = 'alpha(opacity='+ hash[key] * 100 +')';
         } else {
-          this.style.opacity = value;
+          this.style.opacity = hash[key];
         }
       } else if (key === 'float') {
         c_key = Browser.IE ? 'styleFloat' : 'cssFloat';
@@ -2323,7 +2487,7 @@ Element.include({
  *   Most of the naming system in the module inspired by
  *     - Prototype (http://prototypejs.org)   Copyright (C) Sam Stephenson
  *
- * Copyright (C) 2008-2010 Nikolay V. Nemshilov aka St. <nemshilov#gma-il>
+ * Copyright (C) 2008-2010 Nikolay V. Nemshilov
  */
 Element.include({
   /**
@@ -2338,7 +2502,7 @@ Element.include({
     
     for (var key in hash) {
       // some attributes are not available as properties
-      if (this[key] === undefined) {
+      if (typeof(this[key]) === 'undefined') {
         this.setAttribute(key, ''+hash[key]);
       }
       this[key] = hash[key];
@@ -2456,7 +2620,7 @@ Element.include({
  * this module contains the Element's part of functionality 
  * responsible for the dimensions and positions getting/setting
  *
- * Copyright (C) 2008-2010 Nikolay V. Nemshilov aka St. <nemshilov#gma-il>
+ * Copyright (C) 2008-2010 Nikolay V. Nemshilov
  */
 Element.include({
   /**
@@ -2604,10 +2768,11 @@ Element.include({
   /**
    * makes the window be scrolled to the element
    *
+   * @param Object fx options
    * @return Element self
    */
-  scrollThere: function() {
-    window.scrollTo(this);
+  scrollThere: function(options) {
+    window.scrollTo(this, options);
     return this;
   }
 });
@@ -2615,7 +2780,7 @@ Element.include({
 /**
  * DOM Element events handling methods
  *
- * Copyright (C) 2008-2010 Nikolay V. Nemshilov aka St. <nemshilov#gma-il>
+ * Copyright (C) 2008-2010 Nikolay V. Nemshilov
  */
 Element.include((function() {
   var observer = Observer.create({}, 
@@ -2628,38 +2793,35 @@ Element.include((function() {
   // I'm kinda patching the observer methods manually in here
   // the reason is in building flat and fast functions
   //
-  observer.observe = observer.on = eval('({f:'+
-    observer.observe.toString().replace(/(\$listeners\.push\((\w+?)\);)/, '$1'+
-      '$2.e=Event.cleanName($2.e);$2.n=Event.realName($2.e);'+
-      
-      '$2.w=function(){var a=$A(arguments),e=($2.r&&$2.r!=="stopEvent")?a.shift():Event.ext(a[0],this);'+
-        'return $2.f.apply(this,a.concat($2.a))};'+(
-      
-      self.attachEvent ?
-        '$2.w=$2.w.bind(this);this.attachEvent("on"+$2.n,$2.w);' :
-        'this.addEventListener($2.n,$2.w,false);'
-      )
-    )+
-  '})').f;
+  function hack(name, re, text) {
+    observer[name] = eval('['+ observer[name].toString().replace(re, text) +']')[0];
+  };
   
-  observer.stopObserving = eval('({f:'+
-    observer.stopObserving.toString().replace(/(function\s*\((\w+)\)\s*\{\s*)(return\s*)([^}]+)/m, 
-      '$1var r=$4;'+
-      'if(!r)' + (self.attachEvent ? 
-        'this.detachEvent("on"+$2.n,$2.w);' :
-        'this.removeEventListener($2.n,$2.w,false);'
-      )+'$3 r')+
-  '})').f;
+  hack('on', 
+    /(\$listeners\.push\((\w+?)\);)/,
+    
+    '$1$2.e=Event.cleanName($2.e);$2.n=Event.realName($2.e);$2.w=function(){var a=$A(arguments),e=($2.r&&$2.r!=="stopEvent")?a.shift():Event.ext(a[0],this);return $2.f.apply(this,a.concat($2.a))};' + (
+        window.attachEvent ?
+          '$2.w=$2.w.bind(this);this.attachEvent("on"+$2.n,$2.w);' :
+          'this.addEventListener($2.n,$2.w,false);'
+        )
+  );
+  observer.observe = observer.on;
   
+  hack('stopObserving',
+    /(function\s*\((\w+)\)\s*\{\s*)(return\s*)([^}]+)/m, 
+    '$1var r=$4;if(!r)' + (window.attachEvent ? 
+      'this.detachEvent("on"+$2.n,$2.w);' :
+      'this.removeEventListener($2.n,$2.w,false);'
+    )+'$3 r'
+  );
   
-  observer.fire = eval('({f:'+
-    observer.fire.toString().replace(/(\w+)\.f\.apply.*?\.concat\((\w+)\)[^}]/,
-      '$1.f.apply(this,[new Event($1.e,$2.shift())].concat($1.a).concat($2))'
-    )+
-  '})').f;
+  hack('fire',
+    /(\w+)\.f\.apply.*?\.concat\((\w+)\)\)/,
+    '$1.f.apply(this,(($1.r&&$1.r!=="stopEvent")?[]:[new Event($1.e,$2.shift())]).concat($1.a).concat($2))'
+  );
   
-  // a simple events terminator method to be hooked like
-  // this.onClick('stopEvent');
+  // a simple events terminator method to be hooked like this.onClick('stopEvent');
   observer.stopEvent = function(e) { e.stop(); };
   
   $ext(window,   observer);
@@ -2677,7 +2839,7 @@ Element.include((function() {
  * NOTE: this module is just a wrap over the native CSS-selectors feature
  *       see the olds/css.js file for the manual selector code
  *
- * Copyright (C) 2008-2010 Nikolay V. Nemshilov aka St. <nemshilov#gma-ilc-om>
+ * Copyright (C) 2008-2010 Nikolay V. Nemshilov
  */
 Element.include((function() {
   /**
@@ -2685,7 +2847,7 @@ Element.include((function() {
    * and as we actually search only inside of the element we add it's tag
    * as a scope for the search
    */
-  var stub_rule = function(css_rule, tag) {
+  function stub_rule(css_rule, tag) {
     return css_rule ? css_rule.replace(/(^|,)/g, '$1'+ tag + ' ') : '*';
   };
   
@@ -2714,18 +2876,18 @@ return {
   /**
    * checks if the element matches this css-rule
    *
+   * NOTE: the element should be attached to the page
+   *
    * @param String css-rule
    * @return Boolean check result
    */
   match: function(css_rule) {
-    if (!css_rule || css_rule == '*') return true;
+    var result, parent = this.tagName === 'HTML' ? this.ownerDocument : this.parents().last();
     
-    var fake, result, parent, parents = this.parents();
+    // if it's a single node putting it into the context
+    result = $(parent || $E('p').insert(this)).select(css_rule).include(this);
     
-    parent = parents.length ? parents.last() : fake = $E('div').insert(this);
-    result = parent.select(css_rule).include(this);
-    
-    if (fake) { this.remove(); }
+    if (!parent) this.remove();
     
     return result;
   }
@@ -2734,21 +2896,22 @@ return {
 // document-level hooks
 $ext(document, {
   first: function(css_rule) {
-    return this.querySelector(css_rule || '*');
+    return this.querySelector(css_rule);
   },
   
   select: function(css_rule) {
-    return $A(this.querySelectorAll(css_rule || '*'));
+    return $A(this.querySelectorAll(css_rule));
   }
 });
+
 
 /**
  * the window object extensions
  *
- * Copyright (C) 2008-2009 Nikolay V. Nemshilov aka St. <nemshilov#gma-il>
+ * Copyright (C) 2008-2010 Nikolay V. Nemshilov
  */
-$ext(self, (function() {
-  var old_scroll = window.scrollTo;
+$ext(window, (function() {
+  var native_scroll = window.scrollTo;
   
 return {
     /**
@@ -2782,19 +2945,27 @@ return {
      *
      * @param mixed number left position, a hash position, element or a string element id
      * @param number top position
+     * @param Object fx options
      * @return window self
      */
-    scrollTo: function(left, top) {
+    scrollTo: function(left, top, fx_options) {
+      var left_pos = left, top_pos = top; // moving the values into new vars so they didn't get screwed later on
+      
       if(isElement(left) || (isString(left) && $(left))) {
         left = $(left).position();
       }
 
       if (isHash(left)) {
-        top  = left.y;
-        left = left.x;
+        top_pos  = left.y;
+        left_pos = left.x;
       }
       
-      old_scroll(left, top);
+      // checking if a smooth scroll was requested
+      if (isHash(fx_options = fx_options || top) && window.Fx) {
+        new Fx.Scroll(this, fx_options).start({x: left_pos, y: top_pos});
+      } else {
+        native_scroll(left_pos, top_pos);
+      }
 
       return this;
     }
@@ -2809,14 +2980,14 @@ return {
  *   The basic principles of the module are originated from
  *     - MooTools  (http://mootools.net)      Copyright (C) Valerio Proietti
  *
- * Copyright (C) 2009 Nikolay V. Nemshilov aka St. <nemshilov#gma-ilc-om>
+ * Copyright (C) 2009-2010 Nikolay V. Nemshilov
  */
 [window, document].each(function(object) {
   Observer.createShortcuts(object, ['ready']);
   var ready = object.fire.bind(object, 'ready');
   
   // IE and Konqueror browsers
-  if (document.readyState !== undefined) {
+  if (typeof(document.readyState) !== 'undefined') {
     (function() {
       ['loaded','complete'].includes(document.readyState) ? ready() : arguments.callee.delay(50);
     })();
@@ -2833,9 +3004,9 @@ return {
  *   The basic principles of the module are inspired by
  *     - Prototype (http://prototypejs.org)   Copyright (C) Sam Stephenson
  *
- * Copyright (C) 2009-2010 Nikolay V. Nemshilov aka St. <nemshilov#gma-ilc-om>
+ * Copyright (C) 2009-2010 Nikolay V. Nemshilov
  */
-var Form = function(options) {
+function Form(options) {
   var options = options || {}, remote = options.remote,
     form = new Element('form', Object.without(options, 'remote'));
   
@@ -2872,7 +3043,6 @@ $ext(Form, {
   }
 });
 
-Form.addMethods = Form.include;
 Form.include({
   /**
    * returns the form elements as an array of extended units
@@ -2880,7 +3050,7 @@ Form.include({
    * @return Array of elements
    */
   getElements: function() {
-    return this.select('input,select,textarea,button');
+    return $A(this.elements).map($);
   },
   
   /**
@@ -2973,7 +3143,7 @@ Form.include(Observer.createShortcuts({}, $w('submit reset focus')), true);
  *   The basic ideas are taken from
  *     - Prototype (http://prototypejs.org)   Copyright (C) Sam Stephenson
  *
- * Copyright (C) 2009-2010 Nikolay V. Nemshilov aka St. <nemshilov#gma-ilc-om>
+ * Copyright (C) 2009-2010 Nikolay V. Nemshilov
  */
 (function() {
   // trying to get the input element classes list
@@ -3024,7 +3194,7 @@ Form.include(Observer.createShortcuts({}, $w('submit reset focus')), true);
     });
   });
 })();
-Form.Element.addMethods = Form.Element.include;
+
 Form.Element.include({
   /**
    * uniform access to the element values
@@ -3049,7 +3219,7 @@ Form.Element.include({
    */
   setValue: function(value) {
     if (this.type == 'select-multiple') {
-      value = (isArray(value) ? value : [value]).map(String);
+      value = $A(isArray(value) ? value : [value]).map(String);
       $A(this.getElementsByTagName('option')).each(function(option) {
         option.selected = value.includes(option.value);
       });
@@ -3128,9 +3298,9 @@ Form.Element.include(Observer.createShortcuts({}, $w('disable enable focus blur 
  *   Most things in the unit are take from
  *     - MooTools  (http://mootools.net)      Copyright (C) Valerio Proietti
  *
- * Copyright (C) 2008-2009 Nikolay V. Nemshilov aka St. <nemshilov#gma-il>
+ * Copyright (C) 2008-2010 Nikolay V. Nemshilov
  */
-var Cookie = new Class({
+Cookie = new Class({
   include: Options,
   
   extend: {
@@ -3221,9 +3391,9 @@ var Cookie = new Class({
  *     - MooTools  (http://mootools.net)      Copyright (C) Valerio Proietti
  *     - jQuery    (http://jquery.com)        Copyright (C) John Resig
  *
- * Copyright (C) 2008-2009 Nikolay V. Nemshilov aka St. <nemshilov#gma-il>
+ * Copyright (C) 2008-2010 Nikolay V. Nemshilov
  */
-var Xhr = new Class(Observer, {
+Xhr = new Class(Observer, {
   extend: {
     // supported events list
     EVENTS: $w('success failure complete request cancel create'),
@@ -3318,7 +3488,7 @@ var Xhr = new Class(Observer, {
    * @return Xhr self
    */
   send: function(params) {
-    var add_params = {}, url = this.url, method = this.method.toLowerCase();
+    var add_params = {}, url = this.url, method = this.method.toLowerCase(), key;
     
     if (method == 'put' || method == 'delete') {
       add_params['_method'] = method;
@@ -3332,7 +3502,7 @@ var Xhr = new Class(Observer, {
     }
     
     if (method == 'get') {
-      url += (url.includes('?') ? '&' : '?') + data;
+      if (data) url += (url.includes('?') ? '&' : '?') + data;
       data = null;
     }
     
@@ -3343,7 +3513,7 @@ var Xhr = new Class(Observer, {
     
     this.xhr.onreadystatechange = this.stateChanged.bind(this);
     
-    for (var key in this.headers) {
+    for (key in this.headers) {
       this.xhr.setRequestHeader(key, this.headers[key]);
     }
     
@@ -3448,7 +3618,7 @@ var Xhr = new Class(Observer, {
       return JSON.parse(this.text);
     } catch(e) {
       // manual json consistancy check
-      if (self.JSON || !(/^[,:{}\[\]0-9.\-+Eaeflnr-u \n\r\t]*$/).test(this.text.replace(/\\./g, '@').replace(/"[^"\\\n\r]*"/g, ''))) {
+      if (window.JSON || !(/^[,:{}\[\]0-9.\-+Eaeflnr-u \n\r\t]*$/).test(this.text.replace(/\\./g, '@').replace(/"[^"\\\n\r]*"/g, ''))) {
         if (this.secureJSON) {
           throw "JSON parse error: "+this.text;
         } else {
@@ -3524,7 +3694,7 @@ Xhr.onCreate(function() {
  *     - Prototype (http://prototypejs.org)   Copyright (C) Sam Stephenson
  *     - jQuery    (http://jquery.com)        Copyright (C) John Resig
  *
- * Copyright (C) 2009-2010 Nikolay V. Nemshilov aka St. <nemshilov#gma-ilc-om>
+ * Copyright (C) 2009-2010 Nikolay V. Nemshilov
  */
 Form.include({
   /**
@@ -3580,7 +3750,7 @@ Form.include({
  * Credits:
  *   - jQuery    (http://jquery.com)        Copyright (C) John Resig
  *
- * Copyright (C) 2008-2010 Nikolay V. Nemshilov aka St. <nemshilov#gma-il>
+ * Copyright (C) 2008-2010 Nikolay V. Nemshilov
  */
 Element.include({
   /**
@@ -3601,7 +3771,7 @@ Element.include({
  * This unit presents a fake drop in replacement for the XmlHTTPRequest unit
  * but works with an iframe targeting in the background
  *
- * Copyright (C) 2008-2009 Nikolay V. Nemshilov aka St. <nemshilov#gma-il>
+ * Copyright (C) 2008-2010 Nikolay V. Nemshilov
  */
 Xhr.IFramed = new Class({
   /**
@@ -3638,8 +3808,9 @@ Xhr.IFramed = new Class({
     this.status       = 200;
     this.readyState   = 4;
     
-    var doc = window[this.iframe.id].document.documentElement;
-    this.responseText = doc ? doc.innerHTML : null;
+    try {
+      this.responseText = window[this.iframe.id].document.documentElement.innerHTML;
+    } catch(e) { }
     
     this.onreadystatechange();
   },
@@ -3658,9 +3829,9 @@ Xhr.IFramed = new Class({
  *   The basic principles, structures and naming system are inspired by
  *     - MooTools  (http://mootools.net)      Copyright (C) Valerio Proietti
  *
- * Copyright (C) 2008-2009 Nikolay V. Nemshilov aka St. <nemshilov#gma-ilc-om>
+ * Copyright (C) 2008-2010 Nikolay V. Nemshilov
  */
-var Fx = new Class(Observer, {
+Fx = new Class(Observer, {
   extend: {
     EVENTS: $w('start finish cancel'),
     
@@ -3700,7 +3871,10 @@ var Fx = new Class(Observer, {
       Lin: function(i) {
         return i;
       }
-    }
+    },
+    
+    ch: [], // scheduled effects registries
+    cr: []  // currently running effects registries
   },
   
   /**
@@ -3710,7 +3884,12 @@ var Fx = new Class(Observer, {
    */
   initialize: function(element, options) {
     this.$super(options);
-    this.element = $(element);
+    
+    if (this.element = element = $(element)) {
+      var uid = $uid(element);
+      this.ch = (Fx.ch[uid] = Fx.ch[uid] || []);
+      this.cr = (Fx.cr[uid] = Fx.cr[uid] || []);
+    }
   },
   
   /**
@@ -3729,6 +3908,8 @@ var Fx = new Class(Observer, {
     this.steps  = (duration / 1000 * this.options.fps).ceil();
     this.number = 1;
     
+    if (this.cr) this.cr.push(this); // adding this effect to the list of currently active
+    
     return this.fire('start', this).startTimer();
   },
   
@@ -3738,16 +3919,21 @@ var Fx = new Class(Observer, {
    * @return Fx this
    */
   finish: function() {
-    return this.stopTimer().fire('finish').next();
+    return this.stopTimer().unreg().fire('finish').next();
   },
   
   /**
    * interrupts the transition
    *
+   * NOTE:
+   *   this method cancels all the scheduled effects
+   *   in the element chain
+   *
    * @return Fx this
    */
   cancel: function() {
-    return this.stopTimer().fire('cancel').next();
+    this.ch.clean();
+    return this.stopTimer().unreg().fire('cancel');
   },
   
   /**
@@ -3788,12 +3974,14 @@ var Fx = new Class(Observer, {
       that.number ++;
     }
   },
-    
+  
+  // starts the effect timer
   startTimer: function() {
     this.timer = this.step.periodical((1000 / this.options.fps).round(), this);
     return this;
   },
   
+  // stops the effect timer
   stopTimer: function() {
     if (this.timer) {
       this.timer.stop();
@@ -3804,39 +3992,40 @@ var Fx = new Class(Observer, {
   // handles effects queing
   // should return false if there's no queue and true if there is a queue
   queue: function(args) {
-    if (!this.element) return false;
-    if (this.$ch) return this.$ch = false;
+    var chain = this.ch, queue = this.options.queue;
+    
+    if (!chain || this.$ch)
+      return this.$ch = false;
 
-    var uid = $uid(this.element), chain;
-    Fx.$ch = Fx.$ch || [];
-    chain = (Fx.$ch[uid] = Fx.$ch[uid] || []);
-
-    if (this.options.queue)
+    if (queue)
       chain.push([args, this]);
     
-    this.next = function() {
-      var next = chain.shift(); next = chain[0];
-      if (next) {
-        next[1].$ch = true;
-        next[1].start.apply(next[1], next[0]);
-      }
-      return this;
-    };
-
-    return this.options.queue && chain[0][1] !== this;
+    return queue && chain[0][1] !== this;
   },
   
+  // calls for the next effect in the queue
   next: function() {
+    var chain = this.ch, next = chain.shift(), next = chain[0];
+    if (next) {
+      next[1].$ch = true;
+      next[1].start.apply(next[1], next[0]);
+    }
+    return this;
+  },
+  
+  // unregisters this effect out of the currently running list
+  unreg: function() {
+    var currents = this.cr;
+    if (currents) currents.splice(currents.indexOf(this), 1);
     return this;
   }
-  
   
 });
 
 /**
  * There are the String unit extensions for the effects library
  *
- * Copyright (C) 2008-2009 Nikolay V. Nemshilov aka St. <nemshilov#gma-il>
+ * Copyright (C) 2008-2009 Nikolay V. Nemshilov
  */
 String.COLORS = {
   maroon:  '#800000',
@@ -3859,7 +4048,7 @@ String.COLORS = {
   brown:   '#a52a2a'
 };
 
-$ext(String.prototype, {
+String.include({
   /**
    * converts a #XXX or rgb(X, X, X) sring into standard #XXXXXX color string
    *
@@ -3907,7 +4096,7 @@ $ext(String.prototype, {
  *   The idea is inspired by the Morph effect from
  *     - MooTools  (http://mootools.net)      Copyright (C) Valerio Proietti
  *
- * Copyright (C) 2008-2009 Nikolay V. Nemshilov aka St. <nemshilov#gma-ilc-om>
+ * Copyright (C) 2008-2010 Nikolay V. Nemshilov
  */
 Fx.Morph = new Class(Fx, (function() {
   // a list of common style names to compact the code a bit
@@ -3917,13 +4106,13 @@ Fx.Morph = new Class(Fx, (function() {
   
   
   // adds variants to the style names list
-  var add_variants = function(keys, key, variants) {
+  function add_variants(keys, key, variants) {
     for (var i=0; i < variants.length; i++)
       keys.push(key + variants[i]);
   };
   
   // adjusts the border-styles
-  var check_border_styles = function(before, after) {
+  function check_border_styles(before, after) {
     for (var i=0; i < 4; i++) {
       var direction = directions[i],
         bd_style = Border + direction + Style,
@@ -3946,17 +4135,19 @@ Fx.Morph = new Class(Fx, (function() {
   };
   
   // parses the style hash into a processable format
-  var parse_style = function(values) {
-    var result = {}, re = /[\d\.\-]+/g, m;
+  function parse_style(values) {
+    var result = {}, re = /[\d\.\-]+/g, m, key, value, i;
     
-    for (var key in values) {
+    for (key in values) {
       m = values[key].match(re);
-      var value = m.map('toFloat');
+      value = m.map('toFloat');
       value.t = values[key].split(re);
       value.r = value.t[0] === 'rgb(';
-      if (value.t[0] === '' || value.r) value.t.shift();
-      for (var i=0; i < value.length; i++) {
-        value.t.splice(i*2, 0, value[i]);
+
+      if (value.t.length == 1) value.t.unshift('');
+      
+      for (i=0; i < value.length; i++) {
+        value.t.splice(i*2 + 1, 0, value[i]);
       }
       result[key] = value;
     }
@@ -3981,19 +4172,18 @@ return {
   },
   
   render: function(delta) {
-    var before, after, value, style = this.element.style;
-    for (var key in this.after) {
+    var before, after, value, style = this.element.style, key, i;
+    for (key in this.after) {
       before = this.before[key];
       after  = this.after[key];
       
-      for (var i=0; i < after.length; i++) {
+      for (i=0; i < after.length; i++) {
         value = before[i] + (after[i] - before[i]) * delta;
         if (after.r) value = Math.round(value);
-        after.t[i*2] = value;
+        after.t[i*2 + 1] = value;
       }
-      value = after.t.join('');
-      if (after.r) value = 'rgb('+value;
-      style[key] = value;
+      
+      style[key] = after.t.join('');
     }
   },
   
@@ -4008,9 +4198,9 @@ return {
         .setStyle('position:absolute;z-index:-1;visibility:hidden')
         .insertTo(this.element, 'before')
         .setWidth(this.element.sizes().x)
-        .setStyle(style);
+        .setStyle(style),
     
-    var after  = this._cloneStyle(dummy, keys);
+    after  = this._cloneStyle(dummy, keys);
     
     dummy.remove();
     
@@ -4038,12 +4228,12 @@ return {
    * @return Array of clean style keys list
    */
   _styleKeys: function(style) {
-    var keys = [], border_types = [Style, Color, Width];
+    var keys = [], border_types = [Style, Color, Width], key, i, j;
       
-    for (var key in style) {
+    for (key in style) {
       if (key.startsWith(Border))
-        for (var i=0; i < border_types.length; i++)
-          for (var j=0; j < directions.length; j++)
+        for (i=0; i < border_types.length; i++)
+          for (j=0; j < directions.length; j++)
             keys.push(Border + directions[j] + border_types[i]);
       else if (key == 'margin' || key == 'padding')
         add_variants(keys, key, directions);
@@ -4066,9 +4256,9 @@ return {
    * @return void
    */
   _cleanStyles: function(before, after) {
-    var remove = [];
+    var remove = [], key;
     
-    for (var key in after) {
+    for (key in after) {
       // checking the height/width options
       if ((key == 'width' || key == 'height') && before[key] == 'auto') {
         before[key] = this.element['offset'+key.capitalize()] + 'px';
@@ -4082,7 +4272,7 @@ return {
     check_border_styles.call(this, before, after);
     
     // cleaing up the list
-    for (var key in after) {
+    for (key in after) {
       // proprocessing colors
       if (after[key] !== before[key] && !remove.includes(key) && /color/i.test(key)) {
         if (Browser.Opera) {
@@ -4128,7 +4318,7 @@ return {
 /**
  * the elements hightlighting effect
  *
- * Copyright (C) 2008-2009 Nikolay V. Nemshilov aka St. <nemshilov#gma-ilc-om>
+ * Copyright (C) 2008-2010 Nikolay V. Nemshilov
  */
 Fx.Highlight = new Class(Fx.Morph, {
   extend: {
@@ -4164,7 +4354,7 @@ Fx.Highlight = new Class(Fx.Morph, {
 /**
  * this is a superclass for the bidirectional effects
  *
- * Copyright (C) 2008-2009 Nikolay V. Nemshilov aka St. <nemshilov#gma-ilc-om>
+ * Copyright (C) 2008-2010 Nikolay V. Nemshilov
  */
 Fx.Twin = new Class(Fx.Morph, {
   
@@ -4199,7 +4389,7 @@ Fx.Twin = new Class(Fx.Morph, {
 /**
  * the slide effects wrapper
  *
- * Copyright (C) 2008-2009 Nikolay V. Nemshilov aka St. <nemshilov#gma-ilc-om>
+ * Copyright (C) 2008-2010 Nikolay V. Nemshilov
  */
 Fx.Slide = new Class(Fx.Twin, {
   extend: {
@@ -4275,7 +4465,7 @@ Fx.Slide = new Class(Fx.Twin, {
 /**
  * The opacity effects wrapper
  *
- * Copyright (C) 2008-2009 Nikolay V. Nemshilov aka St. <nemshilov#gma-ilc-om>
+ * Copyright (C) 2008-2010 Nikolay V. Nemshilov
  */
 Fx.Fade = new Class(Fx.Twin, {
   prepare: function(how) {
@@ -4291,9 +4481,15 @@ Fx.Fade = new Class(Fx.Twin, {
 /**
  * A smooth scrolling visual effect
  *
- * Copyright (C) 2009 Nikolay V. Nemshilov aka St.
+ * Copyright (C) 2009-2010 Nikolay V. Nemshilov
  */
 Fx.Scroll = new Class(Fx, {
+  
+  initialize: function(element, options) {
+    // swapping the actual scrollable when it's the window
+    this.$super(element.prompt ? element.document[Browser.WebKit ? 'body' : 'documentElement'] : element, options);
+  },
+  
   prepare: function(value) {
     this.before = {};
     this.after  = value;
@@ -4303,8 +4499,8 @@ Fx.Scroll = new Class(Fx, {
   },
   
   render: function(delta) {
-    var before = this.before;
-    for (var key in before) {
+    var before = this.before, key;
+    for (key in before) {
       this.element['scroll' + (key == 'x' ? 'Left' : 'Top')] = before[key] + (this.after[key] - before[key]) * delta;
     }
   }
@@ -4317,7 +4513,7 @@ Fx.Scroll = new Class(Fx, {
  *   Some ideas are inspired by 
  *     - MooTools  (http://mootools.net)      Copyright (C) Valerio Proietti
  *
- * Copyright (C) 2008-2010 Nikolay V. Nemshilov aka St. <nemshilov#gma-ilc-om>
+ * Copyright (C) 2008-2010 Nikolay V. Nemshilov
  */
 Element.include((function(methods) {
   var old_hide   = methods.hide,
@@ -4325,12 +4521,22 @@ Element.include((function(methods) {
       old_scroll = methods.scrollTo;
 
 return {
+  /**
+   * Stops all the visual effects on the element
+   *
+   * @return Element this
+   */
+  stop: function() {
+    (Fx.cr[$uid(this)] || []).each('cancel');
+    return this;
+  },
 
   /**
    * hides the element with given visual effect
    *
    * @param String fx name
    * @param Object fx options
+   * @return Element this
    */
   hide: function(fx, options) {
     return fx ? this.fx(fx, ['out', options]) : old_hide.call(this);
@@ -4341,6 +4547,7 @@ return {
    *
    * @param String fx name
    * @param Object fx options
+   * @return Element this
    */
   show: function(fx, options) {
     return fx ? this.fx(fx, ['in', options]) : old_show.call(this);
@@ -4437,14 +4644,14 @@ return {
  * finds the core inclusion tag and uses it's src attribute
  * to dynamically load the olds patch
  *
- * Copyright (C) 2009 Nikolay V. Nemshilov aka St.
+ * Copyright (C) 2009-2010 Nikolay V. Nemshilov
  */
 if (!document.querySelector) {
   (function() {
-    var rigth_src_re = /(\/right)([^\/]+)$/;
-    var core_src = $A(document.getElementsByTagName('script')).map('src').compact().first('match', rigth_src_re);
+    var rigth_src_re = /(^|\/)(right)([^\/]+)$/,
+        core_src = $A(document.getElementsByTagName('script')).map('src').compact().first('match', rigth_src_re);
     if (core_src)
-      document.write('<scr'+'ipt src="'+core_src.replace(rigth_src_re, '$1-olds$2')+'"></scr'+'ipt>');
+      document.write('<scr'+'ipt src="'+core_src.replace(rigth_src_re, '$1$2-olds$3')+'"></scr'+'ipt>');
   })();
 }
  

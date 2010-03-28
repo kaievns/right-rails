@@ -1,14 +1,14 @@
 /**
  * RightJS UI Slider unit (http://rightjs.org/ui/slider)
  *
- * Copyright (C) 2009 Nikolay V. Nemshilov aka St.
+ * Copyright (C) 2009 Nikolay V. Nemshilov
  */
 if (!self.RightJS || !self.Draggable) throw "Gimme RightJS w/ DnD";
 
 /**
  * RightJS UI Slider unit
  *
- * Copyright (C) 2009 Nikolay V. Nemshilov aka St.
+ * Copyright (C) 2009 Nikolay V. Nemshilov
  */
 var Slider = new Class(Observer, {
   extend: {
@@ -284,7 +284,7 @@ var Slider = new Class(Observer, {
 /**
  * Document onReady hook for sliders
  *
- * Copyright (C) 2009 Nikolay V. Nemshilov aka St.
+ * Copyright (C) 2009 Nikolay V. Nemshilov
  */
 document.onReady(function() { Slider.rescan(); });
 

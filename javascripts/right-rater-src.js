@@ -3,14 +3,14 @@
  * 
  * Visit http://rightjs.org/ui/rater for details
  *
- * Copyright (C) 2009 Nikolay V. Nemshilov aka St.
+ * Copyright (C) 2009-2010 Nikolay V. Nemshilov
  */
 if (!self.RightJS) throw "Gimme RightJS";
 
 /**
  * The Rating widget
  *
- * Copyright (C) 2009 Nikolay V. Nemshilov aka St.
+ * Copyright (C) 2009-2010 Nikolay V. Nemshilov
  */
 var Rater = new Class(Observer, {
   extend: {
@@ -28,13 +28,9 @@ var Rater = new Class(Observer, {
       param:         'rate', // the value param name 
       Xhr:           null    // additional Xhr options
     },
-    
-    // searches and initializes rating units
-    rescan: function(scope) {
-      ($(scope)||document).select('div.right-rater').each(function(element) {
-        if (!element._rater) new Rater(element);
-      });
-    }
+        
+    // DEPRECATED: searches and initializes rating units
+    rescan: function(scope) {}
   },
   
   /**
@@ -50,6 +46,9 @@ var Rater = new Class(Observer, {
     this.$super(isHash(args.last()) ? args.last() : this.element ? eval('('+this.element.get('data-rater-options')+')') : null);
     
     if (!this.element) this.element = this.build();
+    
+    if (!this.options.value)
+      this.options.value = this.element.select('.right-rater-glow').length;
     
     this.element._rater = this.init();
   },
@@ -241,8 +240,17 @@ var Rater = new Class(Observer, {
 /**
  * Document on-load trigger for units auto-discovery
  *
- * Copyright (C) 2009 Nikolay V. Nemshilov aka St.
+ * Copyright (C) 2009-2010 Nikolay V. Nemshilov
  */
-document.onReady(function() { Rater.rescan(); });
+document.onMouseover(function(event) {
+  var target = event.target, element = [target].concat(target.parents()).first('hasClass', 'right-rater');
+  
+  if (element) {
+    var rater = element._rater || new Rater(element);
+    if (target.parentNode === element)
+      target.fire('mouseover');
+  }
+  
+});
 
-document.write("<style type=\"text/css\">div.right-rater,div.right-rater div{margin:0;padding:0;background:none;border:none;display:inline-block;*display:inline;*zoom:1;font-family:Arial;font-size:110%}div.right-rater{width:6em;vertical-align:middle}div.right-rater div{width:1em;height:1em;line-height:1em;text-align:center;cursor:pointer;color:#888}div.right-rater div.right-rater-glow{color:brown;text-shadow:#666 .05em .05em .15em}div.right-rater-disabled div{cursor:default}</style>");
+document.write("<style type=\"text/css\">div.right-rater,div.right-rater div{margin:0;padding:0;background:none;border:none;display:inline-block;*display:inline;*zoom:1;font-family:Arial;font-size:110%}div.right-rater{width:6em;height:1em;vertical-align:middle}div.right-rater div{float:left;width:1em;height:1em;line-height:1em;text-align:center;cursor:pointer;color:#888}div.right-rater div.right-rater-glow{color:brown;text-shadow:#666 .05em .05em .15em}div.right-rater-disabled div{cursor:default}</style>");

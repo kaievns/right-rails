@@ -1,7 +1,7 @@
 /**
  * The JSON encode/decode feature
  *
- * Copyright (C) 2009 Nikolay V. Nemshilov aka St. <nemshilov#gma-il>
+ * Copyright (C) 2009-2010 Nikolay V. Nemshilov
  */
 
 /**
@@ -11,7 +11,7 @@
  *   Based on the original JSON escaping implementation
  *     http://www.json.org/json2.js
  *
- * @copyright (C) 2009-2010 Nikolay V. Nemshilov aka St.
+ * @copyright (C) 2009-2010 Nikolay V. Nemshilov
  */
 var JSON = (function(native_JSON) {
   // see the original JSON decoder implementation for descriptions http://www.json.org/json2.js
@@ -34,7 +34,7 @@ var JSON = (function(native_JSON) {
   
   
   // converts the value into a JSON string
-  var stringify = native_JSON.stringify || function(value) {
+  var stringify = native_JSON ? native_JSON.stringify : function(value) {
     if (value === null) {
       return 'null';
     } else if (value.toJSON) {
@@ -51,13 +51,13 @@ var JSON = (function(native_JSON) {
             return '['+value.map(JSON.stringify).join(',')+']';
             
           else if (value instanceof Date)
-            return value.getUTCFullYear()      + '-' +
-              zerofy(value.getUTCMonth() + 1)  + '-' +
-              zerofy(value.getUTCDate())       + 'T' +
-              zerofy(value.getUTCHours())      + ':' +
-              zerofy(value.getUTCMinutes())    + ':' +
-              zerofy(value.getUTCSeconds())    + '.' +
-              zerofy(value..getMilliseconds()) + 'Z' ;
+            return value.getUTCFullYear()     + '-' +
+              zerofy(value.getUTCMonth() + 1) + '-' +
+              zerofy(value.getUTCDate())      + 'T' +
+              zerofy(value.getUTCHours())     + ':' +
+              zerofy(value.getUTCMinutes())   + ':' +
+              zerofy(value.getUTCSeconds())   + '.' +
+              zerofy(value.getMilliseconds()) + 'Z' ;
           
           else {
             var result = [];
@@ -71,7 +71,7 @@ var JSON = (function(native_JSON) {
   };
   
   // parses a json string
-  var parse = native_JSON.parse || function(string) {
+  var parse = native_JSON ? native_JSON.parse : function(string) {
     if (isString(string) && string) {
       // getting back the UTF-8 symbols
       string = string.replace(cx, function (a) {
@@ -89,7 +89,6 @@ var JSON = (function(native_JSON) {
     throw "JSON parse error: "+string;
   };
   
-  
 return {
   
   stringify: stringify,
@@ -106,7 +105,7 @@ return {
  * were automatically exported/imported into JSON strings
  * and it allowed transparent objects and arrays saving
  *
- * @copyright (C) 2009 Nikolay V. Nemshilov aka St.
+ * @copyright (C) 2009-2010 Nikolay V. Nemshilov
  */
 if (window['Cookie']) {
   (function(Cookie_prototype) {
@@ -115,11 +114,11 @@ if (window['Cookie']) {
         
     $ext(Cookie_prototype, {
       set: function(value) {
-        return old_set.call(this, JSON.encode(value));
+        return old_set.call(this, JSON.stringify(value));
       },
       
       get: function() {
-        return JSON.decode(old_get.call(this));
+        return JSON.parse(old_get.call(this));
       }
     });
   })(Cookie.prototype);

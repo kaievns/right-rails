@@ -1,7 +1,7 @@
 /**
  * Inline editor feature for RightJS (http://rightjs.org/ui/in-edit)
  *
- * Copyright (C) 2009 Nikolay V. Nemshilov
+ * Copyright (C) 2009-2010 Nikolay V. Nemshilov
  */
 
 /**
@@ -68,7 +68,7 @@ var InEdit = new Class(Observer, {
       this.submit.show();
       
       if (this.options.toggle)
-        this.options.toggle.hide();
+        $(this.options.toggle).hide();
     }
     
     if (this.options.type != 'file')
@@ -146,8 +146,8 @@ var InEdit = new Class(Observer, {
   buildField: function() {
     return (this.options.type == 'textarea' ? $E('textarea') : 
       $E('input', {type: this.options.type}))
-      .addClass('right-in-edit-field')
-      .set('name', this.options.name);
+        .addClass('right-in-edit-field')
+        .set('name', this.options.name);
   },
   
   buildSpinner: function() {
@@ -157,7 +157,9 @@ var InEdit = new Class(Observer, {
     });
     
     (function() {
-      spinner.insertBefore(spinner.lastChild, spinner.firstChild)
+      if (spinner.firstChild) {
+        spinner.insertBefore(spinner.lastChild, spinner.firstChild);
+      }
     }).periodical(400);
     
     return spinner;
@@ -168,7 +170,7 @@ var InEdit = new Class(Observer, {
 /**
  * The document hooks for in-edit form
  *
- * Copyright (C) Nikolay V. Nemshilov
+ * Copyright (C) 2010 Nikolay V. Nemshilov
  */
 document.onKeydown(function(event) {
   if (event.keyCode == 27 && InEdit.current)
@@ -178,9 +180,9 @@ document.onKeydown(function(event) {
 /**
  * The element level inline editor extension
  *
- * Copyright (C) 2009 Nikolay V. Nemshilov
+ * Copyright (C) 2009-2010 Nikolay V. Nemshilov
  */
-Element.addMethods({
+Element.include({
   /**
    * Triggers an inline-editor feature on the element
    *

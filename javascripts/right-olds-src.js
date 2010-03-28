@@ -4,37 +4,31 @@
  * The library released under terms of the MIT license
  * Visit http://rightjs.org for more details
  *
- * Copyright (C) 2008-2009 Nikolay V. Nemshilov aka St.
+ * Copyright (C) 2008-2010 Nikolay V. Nemshilov
  */
 /**
  * Old IE browser hacks
  *
  *   Keep them in one place so they were more compact
  *
- * Copyright (C) 2009-2010 Nikolay V. Nemshilov aka St.
+ * Copyright (C) 2009-2010 Nikolay V. Nemshilov
  */
 if (Browser.OLD) {
   // loads DOM element extensions for selected elements
   $ = (function(old_function) {
     return function(id) {
       var element = old_function(id);
+      
+      // old IE browses match both, ID and NAME
+      if (element !== null && isString(id) && element.id !== id) 
+        element = $$('#'+id)[0];
+        
       return element ? Element.prepare(element) : element;
     }
   })($);
   
   
   $ext(document, {
-/* TODO Not sure about this thing for now
-        It's kinda makes sense, but it will perform
-        double check in node search operations
-        
-    getElementById: (function(old_method) {
-      return function(id) {
-        return Element.prepare(old_method(id));
-      };
-    })(document.getElementById),
- */
-    
     /**
      * Overloading the native method to extend the new elements as it is
      * in all the other browsers
@@ -62,7 +56,7 @@ if (Browser.OLD) {
       if (element && element.tagName && !element.set) {
         $ext(element, Element.Methods, true);
 
-        if (self['Form']) {
+        if (window.Form) {
           switch(element.tagName) {
             case 'FORM':
               Form.ext(element);
@@ -95,7 +89,7 @@ if (Browser.OLD) {
 /**
  * Konqueror browser fixes
  *
- * Copyright (C) 2009-2010 Nikolay V. Nemshilov aka St.
+ * Copyright (C) 2009-2010 Nikolay V. Nemshilov
  */
 
 /**
@@ -124,6 +118,13 @@ if (!$E('p').getBoundingClientRect) {
       return {x: left, y: top};
     }
   });
+  
+  // Konq doesn't have the Form#elements reference
+  Form.include({
+    getElements: function() {
+      return this.select('input,select,textarea,button');
+    }
+  })
 }
 
 
@@ -139,7 +140,7 @@ if (!$E('p').getBoundingClientRect) {
  *   - Sizzle    (http://sizzlejs.org)      Copyright (C) John Resig
  *   - MooTools  (http://mootools.net)      Copyright (C) Valerio Proietti
  *
- * Copyright (C) 2009-2010 Nikolay V. Nemshilov aka St.
+ * Copyright (C) 2009-2010 Nikolay V. Nemshilov
  */
 if (!document.querySelector) {
   Element.include((function() {
@@ -297,7 +298,7 @@ if (!document.querySelector) {
      * @return Object atom matcher
      */
     var atoms_cache = {};
-    var build_atom = function(atom) {
+    function build_atom(atom) {
       if (!atoms_cache[atom]) {
         //
         // HACK HACK HACK
@@ -346,11 +347,7 @@ if (!document.querySelector) {
         //       a list of elements in a single call
         //
         if (i || c.length || a || p) {
-          var filter = 'function(y){'+
-            'var e,r=[];'+
-            'for(var z=0,x=y.length;z<x;z++){'+
-              'e=y[z];_f_'+
-            '}return r}';
+          var filter = 'function(y){var e,r=[];for(var z=0,x=y.length;z<x;z++){e=y[z];_f_}return r}';
           var patch_filter = function(code) {
             filter = filter.replace('_f_', code + '_f_');
           };
@@ -360,31 +357,12 @@ if (!document.querySelector) {
           
           // adding the classes matching code
           if (c.length) patch_filter(
-            'if(e.className){'+
-              'var n=e.className.split(" ");'+
-              'if(n.length==1&&c.indexOf(n[0])==-1)continue;'+
-              'else{'+
-                'for(var i=0,l=c.length,b=false;i<l;i++)'+
-                  'if(n.indexOf(c[i])==-1){'+
-                    'b=true;break;}'+
-                    
-              'if(b)continue;}'+
-            '}else continue;'
+            'if(e.className){var n=e.className.split(" ");if(n.length==1&&c.indexOf(n[0])==-1)continue;else{for(var i=0,l=c.length,b=false;i<l;i++)if(n.indexOf(c[i])==-1){b=true;break;}if(b)continue;}}else continue;'
           );
           
           // adding the attributes matching conditions
           if (a) patch_filter(
-            'var p,o,v,b=false;'+
-            'for (var k in a){p=e.getAttribute(k)||"";o=a[k].o;v=a[k].v;'+
-              'if('+
-                '(o=="="&&p!=v)||'+
-                '(o=="*="&&!p.includes(v))||'+
-                '(o=="^="&&!p.startsWith(v))||'+
-                '(o=="$="&&!p.endsWith(v))||'+
-                '(o=="~="&&!p.split(" ").includes(v))||'+
-                '(o=="|="&&!p.split("-").includes(v))'+
-              '){b=true;break;}'+
-            '}if(b){continue;}'
+            'var p,o,v,b=false;for (var k in a){p=e.getAttribute(k)||"";o=a[k].o;v=a[k].v;if((o=="="&&p!=v)||(o=="*="&&!p.includes(v))||(o=="^="&&!p.startsWith(v))||(o=="$="&&!p.endsWith(v))||(o=="~="&&!p.split(" ").includes(v))||(o=="|="&&!p.split("-").includes(v))){b=true;break;}}if(b){continue;}'
           );
           
           // adding the pseudo matchers check
@@ -393,7 +371,7 @@ if (!document.querySelector) {
             patch_filter('if(!s[p].call(e,v,s))continue;');
           }
 
-          desc.filter = eval('({f:'+ filter.replace('_f_', 'r.push(e)') +'})').f;
+          desc.filter = eval('['+ filter.replace('_f_', 'r.push(e)') +']')[0];
         }
         
         atoms_cache[atom] = desc;
@@ -409,7 +387,7 @@ if (!document.querySelector) {
      * @return Function selector
      */
     var tokens_cache = {};
-    var build_selector = function(rule) {
+    function build_selector(rule) {
       var rule_key = rule.join('');
       if (!tokens_cache[rule_key]) {
         for (var i=0; i < rule.length; i++) {
@@ -475,7 +453,7 @@ if (!document.querySelector) {
      * @return Array of selectors
      */
     var selectors_cache = {}, chunks_cache = {};
-    var split_rule_to_selectors = function(css_rule) {
+    function split_rule_to_selectors(css_rule) {
       if (!selectors_cache[css_rule]) {
         chunker.lastIndex = 0;
         
@@ -511,7 +489,7 @@ if (!document.querySelector) {
      * @param String raw css-rule
      * @return Array search result
      */
-    var select_all = function(element, css_rule) {
+    function select_all(element, css_rule) {
       var selectors = split_rule_to_selectors(css_rule), result = [];
       for (var i=0, length = selectors.length; i < length; i++)
         result = result.concat(selectors[i](element));
@@ -541,7 +519,7 @@ if (!document.querySelector) {
     $ext(document, dom_extension);
     
     // patching the $$ function to make it more efficient
-    self.$$ = function(css_rule) {
+    window.$$ = function(css_rule) {
       return select_all(document, css_rule || '*');
     };
     

@@ -1,13 +1,13 @@
 /**
  * Additional visual effects module
  *
- * Copyright (C) 2008-2009 Nikolay V. Nemshilov aka St. <nemshilov#gma-il>
+ * Copyright (C) 2008-2010 Nikolay V. Nemshilov
  */
 if (!self.Fx) throw "RightJS Fx is missing";
 /**
  * The basic move visual effect
  *
- * @copyright (C) 2009 Nikolay V. Nemshilov aka St.
+ * @copyright (C) 2009-2010 Nikolay V. Nemshilov
  */
 Fx.Move = new Class(Fx.Morph, {
   extend: {
@@ -75,7 +75,7 @@ Fx.Move = new Class(Fx.Morph, {
 /**
  * Zoom visual effect, graduately zoom and element in or out
  *
- * @copyright (C) 2009 Nikolay V. Nemshilov aka St.
+ * @copyright (C) 2009-2010 Nikolay V. Nemshilov
  */
 Fx.Zoom = new Class(Fx.Move, {
   PROPERTIES: $w('width height lineHeight paddingTop paddingRight paddingBottom paddingLeft fontSize borderWidth'),
@@ -189,7 +189,7 @@ Fx.Zoom = new Class(Fx.Move, {
 /**
  * Bounce visual effect, slightly moves an element forward and back
  *
- * @copyright (C) 2009 Nikolay V. Nemshilov aka St.
+ * @copyright (C) 2009 Nikolay V. Nemshilov
  */
 Fx.Bounce = new Class(Fx, {
   extend: {
@@ -234,7 +234,7 @@ Fx.Bounce = new Class(Fx, {
 /**
  * run out and run in efffects
  *
- * Copyright (C) 2009 Nikolay V. Nemshilov aka St.
+ * Copyright (C) 2009-2010 Nikolay V. Nemshilov
  */
 Fx.Run = new Class(Fx.Move, {
   extend: {
@@ -276,7 +276,7 @@ Fx.Run = new Class(Fx.Move, {
 /**
  * The puff visual effect
  *
- * Copyright (C) Nikolay V. Nemshilov aka St.
+ * Copyright (C) 2009-2010 Nikolay V. Nemshilov
  */
 Fx.Puff = new Class(Fx.Zoom, {
   extend: {
@@ -326,7 +326,7 @@ Fx.Puff = new Class(Fx.Zoom, {
 /**
  * Handles the to-class and from-class visual effects
  *
- * Copyright (C) Nikolay V. Nemshilov aka St.
+ * Copyright (C) 2009-2010 Nikolay V. Nemshilov
  */
 Fx.CSS = new Class(Fx.Morph, {
   STYLES: $w('width height lineHeight opacity border padding margin color fontSize background top left right bottom'),
@@ -362,9 +362,9 @@ Fx.CSS = new Class(Fx.Morph, {
 /**
  * Element shortcuts for the additional effects
  *
- * @copyright (C) 2009 Nikolay V. Nemshilov aka St.
+ * @copyright (C) 2009-2010 Nikolay V. Nemshilov
  */
-Element.addMethods({
+Element.include({
   /**
    * The move visual effect shortcut
    *
