@@ -41,14 +41,6 @@ describe RightRails::Helpers::Basic do
     rightjs_scripts
   end
   
-  it "should use the source scripts in the development environment" do
-    should_receive(:javascript_include_tag).with(*%w{right-src right/rails-src})
-    
-    RAILS_ENV = 'development'
-    
-    rightjs_scripts
-  end
-  
   it "should build a script-generator for the rjs method" do
     rjs.should be_a(RightRails::JavaScriptGenerator)
   end
@@ -69,5 +61,21 @@ describe RightRails::Helpers::Basic do
     rjs_tag do |page|
       page.boo.boo.boo
     end.to_s.should == 'javascript_tag'
+  end
+  
+  describe "in the development mode" do
+    before :all do
+      Kernel::RAILS_ENV = 'development'
+    end
+    
+    after :all do 
+      Kernel::RAILS_ENV = 'production'
+    end
+    
+    it "should use the source scripts" do
+      should_receive(:javascript_include_tag).with(*%w{right-src right/rails-src})
+
+      rightjs_scripts
+    end
   end
 end

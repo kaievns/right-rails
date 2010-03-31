@@ -23,7 +23,7 @@ module RightRails::Helpers::Basic
     end
     
     # use the sources in the development environment
-    if defined? RAILS_ENV && RAILS_ENV == 'development'
+    if defined?(RAILS_ENV) && RAILS_ENV == 'development'
       scripts.collect!{ |name| name + '-src' }
     end
     

@@ -6,9 +6,12 @@ module RightRails::Helpers::Misc
   # Just a simple flashes generator, might be replaced in the application
   #
   def flashes
-    content_tag(:div, flash.collect{ |key, text|
+    items = flash.collect{ |key, text|
       content_tag(:div, text, :class => key)
-    }.sort, :id => :flashes, :style => (flash.empty? ? 'display: none' : nil))
+    }.sort.join("")
+    
+    content_tag(:div, items.send(''.respond_to?(:html_safe) ? :html_safe : :to_s),
+      :id => :flashes, :style => (flash.empty? ? 'display: none' : nil))
   end
   
   
@@ -33,10 +36,12 @@ module RightRails::Helpers::Misc
     escape    = options[:escape].nil? ? true : options[:escape]
     field     = args.first
     
-    content_tag :ul, entries.collect{ |entry|
+    items     = entries.collect{ |entry|
       entry = entry.send(field) if field
       content_tag :li, highlight ? highlight(entry, highlight) : escape ? h(entry) : entry
-    }
+    }.join("")
+    
+    content_tag :ul, items.send(''.respond_to?(:html_safe) ? :html_safe : :to_s)
   end
   
   
