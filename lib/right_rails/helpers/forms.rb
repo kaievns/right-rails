@@ -119,7 +119,7 @@ module RightRails::Helpers::Forms
   #
   def rater_display(value, options={})
     content_tag :div, (0...(options[:size] || 5)).to_a.collect{ |i|
-      content_tag :div, '★', :class => i < value ? 'right-rater-glow' : nil
+      content_tag :div, '&#9733;', :class => i < value ? 'right-rater-glow' : nil
     }.join(''), :class => 'right-rater right-rater-disabled'
   end
   

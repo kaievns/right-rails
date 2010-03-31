@@ -46,6 +46,6 @@ describe RightRails::Helpers::Forms do
   
   it "should generate the #rater_display tag" do
     rater_display(4).should ==
-      %Q{<div class="right-rater right-rater-disabled"><div class="right-rater-glow">★</div><div class="right-rater-glow">★</div><div class="right-rater-glow">★</div><div class="right-rater-glow">★</div><div>★</div></div>}
+      %Q{<div class="right-rater right-rater-disabled"><div class="right-rater-glow">&#9733;</div><div class="right-rater-glow">&#9733;</div><div class="right-rater-glow">&#9733;</div><div class="right-rater-glow">&#9733;</div><div>&#9733;</div></div>}
   end
 end
