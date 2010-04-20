@@ -67,6 +67,7 @@ protected
     direction
     tags
     method
+    Xhr
     idParam
     posParam
     parseId

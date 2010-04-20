@@ -10,9 +10,12 @@ module RightRails::Helpers::Forms
     showButtons
     minDate
     maxDate
+    listYears
     firstDay
     numberOfMonths
-    listYears
+    fxName
+    fxDuration
+    hideOnPick
   }
   
   AUTOCOMPLETER_OPTION_KEYS = %w{
