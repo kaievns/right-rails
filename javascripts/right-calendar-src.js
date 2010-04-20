@@ -31,6 +31,8 @@ var Calendar = new Class(Observer, {
       twentyFourHour: null,   // null for automatic, or true|false to enforce
       listYears:      false,  // show/hide the years listing buttons
       
+      hideOnPick:     false,  // hides the popup when the user changes a day
+      
       cssRule:        '[rel^=calendar]' // css rule for calendar related elements
     },
     
@@ -82,7 +84,7 @@ var Calendar = new Class(Observer, {
   initialize: function(options) {
     this.$super(options);
     
-    this.element = $E('div', {'class': 'right-calendar'});
+    this.element = $E('div', {'class': 'right-calendar', calendar: this});
     this.build().connectEvents().setDate(new Date());
   },
   
@@ -199,6 +201,15 @@ var Calendar = new Class(Observer, {
   insertTo: function(element, position) {
     this.element.addClass('right-calendar-inline').insertTo(element, position);
     return this;
+  },
+  
+  /**
+   * Checks if the calendar is inlined
+   *
+   * @return boolean check
+   */
+  inlined: function() {
+    return this.element.hasClass('right-calendar-inline');
   }
 });
 
@@ -445,8 +456,12 @@ Calendar.include({
    * @return Calendar this
    */
   select: function(date) {
-    this.date = date;
-    return this.fire('select', date);
+    this.fire('select', this.date = date);
+    
+    if (this.options.hideOnPick)
+      this.done();
+    
+    return this;
   },
   
   /**
@@ -455,7 +470,7 @@ Calendar.include({
    * @return Calendar this
    */
   done: function() {
-    if (!this.element.hasClass('right-calendar-inline'))
+    if (!this.inlined())
       this.hide();
     return this.fire('done', this.date);
   },
@@ -534,10 +549,10 @@ Calendar.include({
     
     // connecting the time picker events
     if (this.hours) {
-      this.hours.on('change', this.setTime.bind(this));
-      this.minutes.on('change', this.setTime.bind(this));
+      this.hours.onChange(this.setTime.bind(this));
+      this.minutes.onChange(this.setTime.bind(this));
       if (!this.options.twentyFourHour) {
-        this.meridian.on('change', this.setTime.bind(this));
+        this.meridian.onChange(this.setTime.bind(this));
       }
     }
     
@@ -548,7 +563,14 @@ Calendar.include({
     }
     
     // blocking all the events from the element
-    this.element.onClick(function(e) {e.stop();});
+    this.element.onMousedown(function(e) { e.stopPropagation(); })
+      .onClick(function(event) {
+        event.stop();
+        if (this.timer) {
+          this.timer.cancel();
+          this.timer = null;
+        }
+      }.bind(this));
     
     return this;
   },
@@ -713,10 +735,7 @@ Calendar.include({
   parse: function(string) {
     var date;
     
-    if (string instanceof Date || Date.parse(string)) {
-      date = new Date(string);
-      
-    } else if (isString(string) && string) {
+    if (isString(string) && string) {
       var tpl = RegExp.escape(this.options.format);
       var holders = tpl.match(/%[a-z]/ig).map('match', /[a-z]$/i).map('first').without('%');
       var re  = new RegExp('^'+tpl.replace(/%p/i, '(pm|PM|am|AM)').replace(/(%[a-z])/ig, '(.+?)')+'$');
@@ -762,11 +781,11 @@ Calendar.include({
         
         date = new Date(year, month, date, hour, minute, second);
       }
-    } else {
-      date = new Date();
+    } else if (string instanceof Date || Date.parse(string)) {
+      date = new Date(string);
     }
     
-    return isNaN(date.getTime()) ? new Date : date;
+    return (!date || isNaN(date.getTime())) ? new Date : date;
   },  
   
   /**
@@ -829,7 +848,7 @@ Calendar.include({
   var show_calendar = function(event) {
     var calendar = Calendar.find(Event.ext(event));
     
-    if (calendar) {
+    if (calendar && Calendar.current != calendar) {
       var input     = event.target;
       var rule      = Calendar.Options.cssRule.split('[').last();
       var key       = rule.split('=').last().split(']').first();
@@ -848,20 +867,17 @@ Calendar.include({
   // on-click handler
   var on_mousedown = function(event) {
     show_calendar(event);
-    
-    var target = event.target;
-    if ([target].concat(target.parents()).first('hasClass', 'right-calendar')) event.stop();
   };
   
   var on_click = function(event) {
     var target = event.target;
-    
     if (Calendar.find(event)) {
       if (target.tagName == 'A')
         event.stop();
     } else if (Calendar.current) {
-      if (![target].concat(target.parents()).first('hasClass', 'right-calendar'))
+      if (![target].concat(target.parents()).first('hasClass', 'right-calendar')) {
         Calendar.current.hide();
+      }
     }
   };
   
@@ -874,8 +890,13 @@ Calendar.include({
   var on_blur = function(event) {
     var calendar = Calendar.find(Event.ext(event));
     
-    if (calendar)
-      calendar.hide();
+    if (calendar) {
+      // We delay hiding of the calendar block to give calendar's onclick handler
+      // a chance to cancel hiding by killing the timer, as a workaround for IE issues
+      calendar.timer = (
+        function() { this.hide(); }.bind(calendar)
+      ).delay(200);
+    }
   };
   
   var on_keydown = function(event) {

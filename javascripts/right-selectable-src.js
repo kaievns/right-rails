@@ -8,7 +8,7 @@ if (!self.RightJS) throw "Gimme RightJS";
 /**
  * Selectable unit main script
  *
- * Copyright (C) 2009 Nikolay V. Nemshilov
+ * Copyright (C) 2009-2010 Nikolay V. Nemshilov
  */
 var Selectable = new Class(Observer, {
   extend: {
@@ -26,6 +26,8 @@ var Selectable = new Class(Observer, {
       
       update:     null,    // a field to be assigned to
       parseIds:   false,   // if it should parse integer ids out of the keys
+      
+      limit:      null,    // put some number if you'd like to limit the number of selected items
       
       hCont  :   '&bull;', // single-selectable handle content
       
@@ -55,21 +57,24 @@ var Selectable = new Class(Observer, {
    * @param Object options hash
    */
   initialize: function() {
-    var args = $A(arguments);
+    var args = $A(arguments), selectbox;
     
     if (args[0] && !isHash(args[0])) this.element = $(args[0]);
     this.$super(isHash(args.last()) ? args.last() : this.element ?
       eval('('+this.element.get('data-selectable-options')+')') : null);
-      
+    
     if (!this.element)
       this.element = this.build();
-    else if (this.element.tagName == 'SELECT') {
+    else if ((selectbox = this.element.tagName == 'SELECT')) {
       this.selectbox = this.harvestOptions(this.element);
       this.element   = this.build().insertTo(this.selectbox, 'before');
-      this.assignTo(this.hideOriginal(this.selectbox));
+      
     }
     
     this.element._selectable = this.init();
+    
+    if (selectbox)
+      this.assignTo(this.hideOriginal(this.selectbox));
   },
   
   // standard descructor
@@ -98,11 +103,7 @@ var Selectable = new Class(Observer, {
     // resetting the selections
     this.items.each('removeClass', this.selectedClass);
     
-    // selecting the value
-    var items = this.mapEnabled(value).each('addClass', this.selectedClass);
-    if (this.isSingle) this.showItem(items[0]);
-    
-    return this.calcValue();
+    return this.select(value);
   },
   
   /**
@@ -111,7 +112,14 @@ var Selectable = new Class(Observer, {
    * @return Array of selectees
    */
   getValue: function() {
-    return this.value;
+    if (this.isSingle) {
+      var item  = this.items.first('hasClass', this.selectedClass);
+      return item ? this.itemValue(item) : null;
+    } else {
+      return this.items.filter('hasClass', this.selectedClass).map(function(item) {
+        return this.itemValue(item);
+      }, this);
+    }
   },
   
   /**
@@ -151,11 +159,11 @@ var Selectable = new Class(Observer, {
     }.curry(element);
     
     if ($(element)) {
-      assign(this.value);
+      assign(this.getValue());
       connect(this);
     } else {
       document.onReady(function() {
-        assign(this.value);
+        assign(this.getValue());
         connect(this);
       }.bind(this));
     }
@@ -209,15 +217,26 @@ var Selectable = new Class(Observer, {
    * @return Selectable this
    */
   select: function(keys) {
-    var items = this.mapEnabled(keys);
+    var items = this.mapEnabled(keys), selected_class = this.selectedClass;
     
     if (this.isSingle && items) {
-      this.items.each('removeClass', this.selectedClass);
+      this.items.each('removeClass', selected_class);
       items = [items[0]];
     }
     
+    // applying the selection limit if ncessary
+    if (!this.isSingle && this.options.limit) {
+      var selected = this.items.filter('hasClass', selected_class), clean = [];
+      while (items.length && (selected.length + clean.length) < this.options.limit) {
+        var item = items.shift();
+        if (!selected.include(item))
+          clean.push(item);
+      }
+      items = clean;
+    }
+    
     items.each(function(item) {
-      this.fire('select', item.addClass(this.selectedClass));
+      this.fire('select', item.addClass(selected_class));
     }, this);
     
     return this;
@@ -285,7 +304,16 @@ var Selectable = new Class(Observer, {
     this.onClick     = this.click.bind(this);
     
     this.value = null;
-    this.refresh().onSelect('calcValue').onUnselect('calcValue');
+    
+    var on_change = function() {
+      var value = this.getValue();
+      if (value != this.value) {
+        this.value = value;
+        this.fire('change', value, this);
+      }
+    }.bind(this);
+    
+    this.refresh().onSelect(on_change).onUnselect(on_change);
     
     if (this.isSingle)         this.onSelect('showItem');
     if (this.options.disabled) this.disable(this.options.disabled);
@@ -304,25 +332,6 @@ var Selectable = new Class(Observer, {
         this.refresh();
         return result;
       }.bind(this);
-    }
-    
-    return this;
-  },
-  
-  // calculates the value out of the selected items
-  calcValue: function() {
-    if (this.isSingle) {
-      var item  = this.items.first('hasClass', this.selectedClass);
-      var value = item ? this.itemValue(item) : null;
-    } else {
-      var value = this.items.filter('hasClass', this.selectedClass).map(function(item) {
-        return this.itemValue(item);
-      }, this);
-    }
-    
-    if (value != this.value) {
-      this.value = value;
-      this.fire('change', value, this);
     }
     
     return this;
@@ -362,7 +371,7 @@ var Selectable = new Class(Observer, {
   
   // returns matching items or all of them if there's no key
   mapOrAll: function(keys) {
-    return keys ? this.map(keys) : this.items;
+    return defined(keys) ? this.map(keys) : this.items;
   },
   
   // maps and filters only enabled items
@@ -515,7 +524,7 @@ var Selectable = new Class(Observer, {
       options.disabled = [];
       
       $A(box.getElementsByTagName('OPTION')).each(function(option, index) {
-        options.options[option.get('value') || option.innerHTML] = option.innerHTML;
+        options.options[$(option).get('value') || option.innerHTML] = option.innerHTML;
         
         if (option.selected) options.selected.push(index);
         if (option.disabled) options.disabled.push(index);
