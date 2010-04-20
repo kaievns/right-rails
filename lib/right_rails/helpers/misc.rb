@@ -54,12 +54,14 @@ module RightRails::Helpers::Misc
   #
   #   <%= link_to_lightbox image_tag('/image.thmb'), '/image.full', :roadtrip => true %>
   #
-  def link_to_lightbox(name, url={}, html_options=nil, &block)
+  def link_to_lightbox(name, url={}, html_options={}, &block)
     rightjs_include_module 'lightbox'
     
-    html_options ||= {}
     html_options[:rel] = 'lightbox'
     html_options[:rel] << "[roadtrip]" if html_options.delete(:roadtrip)
+    
+    lightbox_options = rightjs_unit_options(html_options, LIGHTBOX_OPTION_KEYS)
+    html_options['data-lightbox-options'] = lightbox_options unless lightbox_options == '{}'
     
     link_to name, url, html_options, &block
   end
@@ -152,6 +154,7 @@ module RightRails::Helpers::Misc
   
   TABS_OPTION_KEYS = %w{
     idPrefix
+    tabsElement
     resizeFx
     resizeDuration
     scrollTabs
@@ -159,10 +162,23 @@ module RightRails::Helpers::Misc
     selected
     disabled
     closable
+    loop
+    loopPause
     url
     cache
     Xhr
     Cookie
+  }
+  
+  LIGHTBOX_OPTION_KEYS = %w{
+    endOpacity
+    fxDuration
+    hideOnEsc
+    hideOnOutClick
+    showCloseButton
+    blockContent
+    mediaWidth
+    mediaHeight
   }
   
 end

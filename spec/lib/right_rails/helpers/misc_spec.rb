@@ -71,6 +71,11 @@ describe RightRails::Helpers::Misc do
       link_to_lightbox('boo', 'boo', :roadtrip => true).should ==
         %Q{<a href="boo" rel="lightbox[roadtrip]">boo</a>}
     end
+    
+    it "should generate lightbox with options" do
+      link_to_lightbox('boo', 'boo', :hide_on_out_click => false).should ==
+        %Q{<a href="boo" data-lightbox-options="{hideOnOutClick:false}" rel="lightbox">boo</a>}
+    end
   end
   
   describe "#tabs generator" do
