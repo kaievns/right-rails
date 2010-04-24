@@ -130,8 +130,7 @@ var Selectable = new Class(Observer, {
    * @return Selectable this
    */
   insertTo: function(element, position) {
-    this.element.insertTo(element, position);
-    if (this.isSingle) this.container.insertTo(this.element, 'before');
+    this[this.isSingle ? 'container' : 'element'].insertTo(element, position);
     return this;
   },
   
@@ -469,24 +468,36 @@ var Selectable = new Class(Observer, {
   // builds a container for a single-select
   buildSingle: function() {
     this.container = $E('div', {'class': this.containerClass})
-      .insert([$E('div', {'html': this.options.hCont, 'class': 'right-selectable-handle'}), $E('ul')])
-      .insertTo(this.element, 'before')
-      .onClick(this.showList.bind(this));
+      .insert([
+        $E('div', {'html': this.options.hCont, 'class': 'right-selectable-handle'}),
+        $E('ul', {'class': 'right-selectable-display'})
+      ])
+      .insertTo(this.element, 'instead')
+      .insert(this.element)
+      .onClick(this.toggleList.bind(this));
       
     document.onClick(this.hideList.bind(this));
     
     return this;
   },
   
+  // toggles the single-selects list
+  toggleList: function(event) {
+    event.stop();
+    return this.element.visible() ? this.hideList() : this.showList(event);
+  },
+  
   // shows list for the single-selects
   showList: function(event) {
     event.stop();
     if (this.isSingle) {
-      var dims = this.container.dimensions();
+      $$('.right-selectable-single').without(this.element).each('hide');
+      
+      var dims = this.container.dimensions(), pos = this.container.position();
       
       this.element.setStyle({
-        top: (dims.top + dims.height) + 'px',
-        left: dims.left + 'px',
+        top: (dims.top + dims.height - pos.y) + 'px',
+        left: (dims.left - pos.x) + 'px',
         width: dims.width + 'px'
       }).show(this.options.fxName, {
         duration: this.options.fxDuration,
@@ -549,4 +560,4 @@ var Selectable = new Class(Observer, {
  */
 document.onReady(function() { Selectable.rescan(); });
 
-document.write("<style type=\"text/css\">*.right-selectable,*.right-selectable li,*.right-selectable dt,*.right-selectable dd,*.right-selectable ul,div.right-selectable-container ul,div.right-selectable-container ul li{margin:0;padding:0;border:none;background:none;list-style:none}*.right-selectable{border:1px solid #CCC;border-bottom:none;display:inline-block;*display:inline;*zoom:1;min-width:10em;-moz-border-radius:.2em;-webkit-border-radius:.2em}*.right-selectable li{padding:.3em 1em;cursor:pointer;border-bottom:1px solid #CCC}*.right-selectable li:hover{background:#EEE}*.right-selectable li.right-selectable-selected{font-weight:bold;background:#DDD}*.right-selectable li.right-selectable-disabled,*.right-selectable li.right-selectable-disabled:hover{background:#CCC;color:#777;cursor:default}dl.right-selectable dt{padding:.3em .5em;cursor:default;font-weight:bold;font-style:italic;color:#444;background:#EEE;border-bottom:1px solid #CCC}dl.right-selectable dd li{padding-left:1.5em}*.right-selectable-single{-moz-box-shadow:#AAA .2em .2em .5em;-webkit-box-shadow:#AAA .2em .2em .5em;display:none;position:absolute;background:#FFF}div.right-selectable-container{border:1px solid #CCC;-moz-border-radius:.2em;-webkit-border-radius:.2em;display:inline-block;*display:inline;*zoom:1;*width:10em;vertical-align:middle;min-width:10em;cursor:pointer;height:1.6em}div.right-selectable-container div.right-selectable-handle{font-family:Arial;float:right;width:0.8em;background:#DDD;text-align:center;height:100%;line-height:0.8em;font-size:200%;color:#888;border-left:1px solid #CCC}div.right-selectable-container:hover div{color:#666}div.right-selectable-container ul{display:block;width:auto;margin-right:2em;overflow:hidden}div.right-selectable-container ul li{line-height:1.6em;padding:0 .5em}</style>");
+document.write("<style type=\"text/css\">*.right-selectable,*.right-selectable li,*.right-selectable dt,*.right-selectable dd,*.right-selectable ul,div.right-selectable-container ul.right-selectable-display,div.right-selectable-container ul.right-selectable-display li{margin:0;padding:0;border:none;background:none;list-style:none}*.right-selectable{border:1px solid #CCC;border-bottom:none;display:inline-block;*display:inline;*zoom:1;min-width:10em;-moz-border-radius:.2em;-webkit-border-radius:.2em}*.right-selectable li{padding:.3em 1em;cursor:pointer;border-bottom:1px solid #CCC}*.right-selectable li:hover{background:#EEE}*.right-selectable li.right-selectable-selected{font-weight:bold;background:#DDD}*.right-selectable li.right-selectable-disabled,*.right-selectable li.right-selectable-disabled:hover{background:#CCC;color:#777;cursor:default}dl.right-selectable dt{padding:.3em .5em;cursor:default;font-weight:bold;font-style:italic;color:#444;background:#EEE;border-bottom:1px solid #CCC}dl.right-selectable dd li{padding-left:1.5em}*.right-selectable-single{-moz-box-shadow:#AAA .2em .2em .5em;-webkit-box-shadow:#AAA .2em .2em .5em;display:none;position:absolute;background:#FFF;z-index:99999}div.right-selectable-container{border:1px solid #CCC;-moz-border-radius:.2em;-webkit-border-radius:.2em;display:inline-block;*display:inline;*zoom:1;*width:10em;vertical-align:middle;min-width:10em;cursor:pointer;height:1.6em;position:relative}div.right-selectable-container div.right-selectable-handle{font-family:Arial;float:right;width:0.8em;background:#DDD;text-align:center;height:100%;line-height:0.8em;font-size:200%;color:#888;border-left:1px solid #CCC}div.right-selectable-container:hover div.right-selectable-handle{color:#666}div.right-selectable-container ul.right-selectable-display{display:block;width:auto;margin-right:2em;overflow:hidden}div.right-selectable-container ul.right-selectable-display li{line-height:1.6em;padding:0 .5em}</style>");
