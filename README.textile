@@ -4,7 +4,7 @@ RightRails is a RubyOnRails plugin for RightJS javascript framework.
 
 It works as a drop in replacement for all the Prototype/Scriptaculous
 methods, plus it brings some more sweets and routine ajax operations
-organization.
+helpers.
 
 
 h2. Features
@@ -28,6 +28,10 @@ See the wiki-pages for the documentation
 
 <a href="http://wiki.github.com/MadRabbit/right-rails">http://wiki.github.com/MadRabbit/right-rails</a>
 
+See also the demo application for examples
+
+<a herf="http://github.com/MadRabbit/right-rails-demo">http://github.com/MadRabbit/right-rails-demo</a>
+
 
 h3. Usage
 
@@ -45,11 +49,7 @@ You also will have an ajax-friendly scaffold generator
 
 h4. Ruby Gem
 
-Ruby gem version is now also available. You need to add gemcutter to the list of sources
-
-<pre><code>gem sources -a http://gemcutter.org</code></pre>
-
-Install the gem:
+Ruby gem version is now also available.
 
 <pre><code>gem install right-rails</code></pre>
 
@@ -62,4 +62,4 @@ end</code></pre>
 
 
 
-Copyright (c) 2009 Nikolay V. Nemshilov, released under the MIT license
+Copyright (c) 2009-2010 Nikolay V. Nemshilov, released under the MIT license
