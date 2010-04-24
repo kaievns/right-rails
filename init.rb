@@ -1,4 +1,14 @@
 # Include hook code here
+
+require 'right_rails'
+require 'right_rails/controller_extensions'
+require 'right_rails/java_script_generator'
+require 'right_rails/helpers'
+require 'right_rails/helpers/basic'
+require 'right_rails/helpers/forms'
+require 'right_rails/helpers/misc'
+require 'right_rails/helpers/rails'
+
 if defined?(Rails)
   if Rails::VERSION::MAJOR == 2
     # Rails 2.x.x initalizer
@@ -19,15 +29,6 @@ if defined?(Rails)
     require 'action_controller/railtie'
     
     if defined?(ActionController)
-      require 'right_rails'
-      require 'right_rails/controller_extensions'
-      require 'right_rails/java_script_generator'
-      require 'right_rails/helpers'
-      require 'right_rails/helpers/basic'
-      require 'right_rails/helpers/forms'
-      require 'right_rails/helpers/misc'
-      require 'right_rails/helpers/rails'
-      
       class ActionController::Base
         include RightRails::ControllerExtensions
     
