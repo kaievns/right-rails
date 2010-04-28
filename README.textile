@@ -37,15 +37,19 @@ h3. Usage
 
 Install the plugin to your rails application
 
-@script/plugin install git://github.com/MadRabbit/right-rails.git@
+<pre>script/plugin install git://github.com/MadRabbit/right-rails.git</pre>
 
 After that run the @right_rails@ generator, which will put all the JavaScripts in place
 
-@script/generate right_rails@
+<pre>script/generate right_rails</pre>
+
+And add the following helper to your application layout, this will include all the necessary scripts on your page
+
+<pre><%= rightjs_scripts %></pre>
 
 You also will have an ajax-friendly scaffold generator
 
-@script/generate right_scaffold Zing@
+<pre>script/generate right_scaffold Zing</pre>
 
 h4. Ruby Gem
 
