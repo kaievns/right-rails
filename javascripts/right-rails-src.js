@@ -28,7 +28,10 @@ var RR = {
     
     highlightUpdates: true,
     
-    removeFx:         'fade',
+    removeFx:         'fade',    // blocks removing fx
+    insertFx:         'fade',    // blocks insertion fx
+    
+    insertPosition:   'bottom',  // default insert position
     
     linkToAjaxEdit:   '.ajax_edit',
     linkToAjaxDelete: '.ajax_delete',
@@ -72,7 +75,7 @@ var RR = {
    * @return RR this
    */
   highlight: function(id) {
-    if (this.Options.highlightUpdates) {
+    if ($(id) && this.Options.highlightUpdates) {
       $(id).highlight();
     }
     return this;
@@ -83,10 +86,31 @@ var RR = {
    *
    * @param String destination id
    * @param String content
+   * @param String position
    * @return RR this
    */
-  insert: function(where, what) {
-    return this.highlight($(where).insert(what).lastChild).rescan(where);
+  insert: function(where, what, in_position) {
+    var position  = in_position || this.Options.insertPosition, new_element,
+        container = $(where).insert(what, position);
+    
+    // trying to find the new block
+    switch (position) {
+      case 'bottom':  new_element = container.subNodes().last(); break;
+      case 'top':     new_element = container.first(); break;
+      case 'before':  new_element = container.prev();  break;
+      case 'after':   new_element = container.next();  break;
+    }
+    
+    // necely displaying the new block
+    if (new_element && this.Options.insertFx) {
+      new_element.hide().show(this.Options.insertFx, {
+        onFinish: this.highlight.bind(this, new_element)
+      });
+    } else {
+      this.highlight(new_element);
+    }
+    
+    return this.rescan(where);
   },
   
   /**
@@ -192,7 +216,7 @@ var RR = {
    */
   rescan: function(scope) {
     $w('Draggable Droppable Tabs Slider Selectable').each(function(name) {
-      if (self[name]) self[name].rescan(this.Options.rescanWithScopes ? scope : null);
+      if (name in self) self[name].rescan(this.Options.rescanWithScopes ? scope : null);
     }, this);
     
     

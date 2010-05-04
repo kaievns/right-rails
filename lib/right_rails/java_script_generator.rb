@@ -69,13 +69,13 @@ class RightRails::JavaScriptGenerator
     end
 
     # builds the record HTML code and then insterts it in place
-    def insert(record)
-      self.RR.insert(record.class.table_name, @util.render(record))
+    def insert(record, position=nil)
+      self.RR.insert(*[record.class.table_name, @util.render(record), position].compact)
     end
     
     # generates a script that inserts the record partial, then updates the form and the flashes block
-    def insert_and_care(record)
-      insert(record)
+    def insert_and_care(record, position=nil)
+      insert(record, position)
       @util.template.instance_variable_set("@#{record.class.table_name.singularize}", record.class.new)
       replace_form_for(record.class.new)
       update_flash
