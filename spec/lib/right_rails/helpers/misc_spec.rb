@@ -7,6 +7,11 @@ describe RightRails::Helpers::Misc do
   include RightRails::Helpers::Basic
   include RightRails::Helpers::Misc
   
+  # fraking Rails 3 replacement
+  def javascript_tag(script)
+    __rjs_hs(%Q{<script type="text/javascript">\n//<![CDATA[\n#{script}\n//]]>\n</script>})
+  end
+  
   it "should provide the basic #flashes builder" do
     should_receive(:flash).any_number_of_times.and_return({
       :warning => "Warning!",

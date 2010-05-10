@@ -69,7 +69,10 @@ describe RightRails::Helpers::Basic do
     end
     
     after :all do 
-      Kernel::RAILS_ENV = 'production'
+      # suppressing the warning coz we're being noughty in here and reassign the constant
+      Kernel::silence_warnings do
+        Kernel::RAILS_ENV = 'production'
+      end
     end
     
     it "should use the source scripts" do

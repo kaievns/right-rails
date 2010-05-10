@@ -10,7 +10,7 @@ module RightRails::Helpers::Misc
       content_tag(:div, text, :class => key)
     }.sort.join("")
     
-    content_tag(:div, items.send(''.respond_to?(:html_safe) ? :html_safe : :to_s),
+    content_tag(:div, __rjs_hs(items),
       :id => :flashes, :style => (flash.empty? ? 'display: none' : nil))
   end
   
@@ -36,12 +36,15 @@ module RightRails::Helpers::Misc
     escape    = options[:escape].nil? ? true : options[:escape]
     field     = args.first
     
+    
     items     = entries.collect{ |entry|
       entry = entry.send(field) if field
-      content_tag :li, highlight ? highlight(entry, highlight) : escape ? h(entry) : entry
+      text  = highlight ? highlight(entry, highlight) : escape ? h(entry) : entry
+      
+      content_tag :li, __rjs_hs(text)
     }.join("")
     
-    content_tag :ul, items.send(''.respond_to?(:html_safe) ? :html_safe : :to_s)
+    content_tag :ul, __rjs_hs(items)
   end
   
   
@@ -112,11 +115,13 @@ module RightRails::Helpers::Misc
     content = if tabs_type != :harmonica
       # tabs list
       tabs_list = content_tag(:ul,
-        @__tabs.collect{ |tab|
-          content_tag(:li, content_tag(:a, tab[:title],
-            :href => tab[:options][:id] ? "##{tab[:options][:id]}" : tab[:options][:url]
-          ))
-        }.join("\n")
+        __rjs_hs(
+          @__tabs.collect{ |tab|
+            content_tag(:li, content_tag(:a, tab[:title],
+              :href => tab[:options][:id] ? "##{tab[:options][:id]}" : tab[:options][:url]
+            ))
+          }.join("\n")
+        )
       ) + "\n";
       
       # contents list
@@ -124,22 +129,24 @@ module RightRails::Helpers::Misc
         tab[:content] ? content_tag(:li, tab[:content], :id => "#{tab_id_prefix}#{tab[:options][:id]}") + "\n" : ''
       }.join("")
       
-      content_tag(:ul, tabs_list + bodies_list.send("".respond_to?(:html_safe) ? :html_safe : :to_s), options)
+      content_tag(:ul, tabs_list + __rjs_hs(bodies_list), options)
     else
     # the harmonicas generator
       content_tag(:dl,
-        @__tabs.collect{ |tab|
-          content_tag(:dt, content_tag(:a, tab[:title],
-            :href => tab[:options][:id] ? "##{tab[:options][:id]}" : tab[:options][:url]
-          )) + "\n" +
-          content_tag(:dd, tab[:content] || '', :id => tab[:options][:id] ? "#{tab_id_prefix}#{tab[:options][:id]}" : nil)
-        }.join("\n"),
+        __rjs_hs(
+          @__tabs.collect{ |tab|
+            content_tag(:dt, content_tag(:a, tab[:title],
+              :href => tab[:options][:id] ? "##{tab[:options][:id]}" : tab[:options][:url]
+            )) + "\n" +
+            content_tag(:dd, tab[:content] || '', :id => tab[:options][:id] ? "#{tab_id_prefix}#{tab[:options][:id]}" : nil)
+          }.join("\n")
+        ),
         options
       )
       
     end
     
-    concat(content + "\n".send("".respond_to?(:html_safe) ? :html_safe : :to_s) + javascript_tag("new Tabs('#{options['id']}');"))
+    concat(content + __rjs_hs("\n") + javascript_tag("new Tabs('#{options['id']}');"))
   end
   
   def tab(title, options={}, &block)

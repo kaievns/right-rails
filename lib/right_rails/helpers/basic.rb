@@ -116,4 +116,11 @@ module RightRails::Helpers::Basic
     
     "{#{unit_options.sort.join(',')}}"
   end
+  
+  #
+  # Rails 2 && 3 html-safe string
+  #
+  def __rjs_hs(string)
+    string.send("".respond_to?(:html_safe) ? :html_safe : :to_s) if string
+  end
 end
