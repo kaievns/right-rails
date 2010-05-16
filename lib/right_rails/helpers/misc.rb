@@ -159,6 +159,31 @@ module RightRails::Helpers::Misc
     }
   end
   
+  #
+  # The resizable unit helper
+  #
+  # USAGE:
+  #   <% resizable(:direction => 'bottom', :minHeight => '100px') do %>
+  #     Some content in here
+  #   <% end -%>
+  #
+  def resizable(options={}, &block)
+    rightjs_include_module 'resizable'
+    
+    tabs_options = rightjs_unit_options(options, RESIZABLE_OPTION_KEYS)
+    options['data-resizable-options'] = tabs_options unless tabs_options == '{}'
+    
+    options[:class] ||= ''
+    options[:class] << " right-resizable#{options[:direction] ? "-#{options.delete(:direction)}" : ''}"
+    options[:class].strip!
+    
+    concat(content_tag(:div, (
+        content_tag(:div, __rjs_hs(capture(&block)), :class => 'right-resizable-content') +
+        content_tag(:div, '', :class => 'right-resizable-handle')
+      ), options
+    ))
+  end
+  
   TABS_OPTION_KEYS = %w{
     idPrefix
     tabsElement
@@ -186,6 +211,13 @@ module RightRails::Helpers::Misc
     blockContent
     mediaWidth
     mediaHeight
+  }
+  
+  RESIZABLE_OPTION_KEYS = %w{
+    minWidth
+    maxWidth
+    minHeight
+    maxHeight
   }
   
 end

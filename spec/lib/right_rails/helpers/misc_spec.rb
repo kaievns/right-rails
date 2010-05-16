@@ -12,6 +12,16 @@ describe RightRails::Helpers::Misc do
     __rjs_hs(%Q{<script type="text/javascript">\n//<![CDATA[\n#{script}\n//]]>\n</script>})
   end
   
+  # stubbing those two
+  def capture(&block)
+    return yield()
+  end
+  
+  def concat(content)
+    content
+  end
+  
+  
   it "should provide the basic #flashes builder" do
     should_receive(:flash).any_number_of_times.and_return({
       :warning => "Warning!",
@@ -84,19 +94,13 @@ describe RightRails::Helpers::Misc do
   end
   
   describe "#tabs generator" do
-    def capture(&block)
-      return yield()
-    end
-    
-    def concat(content)
-      content
-    end
-    
     it "should generate simple tabs" do
       tabs(:id => 'my-tabs') {
         tab("Tab 1", :id => 'tab-1'){ 'content 1' }
         tab("Tab 2", :id => 'tab-2'){ 'content 2' }
       }.should == %Q{<ul id=\"my-tabs\"><ul><li><a href=\"#tab-1\">Tab 1</a></li>\n<li><a href=\"#tab-2\">Tab 2</a></li></ul>\n<li id=\"tab-1\">content 1</li>\n<li id=\"tab-2\">content 2</li>\n</ul>\n<script type=\"text/javascript\">\n//<![CDATA[\nnew Tabs('my-tabs');\n//]]>\n</script>}
+      
+      @_right_scripts.should == ['tabs']
     end
     
     it "should generate tabs with id prefix" do
@@ -125,6 +129,28 @@ describe RightRails::Helpers::Misc do
         tab("Tab 1", :id => 'tab-1'){ 'content 1' }
         tab("Tab 2", :id => 'tab-2'){ 'content 2' }
       }.should == %Q{<dl id=\"my-tabs\"><dt><a href=\"#tab-1\">Tab 1</a></dt>\n<dd id=\"tab-1\">content 1</dd>\n<dt><a href=\"#tab-2\">Tab 2</a></dt>\n<dd id=\"tab-2\">content 2</dd></dl>\n<script type=\"text/javascript\">\n//<![CDATA[\nnew Tabs('my-tabs');\n//]]>\n</script>}
+    end
+  end
+  
+  describe "#resizable generator" do
+    it "should generate a simple resizable" do
+      resizable {
+        "bla bla bla"
+      }.should == %Q{<div class=\"right-resizable\"><div class=\"right-resizable-content\">bla bla bla</div><div class=\"right-resizable-handle\"></div></div>}
+      
+      @_right_scripts.should == ['resizable']
+    end
+    
+    it "should generate a resizable with directions" do
+      resizable(:direction => :bottom) {
+        'boo'
+      }.should == %Q{<div class=\"right-resizable-bottom\"><div class=\"right-resizable-content\">boo</div><div class=\"right-resizable-handle\"></div></div>}
+    end
+    
+    it "should generate a resizable with constraints" do
+      resizable(:min_width => 100, :maxHeight => '10em'){
+        'boo'
+      }.should == %Q{<div class=\"right-resizable\" data-resizable-options=\"{maxHeight:'10em',minWidth:100}\"><div class=\"right-resizable-content\">boo</div><div class=\"right-resizable-handle\"></div></div>}
     end
   end
 end
