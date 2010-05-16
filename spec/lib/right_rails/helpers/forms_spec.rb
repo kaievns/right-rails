@@ -48,4 +48,14 @@ describe RightRails::Helpers::Forms do
     rater_display(4).should ==
       %Q{<div class="right-rater right-rater-disabled"><div class="right-rater-glow">&#9733;</div><div class="right-rater-glow">&#9733;</div><div class="right-rater-glow">&#9733;</div><div class="right-rater-glow">&#9733;</div><div>&#9733;</div></div>}
   end
+  
+  it "should generate a #colorpicker_field_tag" do
+    colorpicker_field_tag('name', '#FF0').should == 
+      %Q{<input id=\"name\" name=\"name\" rel=\"colorpicker\" type=\"text\" value=\"#FF0\" />}
+  end
+  
+  it "should generate a #colorpicker_field_tag with options" do
+    colorpicker_field_tag('name', '#FF0', :format => 'rgb').should == 
+      %Q{<input data-colorpicker-options=\"{format:'rgb'}\" id=\"name\" name=\"name\" rel=\"colorpicker\" type=\"text\" value=\"#FF0\" />}
+  end
 end

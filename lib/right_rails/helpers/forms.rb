@@ -51,6 +51,14 @@ module RightRails::Helpers::Forms
     Xhr
   }
   
+  COLORPICKER_OPTION_KEYS = %w{
+    format
+    update
+    updateBg
+    fxName
+    fxDuration
+  }
+  
   #
   # Generates the calendar field tag
   #
@@ -128,6 +136,21 @@ module RightRails::Helpers::Forms
     }.join('')), :class => 'right-rater right-rater-disabled'
   end
   
+  #
+  # a standalone colorpicker field tag
+  #
+  def colorpicker_field_tag(name, value, options={})
+    text_field_tag name, value, __add_colorpicker_field_options(options)
+  end
+  
+  #
+  # A colorpicker field for a form
+  #
+  def colorpicker_field(object_name, method, options={})
+    options = __add_colorpicker_field_options(options)
+    ActionView::Helpers::InstanceTag.new(object_name, method, self, options.delete(:object)).to_colorpicker_field_tag(options)
+  end
+  
 private
 
   def __add_calendar_field_options(options={})
@@ -181,6 +204,16 @@ private
     javascript_tag "new Rater(#{options}).insertTo('#{id}','after').assignTo('#{id}');"
   end
   
+  def __add_colorpicker_field_options(options)
+    rightjs_include_module 'colorpicker'
+    
+    options['rel'] = 'colorpicker'
+    
+    colorpicker_options = rightjs_unit_options(options, COLORPICKER_OPTION_KEYS)
+    options['data-colorpicker-options'] = colorpicker_options unless colorpicker_options == '{}'
+    
+    options
+  end
   
   
 ###################################################################################
@@ -204,6 +237,10 @@ private
     
     def rater(name, options={})
       @template.rater(@object_name, name, objectify_options(options))
+    end
+    
+    def colorpicker_field(name, options={})
+      @template.colorpicker_field(@object_name, name, objectify_options(options))
     end
   end
   
@@ -233,6 +270,10 @@ private
     
     def to_rater_tag(options)
       to_input_field_tag('hidden', options)
+    end
+    
+    def to_colorpicker_field_tag(options)
+      to_input_field_tag('text', options)
     end
   end
   
