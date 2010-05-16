@@ -1,7 +1,7 @@
 Gem::Specification.new do |s|
   s.name    = 'right-rails'
-  s.version = '0.5.3'
-  s.date    = '2010-04-24'
+  s.version = '0.6.0'
+  s.date    = '2010-05-16'
   
   s.summary = "RightJS plugin for Rails"
   s.description = "RightRails provides support of the RightJS JavaScript framework. It has transparent Prototype helpers replacement, plus there is a new RJS processor, the most common ajax operations interface, RightJS own features support, remote files uploading handler, etc."
@@ -21,7 +21,7 @@ Gem::Specification.new do |s|
   }
 
   
-  s.files = Dir['generators/**/*'] + Dir['javascripts/**/*'] + Dir['lib/**/*'] + Dir['spec/**/*']
+  s.files = Dir['generators/**/*'] + Dir['javascripts/**/*'] + Dir['images/**/*']+ Dir['lib/**/*'] + Dir['spec/**/*']
   s.files+= %w(
     README.textile
     CHANGELOG
