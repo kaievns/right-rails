@@ -4,7 +4,6 @@
  * Copyright (C) 2009 Nikolay V. Nemshilov
  */
 if (!self.RightJS) throw "Gimme RightJS";
-
 /**
  * Selectable unit main script
  *
@@ -338,7 +337,8 @@ var Selectable = new Class(Observer, {
   
   // finds out the value for the item
   itemValue: function(item) {
-    return item.id ? this.options.parseIds ? item.id.match(/\d+/) : item.id : this.items.indexOf(item);
+    var value = item.id || item.val;
+    return value ? this.options.parseIds ? value.match(/\d+/) : value : this.items.indexOf(item);
   },
   
   // wrapping the events trigger to feed it with some more options
@@ -361,7 +361,7 @@ var Selectable = new Class(Observer, {
       if (isNumber(index)) {
         item = this.items[index];
       } else if(isString(key)) {
-        item = this.items.first(function(i) { return i.id == key; });
+        item = this.items.first(function(i) { return i.id == key || i.val == key; });
       }
       
       return item;
@@ -450,17 +450,21 @@ var Selectable = new Class(Observer, {
   
   // builds the widget programmatically
   build: function() {
-    var element = $E('ul'), options = this.options.options;
+    var element = $E('ul'), options = this.options.options, items = [];
     
     if (isArray(options)) {
       options.each(function(option) {
-        element.insert($E('li', {html: option}));
+        items.push(isArray(option) ? option : [option, option]);
       });
     } else {
       for (var key in options) {
-        element.insert($E('li', {id: key, html: options[key]}));
+        items.push([options[key], key]);
       }
     }
+
+    items.each(function(option) {
+      element.insert($E('li', {val: option[1], html: option[0]}));
+    });
     
     return element;
   },
@@ -530,12 +534,12 @@ var Selectable = new Class(Observer, {
     var options = this.options;
     if (box) {
       options.multiple = box.has('multiple');
-      options.options  = {};
+      options.options  = [];
       options.selected = [];
       options.disabled = [];
       
       $A(box.getElementsByTagName('OPTION')).each(function(option, index) {
-        options.options[$(option).get('value') || option.innerHTML] = option.innerHTML;
+        options.options.push([option.innerHTML, $(option).get('value') || option.innerHTML]);
         
         if (option.selected) options.selected.push(index);
         if (option.disabled) options.disabled.push(index);
@@ -558,6 +562,4 @@ var Selectable = new Class(Observer, {
  *
  * Copyright (C) 2009 Nikolay V. Nemshilov
  */
-document.onReady(function() { Selectable.rescan(); });
-
-document.write("<style type=\"text/css\">*.right-selectable,*.right-selectable li,*.right-selectable dt,*.right-selectable dd,*.right-selectable ul,div.right-selectable-container ul.right-selectable-display,div.right-selectable-container ul.right-selectable-display li{margin:0;padding:0;border:none;background:none;list-style:none}*.right-selectable{border:1px solid #CCC;border-bottom:none;display:inline-block;*display:inline;*zoom:1;min-width:10em;-moz-border-radius:.2em;-webkit-border-radius:.2em}*.right-selectable li{padding:.3em 1em;cursor:pointer;border-bottom:1px solid #CCC}*.right-selectable li:hover{background:#EEE}*.right-selectable li.right-selectable-selected{font-weight:bold;background:#DDD}*.right-selectable li.right-selectable-disabled,*.right-selectable li.right-selectable-disabled:hover{background:#CCC;color:#777;cursor:default}dl.right-selectable dt{padding:.3em .5em;cursor:default;font-weight:bold;font-style:italic;color:#444;background:#EEE;border-bottom:1px solid #CCC}dl.right-selectable dd li{padding-left:1.5em}*.right-selectable-single{-moz-box-shadow:#AAA .2em .2em .5em;-webkit-box-shadow:#AAA .2em .2em .5em;display:none;position:absolute;background:#FFF;z-index:99999}div.right-selectable-container{border:1px solid #CCC;-moz-border-radius:.2em;-webkit-border-radius:.2em;display:inline-block;*display:inline;*zoom:1;*width:10em;vertical-align:middle;min-width:10em;cursor:pointer;height:1.6em;position:relative}div.right-selectable-container div.right-selectable-handle{font-family:Arial;float:right;width:0.8em;background:#DDD;text-align:center;height:100%;line-height:0.8em;font-size:200%;color:#888;border-left:1px solid #CCC}div.right-selectable-container:hover div.right-selectable-handle{color:#666}div.right-selectable-container ul.right-selectable-display{display:block;width:auto;margin-right:2em;overflow:hidden}div.right-selectable-container ul.right-selectable-display li{line-height:1.6em;padding:0 .5em}</style>");
+document.onReady(function() { Selectable.rescan(); });document.write("<style type=\"text/css\">*.right-selectable,*.right-selectable li,*.right-selectable dt,*.right-selectable dd,*.right-selectable ul,div.right-selectable-container ul.right-selectable-display,div.right-selectable-container ul.right-selectable-display li{margin:0;padding:0;border:none;background:none;list-style:none}*.right-selectable{border:1px solid #CCC;border-bottom:none;display:inline-block;*display:inline;*zoom:1;min-width:10em;-moz-border-radius:.2em;-webkit-border-radius:.2em}*.right-selectable li{padding:.3em 1em;cursor:pointer;border-bottom:1px solid #CCC}*.right-selectable li:hover{background:#EEE}*.right-selectable li.right-selectable-selected{font-weight:bold;background:#DDD}*.right-selectable li.right-selectable-disabled,*.right-selectable li.right-selectable-disabled:hover{background:#CCC;color:#777;cursor:default}dl.right-selectable dt{padding:.3em .5em;cursor:default;font-weight:bold;font-style:italic;color:#444;background:#EEE;border-bottom:1px solid #CCC}dl.right-selectable dd li{padding-left:1.5em}*.right-selectable-single{-moz-box-shadow:#AAA .2em .2em .5em;-webkit-box-shadow:#AAA .2em .2em .5em;display:none;position:absolute;background:#FFF;z-index:99999}div.right-selectable-container{border:1px solid #CCC;-moz-border-radius:.2em;-webkit-border-radius:.2em;display:inline-block;*display:inline;*zoom:1;*width:10em;vertical-align:middle;min-width:10em;cursor:pointer;height:1.6em;position:relative}div.right-selectable-container div.right-selectable-handle{font-family:Arial;float:right;width:0.8em;background:#DDD;text-align:center;height:100%;line-height:0.8em;font-size:200%;color:#888;border-left:1px solid #CCC}div.right-selectable-container:hover div.right-selectable-handle{color:#666}div.right-selectable-container ul.right-selectable-display{display:block;width:auto;margin-right:2em;overflow:hidden}div.right-selectable-container ul.right-selectable-display li{line-height:1.6em;padding:0 .5em}</style>");

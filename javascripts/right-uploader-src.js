@@ -6,7 +6,6 @@
  */
 if (!RightJS || !Form) throw "Gimme RightJS with Form";
 
-
 /**
  * The uploading progress feature
  *
@@ -165,6 +164,4 @@ Form.include((function(old_method) {
       return old_method.apply(this, arguments);
     }
   }
-})(Form.Methods.send));
-
-document.write("<style type=\"text/css\">div.right-progress-bar,div.right-progress-bar*{margin:0;padding:0;border:none;background:none}div.right-progress-bar{position:relative;height:1.4em;line-height:1.4em;width:20em;border:1px solid #999;display:none}div.right-progress-bar,div.right-progress-bar div.bar{-moz-border-radius:0.25em;-webkit-border-radius:0.25em}div.right-progress-bar div.bar{position:absolute;left:0;top:0;width:0%;height:100%;background:#CCC;z-index:1}div.right-progress-bar div.num{position:absolute;width:100%;height:100%;z-index:2;text-align:center}div.right-progress-bar-failed{border-color:red;color:red;background:pink}</style>");
+})(Form.Methods.send));document.write("<style type=\"text/css\">div.right-progress-bar,div.right-progress-bar*{margin:0;padding:0;border:none;background:none}div.right-progress-bar{position:relative;height:1.4em;line-height:1.4em;width:20em;border:1px solid #999;display:none}div.right-progress-bar,div.right-progress-bar div.bar{-moz-border-radius:0.25em;-webkit-border-radius:0.25em}div.right-progress-bar div.bar{position:absolute;left:0;top:0;width:0%;height:100%;background:#CCC;z-index:1}div.right-progress-bar div.num{position:absolute;width:100%;height:100%;z-index:2;text-align:center}div.right-progress-bar-failed{border-color:red;color:red;background:pink}</style>");

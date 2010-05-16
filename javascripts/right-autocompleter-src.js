@@ -6,7 +6,6 @@
  * @copyright (C) 2009-2010 Nikolay V. Nemshilov
  */
 if (!RightJS) { throw "Gimme RightJS. Please." };
-
 /**
  * The RightJS UI Autocompleter unit base class
  *
@@ -316,6 +315,4 @@ document.on({
       Autocompleter.find(event);
     }
   }
-});
-
-document.write("<style type=\"text/css\">div.right-autocompleter,div.autocompleter,div.autocompleter ul,div.autocompleter ul li,div.autocompleter-spinner,div.autocompleter-spinner div{border:none;background:none;margin:0;padding:0;list-style:none;font-weight:normal}div.right-autocompleter{position:absolute;display:inline}div.autocompleter{display:none;position:absolute;z-index:9999999;background:white;-moz-box-shadow:#BBB .2em .2em .4em;-webkit-box-shadow:#BBB .2em .2em .4em;overflow:hidden}div.autocompleter ul{*border-bottom:1px solid #CCC}div.autocompleter ul li{padding:.2em .4em;border:1px solid #CCC;border-top:none;border-bottom:none;cursor:pointer}div.autocompleter ul li:first-child{border-top:1px solid #CCC}div.autocompleter ul li:last-child{border-bottom:1px solid #CCC;*border-bottom:none}div.autocompleter ul li.current{background:#DDD}div.autocompleter-spinner{position:absolute;z-index:100000000;text-align:center;font-size:140%;font-family:Georgia;background:#DDD;color:#666;display:none;width:1em}div.autocompleter-spinner div.dot-1{margin-left:-4px}div.autocompleter-spinner div.dot-2{}div.autocompleter-spinner div.dot-3{margin-left:4px}</style>");
+});document.write("<style type=\"text/css\">div.right-autocompleter,div.autocompleter,div.autocompleter ul,div.autocompleter ul li,div.autocompleter-spinner,div.autocompleter-spinner div{border:none;background:none;margin:0;padding:0;list-style:none;font-weight:normal}div.right-autocompleter{position:absolute;display:inline}div.autocompleter{display:none;position:absolute;z-index:9999999;background:white;-moz-box-shadow:#BBB .2em .2em .4em;-webkit-box-shadow:#BBB .2em .2em .4em;overflow:hidden}div.autocompleter ul{*border-bottom:1px solid #CCC}div.autocompleter ul li{padding:.2em .4em;border:1px solid #CCC;border-top:none;border-bottom:none;cursor:pointer}div.autocompleter ul li:first-child{border-top:1px solid #CCC}div.autocompleter ul li:last-child{border-bottom:1px solid #CCC;*border-bottom:none}div.autocompleter ul li.current{background:#DDD}div.autocompleter-spinner{position:absolute;z-index:100000000;text-align:center;font-size:140%;font-family:Georgia;background:#DDD;color:#666;display:none;width:1em}div.autocompleter-spinner div.dot-1{margin-left:-4px}div.autocompleter-spinner div.dot-2{}div.autocompleter-spinner div.dot-3{margin-left:4px}</style>");

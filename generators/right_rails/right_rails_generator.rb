@@ -30,6 +30,14 @@ class RightRailsGenerator < Rails::Generator::Base
       # creating the iframed uploads layout
       m.directory "app/views/layouts"
       m.file "/../generators/right_rails/templates/iframed.html.erb", "app/views/layouts/iframed.html.erb"
+      
+      # copying the images in place
+      m.directory "public/images/rightjs-ui"
+      Dir.open("#{File.dirname(__FILE__)}/../../images").each do |filename|
+        unless ['.', '..'].include?(filename)
+          m.file "/../images/#{filename}", "public/images/rightjs-ui/#{filename}"
+        end
+      end
     end
   end
   

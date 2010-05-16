@@ -3,7 +3,6 @@
  *
  * Copyright (C) 2009-2010 Nikolay V. Nemshilov
  */
-
 /**
  * An inline editor feature
  *
@@ -192,6 +191,4 @@ Element.include({
   inEdit: function(options) {
     return new InEdit(this, options).show();
   }
-});
-
-document.write("<style type=\"text/css\">form.right-in-edit,*.right-in-edit-field,*.right-in-edit-submit,*.right-in-edit-cancel,*.right-in-edit-spinner,*.right-in-edit-spinner div{margin:0;padding:0}form.right-in-edit,*.right-in-edit-spinner,*.right-in-edit-spinner div{display:inline-block;*display:inline;*zoom:1;border:none;background:none}textarea.right-in-edit-field{width:100%;margin-bottom:.5em}*.right-in-edit-field,*.right-in-edit-submit,*.right-in-edit-spinner{margin-right:.2em}*.right-in-edit-spinner{background:#EEE;border:1px solid #DDD;-moz-border-radius:.2em;-webkit-border-radius:.2em;text-align:center;line-height:100%}*.right-in-edit-spinner div{width:.3em;height:.7em;margin-top:.3em;background:#BBB;margin-right:2px;-moz-border-radius:.1em;-webkit-border-radius:.1em}*.right-in-edit-spinner div.glow{background:#777}</style>");
+});document.write("<style type=\"text/css\">form.right-in-edit,*.right-in-edit-field,*.right-in-edit-submit,*.right-in-edit-cancel,*.right-in-edit-spinner,*.right-in-edit-spinner div{margin:0;padding:0}form.right-in-edit,*.right-in-edit-spinner,*.right-in-edit-spinner div{display:inline-block;*display:inline;*zoom:1;border:none;background:none}textarea.right-in-edit-field{width:100%;margin-bottom:.5em}*.right-in-edit-field,*.right-in-edit-submit,*.right-in-edit-spinner{margin-right:.2em}*.right-in-edit-spinner{background:#EEE;border:1px solid #DDD;-moz-border-radius:.2em;-webkit-border-radius:.2em;text-align:center;line-height:100%}*.right-in-edit-spinner div{width:.3em;height:.7em;margin-top:.3em;background:#BBB;margin-right:2px;-moz-border-radius:.1em;-webkit-border-radius:.1em}*.right-in-edit-spinner div.glow{background:#777}</style>");

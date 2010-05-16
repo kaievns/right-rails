@@ -6,7 +6,6 @@
  * Copyright (C) 2009-2010 Nikolay V. Nemshilov
  */
 if (!self.RightJS) throw "Gimme RightJS";
-
 /**
  * The Rating widget
  *
@@ -251,6 +250,4 @@ document.onMouseover(function(event) {
       target.fire('mouseover');
   }
   
-});
-
-document.write("<style type=\"text/css\">div.right-rater,div.right-rater div{margin:0;padding:0;background:none;border:none;display:inline-block;*display:inline;*zoom:1;font-family:Arial;font-size:110%}div.right-rater{width:6em;height:1em;vertical-align:middle}div.right-rater div{float:left;width:1em;height:1em;line-height:1em;text-align:center;cursor:pointer;color:#888}div.right-rater div.right-rater-glow{color:brown;text-shadow:#666 .05em .05em .15em}div.right-rater-disabled div{cursor:default}</style>");
+});document.write("<style type=\"text/css\">div.right-rater,div.right-rater div{margin:0;padding:0;background:none;border:none;display:inline-block;*display:inline;*zoom:1;font-family:Arial;font-size:110%}div.right-rater{width:6em;height:1em;vertical-align:middle}div.right-rater div{float:left;width:1em;height:1em;line-height:1em;text-align:center;cursor:pointer;color:#888}div.right-rater div.right-rater-glow{color:brown;text-shadow:#666 .05em .05em .15em}div.right-rater-disabled div{cursor:default}</style>");

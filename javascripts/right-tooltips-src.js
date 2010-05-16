@@ -6,7 +6,6 @@
  * Copyright (C) 2009-2010 Nikolay V. Nemshilov
  */
 if (!RightJS) throw "Gimme RightJS!";
-
 /**
  * The native tooltips feature for RithJS
  *
@@ -71,6 +70,14 @@ var Tooltip = new Class({
     
     if (element.id)
       this.element.id = element.id + this.options.idSuffix;
+    
+    // prevents the false hidding when the mouse gets over the tooltip
+    this.element
+      .onMouseout('stopEvent')
+      .onMouseover(function(event) {
+        event.stop();
+        this.cancelTimer();
+      }.bind(this));
   },
   
   /**
@@ -80,13 +87,16 @@ var Tooltip = new Class({
    */
   hide: function() {
     this.cancelTimer();
-    this.element.hide(this.options.fxName, {
-      duration: this.options.fxDuration,
-      onFinish: function() {
-        if (Tooltip.current === this)
-          Tooltip.current = null;
-      }.bind(this)
-    });
+    
+    this.timer = (function() {
+      this.element.hide(this.options.fxName, {
+        duration: this.options.fxDuration,
+        onFinish: function() {
+          if (Tooltip.current === this)
+            Tooltip.current = null;
+        }.bind(this)
+      });
+    }).bind(this).delay(100);
     
     return this;
   },
@@ -182,6 +192,4 @@ document.on({
       tip.moveTo(event);
     }
   }
-});
-
-document.write("<style type=\"text/css\">div.right-tooltip{display:none;position:absolute;z-index:999999;font-size:90%;margin-top:16pt;margin-left:5pt;color:#FFF;text-shadow:0 0 .2em #000;border:.3em solid rgba(255,255,255,0.2);background-color:rgba(25,25,25,0.92);*background-color:#000;*border:.3em solid #444;background-image:-webkit-gradient(linear,0% 0%,0% 100%,from(transparent),to(#000));border-radius:.4em;-moz-border-radius:.4em;-webkit-border-radius:.4em;box-shadow:0 0 .4em #555;-moz-box-shadow:0 0 .4em #555;-webkit-box-shadow:0 0 .4em #555}div.right-tooltip-container{margin:.4em .6em}</style>");
+});document.write("<style type=\"text/css\">div.right-tooltip{display:none;position:absolute;z-index:999999;font-size:90%;margin-top:16pt;margin-left:5pt;color:#FFF;text-shadow:0 0 .2em #000;border:.3em solid rgba(255,255,255,0.2);background-color:rgba(25,25,25,0.92);*background-color:#000;*border:.3em solid #444;background-image:-webkit-gradient(linear,0% 0%,0% 100%,from(transparent),to(#000));border-radius:.4em;-moz-border-radius:.4em;-webkit-border-radius:.4em;box-shadow:0 0 .4em #555;-moz-box-shadow:0 0 .4em #555;-webkit-box-shadow:0 0 .4em #555}div.right-tooltip-container{margin:.4em .6em}</style>");
