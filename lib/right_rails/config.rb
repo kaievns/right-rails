@@ -13,12 +13,11 @@
 # public/javascript/right.js file
 #
 module RightRails::Config
-  DEFAULT_PUBLIC_PATH     = 'auto' #  'auto' or some path
-  DEFAULT_SAFE_MODE       = 'auto' #  'auto', true or false
-  DEFAULT_RIGHTJS_VERSION = 'auto' #  'auto', 2 or 1
-  DEFAULT_ENVIRONMENT     = 'auto' #  'auto', 'production' or 'development'
-  
-  RIGHTJS_DEFAULT_LOCATION = 'javascripts/right.js'
+  DEFAULT_PUBLIC_PATH      = 'auto' #  'auto' or some path
+  DEFAULT_SAFE_MODE        = 'auto' #  'auto', true or false
+  DEFAULT_RIGHTJS_VERSION  = 'auto' #  'auto', 2 or 1
+  DEFAULT_ENVIRONMENT      = 'auto' #  'auto', 'production' or 'development'
+  DEFAULT_RIGHTJS_LOCATION = 'javascripts/right.js'
   
   class << self
     #
@@ -154,7 +153,7 @@ module RightRails::Config
     # NOTE: _will_not_ raise any errors if the file is not found
     #
     def read_rightjs_file
-      File.read("#{public_path}/#{RIGHTJS_DEFAULT_LOCATION}")
+      File.read("#{public_path}/#{DEFAULT_RIGHTJS_LOCATION}")
     rescue
       ''
     end

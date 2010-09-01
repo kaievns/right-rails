@@ -28,7 +28,7 @@ describe RightRails::Config do
     describe "with non-standard right.js" do
       before :each do
         File.should_receive(:read).with(
-          "#{@config.public_path}/#{@config::RIGHTJS_DEFAULT_LOCATION}"
+          "#{@config.public_path}/#{@config::DEFAULT_RIGHTJS_LOCATION}"
         ).and_return(%Q{
           RightJS={version: "1.5.6"};
           RightJS.safe = true;
