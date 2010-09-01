@@ -11,33 +11,19 @@ require 'right_rails/helpers/misc'
 require 'right_rails/helpers/rails'
 
 if defined?(Rails)
-  if Rails::VERSION::MAJOR == 2
-    # Rails 2.x.x initalizer
-    
-    if defined?(ActionController)
-      class ActionController::Base
-        include RightRails::ControllerExtensions
-    
-        helper RightRails::Helpers::Basic,
-               RightRails::Helpers::Rails,
-               RightRails::Helpers::Forms,
-               RightRails::Helpers::Misc
-      end
-    end
-
-  else
+  if Rails::VERSION::MAJOR > 2
     # Rails 3 initializer
     require 'action_controller/railtie'
-    
-    if defined?(ActionController)
-      class ActionController::Base
-        include RightRails::ControllerExtensions
-    
-        helper RightRails::Helpers::Basic,
-               RightRails::Helpers::Forms,
-               RightRails::Helpers::Misc,
-               RightRails::Helpers::Rails
-      end
+  end
+  
+  if defined?(ActionController)
+    class ActionController::Base
+      include RightRails::ControllerExtensions
+  
+      helper RightRails::Helpers::Basic,
+             RightRails::Helpers::Rails,
+             RightRails::Helpers::Forms,
+             RightRails::Helpers::Misc
     end
   end
 end
