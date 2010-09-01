@@ -6,6 +6,7 @@ require 'action_view'
 require 'action_controller'
 
 require 'right_rails'
+require 'right_rails/config'
 require 'right_rails/java_script_generator'
 require 'right_rails/controller_extensions'
 require 'right_rails/helpers'
@@ -16,8 +17,16 @@ require 'right_rails/helpers/misc'
 
 module Rails
   class << self
+    def env
+      
+    end
+    
     def root
       'rails-root'
+    end
+    
+    def public_path
+      "#{root}/public"
     end
   end
 end

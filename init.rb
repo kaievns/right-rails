@@ -1,6 +1,7 @@
 # Include hook code here
 
 require 'right_rails'
+require 'right_rails/config'
 require 'right_rails/controller_extensions'
 require 'right_rails/java_script_generator'
 require 'right_rails/helpers'
