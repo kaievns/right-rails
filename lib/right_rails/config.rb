@@ -108,6 +108,8 @@ module RightRails::Config
       @safe_mode
     end
     
+    alias_method :safe_mode?, :safe_mode
+    
     #
     # Setup whether RightJS is used in the safe-mode or not
     #

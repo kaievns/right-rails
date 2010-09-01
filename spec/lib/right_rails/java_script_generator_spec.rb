@@ -32,6 +32,8 @@ end
 
 describe RightRails::JavaScriptGenerator do
   before :each do
+    RightRails::Config.reset!
+    
     @template = mock()
     def @template.dom_id(record) "record_#{record.id}" end
     def @template.escape_javascript(str) str end
@@ -96,6 +98,22 @@ describe RightRails::JavaScriptGenerator do
       @page['el2'].update('text2').highlight();
       
       @page.to_s.should == '$("el1").update("text1").show();$("el2").update("text2").highlight();'
+    end
+    
+    describe "in safe-mode" do
+      before :each do
+        RightRails::Config.safe_mode = true
+      end
+      
+      it "should prefix $ with RightJS." do
+        @page['element-id']
+        @page.to_s.should == 'RightJS.$("element-id");'
+      end
+      
+      it "should prefix $$ with RightJS." do
+        @page.find('div#css.rule')
+        @page.to_s.should == 'RightJS.$$("div#css.rule");'
+      end
     end
   end
   

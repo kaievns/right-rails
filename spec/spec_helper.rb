@@ -18,7 +18,7 @@ require 'right_rails/helpers/misc'
 module Rails
   class << self
     def env
-      
+      'development'
     end
     
     def root

@@ -32,7 +32,7 @@ class RightRails::JavaScriptGenerator
   module Methods
     # referring an element by an id or a record
     def [](record_or_id)
-      @util.record("$(\"#{@util.dom_id(record_or_id)}\")")
+      @util.record("#{RightRails::Helpers.prefix}$(\"#{@util.dom_id(record_or_id)}\")")
     end
 
     # just pushes a line of code into the thread
@@ -43,7 +43,7 @@ class RightRails::JavaScriptGenerator
 
     # builds a css-select block
     def find(css_rule)
-      @util.record("$$(\"#{css_rule}\")")
+      @util.record("#{RightRails::Helpers.prefix}$$(\"#{css_rule}\")")
     end
 
     # access to the javascript variables
@@ -278,7 +278,7 @@ protected
           
           # throwing an ansupported class name
           else
-            throw "RightRails::JavaScriptGenerator doesn't instances of #{value.class.name} yet"
+            throw "RightRails::JavaScriptGenerator doesn't support instances of #{value.class.name} yet"
           end
       end
     end

@@ -5,7 +5,7 @@
 # to make it automatically initialized when you include the plugin as
 # a gem in your environment.rb without the actual lib option specification
 #
-# Copyright (C) 2009 Nikolay V. Nemshilov aka St.
+# Copyright (C) 2009-2010 Nikolay Nemshilov
 #
 require 'right_rails'
 require File.dirname(__FILE__) + '/../init.rb'
