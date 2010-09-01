@@ -9,7 +9,7 @@ describe RightRails::Helpers::Misc do
   
   # fraking Rails 3 replacement
   def javascript_tag(script)
-    __rjs_hs(%Q{<script type="text/javascript">\n//<![CDATA[\n#{script}\n//]]>\n</script>})
+    RightRails::Helpers.html_safe(%Q{<script type="text/javascript">\n//<![CDATA[\n#{script}\n//]]>\n</script>})
   end
   
   # stubbing those two

@@ -10,7 +10,7 @@ module RightRails::Helpers::Misc
       content_tag(:div, text, :class => key)
     }.sort.join("")
     
-    content_tag(:div, __rjs_hs(items),
+    content_tag(:div, RightRails::Helpers.html_safe(items),
       :id => :flashes, :style => (flash.empty? ? 'display: none' : nil))
   end
   
@@ -41,10 +41,10 @@ module RightRails::Helpers::Misc
       entry = entry.send(field) if field
       text  = highlight ? highlight(entry, highlight) : escape ? h(entry) : entry
       
-      content_tag :li, __rjs_hs(text)
+      content_tag :li, RightRails::Helpers.html_safe(text)
     }.join("")
     
-    content_tag :ul, __rjs_hs(items)
+    content_tag :ul, RightRails::Helpers.html_safe(items)
   end
   
   
@@ -115,7 +115,7 @@ module RightRails::Helpers::Misc
     content = if tabs_type != :harmonica
       # tabs list
       tabs_list = content_tag(:ul,
-        __rjs_hs(
+        RightRails::Helpers.html_safe(
           @__tabs.collect{ |tab|
             content_tag(:li, content_tag(:a, tab[:title],
               :href => tab[:options][:id] ? "##{tab[:options][:id]}" : tab[:options][:url]
@@ -129,11 +129,11 @@ module RightRails::Helpers::Misc
         tab[:content] ? content_tag(:li, tab[:content], :id => "#{tab_id_prefix}#{tab[:options][:id]}") + "\n" : ''
       }.join("")
       
-      content_tag(:ul, tabs_list + __rjs_hs(bodies_list), options)
+      content_tag(:ul, tabs_list + RightRails::Helpers.html_safe(bodies_list), options)
     else
     # the harmonicas generator
       content_tag(:dl,
-        __rjs_hs(
+        RightRails::Helpers.html_safe(
           @__tabs.collect{ |tab|
             content_tag(:dt, content_tag(:a, tab[:title],
               :href => tab[:options][:id] ? "##{tab[:options][:id]}" : tab[:options][:url]
@@ -146,7 +146,7 @@ module RightRails::Helpers::Misc
       
     end
     
-    concat(content + __rjs_hs("\n") + javascript_tag("new Tabs('#{options['id']}');"))
+    concat(content + RightRails::Helpers.html_safe("\n") + javascript_tag("new Tabs('#{options['id']}');"))
   end
   
   def tab(title, options={}, &block)
@@ -178,7 +178,7 @@ module RightRails::Helpers::Misc
     options[:class].strip!
     
     concat(content_tag(:div, (
-        content_tag(:div, __rjs_hs(capture(&block)), :class => 'right-resizable-content') +
+        content_tag(:div, RightRails::Helpers.html_safe(capture(&block)), :class => 'right-resizable-content') +
         content_tag(:div, '', :class => 'right-resizable-handle')
       ), options
     ))
