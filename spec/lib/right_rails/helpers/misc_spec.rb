@@ -79,7 +79,7 @@ describe RightRails::Helpers::Misc do
   describe "#link_to_lightbox" do
     it "should generate the link" do
       link_to_lightbox('boo', 'boo').should == '<a href="boo" rel="lightbox">boo</a>'
-      @_right_scripts.should == ['lightbox']
+      rightjs_required_files.should include('right/lightbox')
     end
     
     it "should generate lightbox with roadtrip" do
@@ -100,7 +100,7 @@ describe RightRails::Helpers::Misc do
         tab("Tab 2", :id => 'tab-2'){ 'content 2' }
       }.should == %Q{<ul id=\"my-tabs\"><ul><li><a href=\"#tab-1\">Tab 1</a></li>\n<li><a href=\"#tab-2\">Tab 2</a></li></ul>\n<li id=\"tab-1\">content 1</li>\n<li id=\"tab-2\">content 2</li>\n</ul>\n<script type=\"text/javascript\">\n//<![CDATA[\nnew Tabs('my-tabs');\n//]]>\n</script>}
       
-      @_right_scripts.should == ['tabs']
+      rightjs_required_files.should include('right/tabs')
     end
     
     it "should generate tabs with id prefix" do
@@ -138,7 +138,7 @@ describe RightRails::Helpers::Misc do
         "bla bla bla"
       }.should == %Q{<div class=\"right-resizable\"><div class=\"right-resizable-content\">bla bla bla</div><div class=\"right-resizable-handle\"></div></div>}
       
-      @_right_scripts.should == ['resizable']
+      rightjs_required_files.should include('right/resizable')
     end
     
     it "should generate a resizable with directions" do

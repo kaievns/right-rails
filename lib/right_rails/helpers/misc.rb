@@ -58,7 +58,7 @@ module RightRails::Helpers::Misc
   #   <%= link_to_lightbox image_tag('/image.thmb'), '/image.full', :roadtrip => true %>
   #
   def link_to_lightbox(name, url={}, html_options={}, &block)
-    rightjs_include_module 'lightbox'
+    rightjs_require_module 'lightbox'
     
     html_options[:rel] = 'lightbox'
     html_options[:rel] << "[roadtrip]" if html_options.delete(:roadtrip)
@@ -89,7 +89,7 @@ module RightRails::Helpers::Misc
   #      <% tab image_tag(image2.thumb_url), :id => image2.id %>
   #
   def tabs(options={}, &block)
-    rightjs_include_module 'tabs'
+    rightjs_require_module 'tabs'
     @__tabs = []
     yield()
     
@@ -168,7 +168,7 @@ module RightRails::Helpers::Misc
   #   <% end -%>
   #
   def resizable(options={}, &block)
-    rightjs_include_module 'resizable'
+    rightjs_require_module 'resizable'
     
     tabs_options = rightjs_unit_options(options, RESIZABLE_OPTION_KEYS)
     options['data-resizable-options'] = tabs_options unless tabs_options == '{}'

@@ -10,15 +10,15 @@ describe RightRails::Helpers::Basic do
   end
   
   it "should catch the optional modules" do
-    @_right_scripts = %w{lightbox dnd}
+    rightjs_require_module *%w{lightbox dnd}
     
-    should_receive(:javascript_include_tag).with(*%w{right right/lightbox right/dnd right/rails})
+    should_receive(:javascript_include_tag).with(*%w{right right/rails right/lightbox right/dnd})
     
     rightjs_scripts
   end
   
   it "should let to specify the modules as arguments" do
-    should_receive(:javascript_include_tag).with(*%w{right right/lightbox right/dnd right/rails})
+    should_receive(:javascript_include_tag).with(*%w{right right/rails right/lightbox right/dnd})
     
     rightjs_scripts :lightbox, :dnd
   end
@@ -63,22 +63,12 @@ describe RightRails::Helpers::Basic do
     end.to_s.should == 'javascript_tag'
   end
   
-  describe "in the development mode" do
-    before :all do
-      Kernel::RAILS_ENV = 'development'
-    end
-    
-    after :all do 
-      # suppressing the warning coz we're being noughty in here and reassign the constant
-      Kernel::silence_warnings do
-        Kernel::RAILS_ENV = 'production'
-      end
-    end
-    
-    it "should use the source scripts" do
-      should_receive(:javascript_include_tag).with(*%w{right-src right/rails-src})
+  it "should use the source scripts in development mode" do
+    RightRails::Config.env = 'development'
+    should_receive(:javascript_include_tag).with(*%w{right-src right/rails-src})
 
-      rightjs_scripts
-    end
+    rightjs_scripts
+    
+    RightRails::Config.reset!
   end
 end

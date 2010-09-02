@@ -41,6 +41,8 @@ module RightRails::ControllerExtensions
     end
   end
   
+private
+  
   #
   # This class wraps the standard JavaScript responses in the controller
   # 
@@ -64,8 +66,6 @@ module RightRails::ControllerExtensions
       @generator.send(name, *args)
       render 
     end
-    
-  protected
     
     #
     # Compiles the options for the controller#render method

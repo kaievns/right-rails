@@ -9,31 +9,13 @@ module RightRails::Helpers::Basic
   # USAGE:
   #   <%= rightjs_scripts %>
   #
-  #   you can also predefine the list of modules to load
+  # you can also predefine the list of modules to load
   #
   #   <%= rightjs_scripts 'lightbox', 'calendar' %>
   #
   def rightjs_scripts(*modules)
-    scripts = ['right']
-    
-    # including the submodules
-    rightjs_include_module *modules
-    ((@_right_scripts || []) + ['rails']).each do |package|
-      scripts << "right/#{package}"
-    end
-    
-    # use the sources in the development environment
-    if defined?(RAILS_ENV) && RAILS_ENV == 'development'
-      scripts.collect!{ |name| name + '-src' }
-    end
-    
-    # include the localization script if available
-    if defined?(I18n) && defined?(Rails.root)
-      locale_file = "right/i18n/#{I18n.locale.to_s.downcase}"
-      scripts << locale_file if File.exists? "#{Rails.root}/public/javascripts/#{locale_file}.js"
-    end
-    
-    javascript_include_tag *scripts
+    rightjs_require_module *modules
+    javascript_include_tag *rightjs_required_files
   end
   
   #
@@ -74,16 +56,18 @@ module RightRails::Helpers::Basic
     rjs(&block)
   end
   
-# protected
+  #
+  # Requires the RightJS modules
+  #
+  def rightjs_require_module(*list)
+    RightRails::Helpers.require_js_module self, *list
+  end
   
   #
-  # Notifies the scripts collection that the user needs the module
+  # Returns the list of currently required JavaScript files for RightJS
   #
-  def rightjs_include_module(*list)
-    @_right_scripts ||= []
-    list.each do |name|
-      @_right_scripts << name.to_s unless @_right_scripts.include?(name.to_s)
-    end
+  def rightjs_required_files
+    RightRails::Helpers.required_js_files self
   end
   
   #

@@ -176,14 +176,14 @@ describe RightRails::Helpers::Rails do
   
   it "should generate #draggable_element_js" do
     draggable_element_js(:element_id, :revert => true).should == 'new Draggable("element_id", {revert:true});'
-    @_right_scripts.should == ['dnd']
+    rightjs_required_files.should include('right/dnd')
   end
   
   it "should generate #drop_receiving_element_js" do
     drop_receiving_element_js(:element_id, :url => '/boo').should == 
       %Q{new Droppable("element_id", {onDrop:function(draggable){Xhr.load('/boo',{params:'id=' + encodeURIComponent(draggable.element.id)})}});}
-      
-    @_right_scripts.should == ['dnd']
+    
+    rightjs_required_files.should include('right/dnd')
   end
   
   it "should generate #sortable_element_js" do

@@ -129,7 +129,7 @@ module RightRails::Helpers::Forms
   # Builds a dummy rater, just for displaying purposes
   #
   def rater_display(value, options={})
-    rightjs_include_module 'rater'
+    rightjs_require_module 'rater'
     
     content_tag :div, RightRails::Helpers.html_safe((0...(options[:size] || 5)).to_a.collect{ |i|
       content_tag :div, RightRails::Helpers.html_safe('&#9733;'), :class => i < value ? 'right-rater-glow' : nil
@@ -154,7 +154,7 @@ module RightRails::Helpers::Forms
 private
 
   def __add_calendar_field_options(options={})
-    rightjs_include_module 'calendar'
+    rightjs_require_module 'calendar'
     
     options['rel'] = 'calendar'
     
@@ -165,7 +165,7 @@ private
   end
   
   def __add_autocomplete_field_options(options)
-    rightjs_include_module 'autocompleter'
+    rightjs_require_module 'autocompleter'
     
     options['rel'] = "autocompleter[#{escape_javascript(url_for(options.delete(:url)))}]"
     
@@ -177,7 +177,7 @@ private
   end
   
   def __add_slider_options(options)
-    rightjs_include_module 'dnd', 'slider'
+    rightjs_require_module 'dnd', 'slider'
     options.reject { |key, value| SLIDER_OPTION_KEYS.include?(key.to_s) }
   end
   
@@ -191,7 +191,7 @@ private
   end
   
   def __add_rater_options(options)
-    rightjs_include_module 'rater'
+    rightjs_require_module 'rater'
     options.reject { |key, value| RATER_OPTION_KEYS.include?(key.to_s) }
   end
   
@@ -205,7 +205,7 @@ private
   end
   
   def __add_colorpicker_field_options(options)
-    rightjs_include_module 'colorpicker'
+    rightjs_require_module 'colorpicker'
     
     options['rel'] = 'colorpicker'
     
