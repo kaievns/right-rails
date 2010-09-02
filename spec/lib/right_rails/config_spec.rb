@@ -17,12 +17,28 @@ describe RightRails::Config do
       @config.public_path.should == "/rails/public"
     end
     
+    it "should return correct locales_path" do
+      @config.locales_path.should == "#{@config.public_path}/#{@config::DEFAULT_LOCALES_LOCATION}"
+    end
+    
     it "should be in the normal mode" do
       @config.safe_mode.should == false
     end
     
     it "should be in RightJS 2 mode" do
       @config.rightjs_version.should == 2
+    end
+    
+    it "should require rails module" do
+      @config.include_rails_module.should == true
+    end
+    
+    it "should swap builds and sources" do
+      @config.swap_builds_and_sources.should == true
+    end
+    
+    it "should include scripts automatically" do
+      @config.include_scripts_automatically.should == true
     end
     
     describe "with non-standard right.js" do
@@ -70,6 +86,11 @@ describe RightRails::Config do
       @config.public_path.should == 'some/place'
     end
     
+    it "should allow to change the locales location" do
+      @config.locales_path = "boo/hoo"
+      @config.locales_path.should == 'boo/hoo'
+    end
+    
     it "should be in safe mode when said so" do
       @config.safe_mode = true
       @config.safe_mode.should == true
@@ -78,6 +99,33 @@ describe RightRails::Config do
     it "should remain in RightJS 1 mode if said so" do
       @config.rightjs_version = 1
       @config.rightjs_version.should == 1
+    end
+    
+    it "should not include rails module if asked" do
+      @config.include_rails_module = false
+      @config.include_rails_module.should == false
+    end
+    
+    it "should not swap between builds and sources if asked" do
+      @config.swap_builds_and_sources = false
+      @config.swap_builds_and_sources.should == false
+    end
+    
+    it "should not include files automatically if asked" do
+      @config.include_scripts_automatically = false
+      @config.include_scripts_automatically.should == false
+    end
+  end
+  
+  describe ".dev_env? method" do
+    it "should return true in the 'development' environment" do
+      @config.env = 'development'
+      @config.dev_env?.should == true
+    end
+    
+    it "should return false in the 'production' environment" do
+      @config.env = 'production'
+      @config.dev_env?.should == false
     end
   end
 end

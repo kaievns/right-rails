@@ -3,21 +3,30 @@
 #
 # You can adjust the following settings with the RightRails::Config object
 #
-# - RightRails::Config.env             _auto_, _production_ or _development_
-# - RightRails::Config.public_path     _auto_ or some string
-# - RightRails::Config.safe_mode       _auto_, +true+ or +false+
-# - RightRails::Config.rightjs_version _auto_, 2 or 1
+# - RightRails::Config.env                            _auto_, _production_ or _development_
+# - RightRails::Config.public_path                    _auto_ or some string
+# - RightRails::Config.locales_path                   _auto_ or some string
+# - RightRails::Config.safe_mode                      _auto_, +true+ or +false+
+# - RightRails::Config.rightjs_version                _auto_, 2 or 1
+# - RightRails::Config.include_rails_module           +true+ or +false+
+# - RightRails::Config.swap_builds_and_sources        +true+ or +false+
+# - RightRails::Config.include_scripts_automatically  +true+ or +false+
 #
 # When you set a property in _auto_ then the script will try to figure the
 # parameters out by the current environment and the content of the
 # public/javascript/right.js file
 #
 module RightRails::Config
+  
   DEFAULT_PUBLIC_PATH      = 'auto' #  'auto' or some path
   DEFAULT_SAFE_MODE        = 'auto' #  'auto', true or false
   DEFAULT_RIGHTJS_VERSION  = 'auto' #  'auto', 2 or 1
   DEFAULT_ENVIRONMENT      = 'auto' #  'auto', 'production' or 'development'
   DEFAULT_RIGHTJS_LOCATION = 'javascripts/right.js'
+  DEFAULT_LOCALES_LOCATION = 'javascripts/right/i18n'
+  DEFAULT_INCLUDE_RAILS    = true   # true or false
+  DEFAULT_AUTO_INCLUDES    = true   # true or false
+  DEFAULT_SWAP_BUILDS      = true   # true or false
   
   class << self
     #
@@ -26,8 +35,12 @@ module RightRails::Config
     def reset!
       remove_instance_variable(:@environment)     if defined?(@environment)
       remove_instance_variable(:@public_path)     if defined?(@public_path)
+      remove_instance_variable(:@locales_path)    if defined?(@locales_path)
       remove_instance_variable(:@safe_mode)       if defined?(@safe_mode)
       remove_instance_variable(:@rightjs_version) if defined?(@rightjs_version)
+      remove_instance_variable(:@include_rails)   if defined?(@include_rails)
+      remove_instance_variable(:@auto_includes)   if defined?(@auto_includes)
+      remove_instance_variable(:@swap_builds)     if defined?(@swap_builds)
     end
     
     #
@@ -51,7 +64,7 @@ module RightRails::Config
     # You can use 'production', 'development' or 'auto'
     #
     def env=(value)
-      if value == value
+      if value == 'auto'
         value = if in_rails?
           Rails.env
         else
@@ -60,6 +73,13 @@ module RightRails::Config
       end
       
       @environment = value.to_s == 'production' ? 'production' : 'development'
+    end
+    
+    #
+    # Returns a marker if we are in the _development_ environment
+    #
+    def dev_env?
+      env == 'development'
     end
     
     #
@@ -98,6 +118,29 @@ module RightRails::Config
     end
     
     #
+    # Returns a full-path to the localization modules directory
+    #
+    def locales_path
+      unless defined?(@locales_path)
+        self.locales_path = "#{public_path}/#{DEFAULT_LOCALES_LOCATION}"
+      end
+      
+      @locales_path
+    end
+    
+    #
+    # Sets the RightJS localilzation modules directory path
+    #
+    def locales_path=(path)
+      # getting rid of the trailing slash
+      if path.slice(path.size-1, path.size) == '/'
+        path = path.slice(0, path.size-1) 
+      end
+      
+      @locales_path = path
+    end
+    
+    #
     # Checks if the RightJS is used in the safe-mode
     #
     def safe_mode
@@ -107,8 +150,6 @@ module RightRails::Config
       
       @safe_mode
     end
-    
-    alias_method :safe_mode?, :safe_mode
     
     #
     # Setup whether RightJS is used in the safe-mode or not
@@ -145,6 +186,73 @@ module RightRails::Config
       
       @rightjs_version = value < 2 ? 1 : 2
     end
+    
+    #
+    # Returns a marker if the script should automatically include
+    # the ruby-on-rails module for RightJS
+    #
+    def include_rails_module
+      unless defined?(@include_rails)
+        self.include_rails_module = DEFAULT_INCLUDE_RAILS
+      end
+      
+      @include_rails
+    end
+    
+    #
+    # Sets the marker if the plugin should automatically include
+    # the ruby-on-rails module for RightJS
+    #
+    def include_rails_module=(value)
+      @include_rails = !! value
+    end
+    
+    #
+    # Checks if the plugin should automatically swap between
+    # the builds and the source-versions of JavaScript files
+    # depending on current environment
+    #
+    def swap_builds_and_sources
+      unless defined?(@swap_builds)
+        self.swap_builds_and_sources = DEFAULT_SWAP_BUILDS
+      end
+      
+      @swap_builds
+    end
+    
+    #
+    # Sets the marker if the plugin should automatically
+    # swap between source and builds of JavaScript files
+    #
+    def swap_builds_and_sources=(value)
+      @swap_builds = !! value
+    end
+    
+    #
+    # Checks if the plugin should include JavaScript modules
+    # automatically when they needed
+    #
+    def include_scripts_automatically
+      unless defined?(@auto_includes)
+        self.include_scripts_automatically = DEFAULT_AUTO_INCLUDES
+      end
+      
+      @auto_includes
+    end
+    
+    #
+    # Sets the marker if the plugin should automatically include
+    # all the JavaScript files on the page when they needed
+    #
+    def include_scripts_automatically=(value)
+      @auto_includes = !! value
+    end
+    
+    # boolean methods aliases
+    alias_method :safe_mode?,                     :safe_mode
+    alias_method :include_rails_module? ,         :include_rails_module
+    alias_method :swap_builds_and_sources? ,      :swap_builds_and_sources
+    alias_method :include_scripts_automatically?, :include_scripts_automatically
     
   private
     
