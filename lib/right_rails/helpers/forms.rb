@@ -18,9 +18,9 @@ module RightRails::Helpers::Forms
   def calendar_field(object_name, method, options={})
     options = Util.calendar_options(self, options)
     
-    ActionView::Helpers::InstanceTag.new(
-      object_name, method, self, options.delete(:object)
-    ).to_calendar_field_tag(options)
+    tag = ActionView::Helpers::InstanceTag.new(
+      object_name, method, self, options.delete(:object))
+    tag.to_calendar_field_tag(options)
   end
   
   #
@@ -38,9 +38,9 @@ module RightRails::Helpers::Forms
   def autocomplete_field(object_name, method, options)
     options = Util.autocompleter_options(self, options)
     
-    ActionView::Helpers::InstanceTag.new(
-      object_name, method, self, options.delete(:object)
-    ).to_autocomplete_field_tag(options)
+    tag = ActionView::Helpers::InstanceTag.new(
+      object_name, method, self, options.delete(:object))
+    tag.to_autocomplete_field_tag(options)
   end
   
   alias_method :autocompleter_field,     :autocomplete_field

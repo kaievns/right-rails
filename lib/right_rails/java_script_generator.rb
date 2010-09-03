@@ -12,13 +12,15 @@ class RightRails::JavaScriptGenerator
   
   # method calls catchup
   def method_missing(name, *args)
-    @util.record(if JS_CONSTANTS.include?(name)
+    cmd = if JS_CONSTANTS.include?(name)
       name
     elsif name.to_s[name.to_s.size-1, name.to_s.size] == '='
       "#{name.to_s[0, name.to_s.size-1]}=#{@util.to_js_type(args.first)}"
     else
       "#{name}(#{@util.to_js_args(args)})"
-    end)
+    end
+    
+    @util.record(cmd)
   end
   
   # returns the result script
@@ -146,21 +148,22 @@ protected
       name = name.to_s
       args << block if block_given?
       
-      @child = @util.make_call((
+      
+      cmd = if name[name.size-1, name.size] == '='
         # assignments
-        if name[name.size-1, name.size] == '='
-          ".#{name[0,name.size-1]}=#{@util.to_js_type(args.first)}"
-          
-        # operation calls
-        elsif OPERATIONS.include?(name)
-          name = "+=" if name == '<<'
-          "#{name}#{@util.to_js_type(args.first)}"
-          
-        # usual method calls
-        else
-          ".#{name}(#{@util.to_js_args(args)})"
-        end
-      ), self)
+        ".#{name[0,name.size-1]}=#{@util.to_js_type(args.first)}"
+        
+      # operation calls
+      elsif OPERATIONS.include?(name)
+        name = "+=" if name == '<<'
+        "#{name}#{@util.to_js_type(args.first)}"
+        
+      # usual method calls
+      else
+        ".#{name}(#{@util.to_js_args(args)})"
+      end
+      
+      @child = @util.make_call(cmd, self)
     end
     
     # exports the whole thing into a javascript string
@@ -229,16 +232,20 @@ protected
     
     # builds the end script
     def build_script
-      @thread.collect{|line|
+      list = @thread.collect do |line|
         line.is_a?(String) ? line : (line.to_s + ';')
-      }.join('')
+      end
+      
+      list.join('')
     end
 
     # converts the list of values into a javascript function arguments list
     def to_js_args(args)
-      args.collect do |value|
+      list = args.collect do |value|
         to_js_type(value)
-      end.join(',')
+      end
+      
+      list.join(',')
     end
     
     # converts any ruby type into an javascript type

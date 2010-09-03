@@ -2,7 +2,7 @@
 # This module contains the ruby-on-rails native (Prototype) helper replacements
 #
 module RightRails::Helpers::Rails
-  
+
   #
   # Overloading the rails method so it loaded
   # RightJS by default

@@ -244,6 +244,18 @@ describe RightRails::JavaScriptGenerator do
       
       @page.to_s.should == '$$("foo").each(function(a,b){$("element").innerHTML+=a.innerHTML+b+"boo";});alert($("element").innerHTML);'
     end
+    
+    it "should throw an error for unknown data-types" do
+      class Booooooooooo
+        def respond_to?(name)
+          name.to_sym == :to_json ? false : super(name)
+        end
+      end
+      
+      lambda {
+        @page['element'].insert(Booooooooooo.new)
+      }.should raise_error
+    end
   end
   
   describe "RR object method calls generator" do

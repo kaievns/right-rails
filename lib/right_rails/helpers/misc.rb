@@ -140,8 +140,7 @@ module RightRails::Helpers::Misc
             )) + "\n" +
             content_tag(:dd, tab[:content] || '', :id => tab[:options][:id] ? "#{tab_id_prefix}#{tab[:options][:id]}" : nil)
           }.join("\n")
-        ),
-        options
+        ), options
       )
       
     end

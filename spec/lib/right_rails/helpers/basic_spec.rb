@@ -81,9 +81,7 @@ describe RightRails::Helpers::Basic do
     it "should generate a proper javascript tag construction" do
       should_receive(:rjs).and_return('some-stuff')
     
-      rjs_tag do |page|
-        page.boo.boo.boo
-      end.to_s.should == '<javascript>some-stuff</javascript>'
+      rjs_tag.to_s.should == '<javascript>some-stuff</javascript>'
     end
   end
   

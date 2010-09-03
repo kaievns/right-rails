@@ -1,9 +1,6 @@
 require File.dirname(__FILE__) + "/../../spec_helper.rb"
 
 module I18n
-  def locale
-    'en'
-  end
 end
 
 describe RightRails::Helpers do

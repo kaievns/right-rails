@@ -43,12 +43,14 @@ describe RightRails::Config do
     
     describe "with non-standard right.js" do
       before :each do
-        File.should_receive(:read).with(
-          "#{@config.public_path}/#{@config::DEFAULT_RIGHTJS_LOCATION}"
-        ).and_return(%Q{
+        rightjs_source_mock = %Q{
           RightJS={version: "1.5.6"};
           RightJS.safe = true;
-        });
+        }
+        
+        File.should_receive(:read).with(
+          "#{@config.public_path}/#{@config::DEFAULT_RIGHTJS_LOCATION}"
+        ).and_return(rightjs_source_mock)
       end
       
       it "should be in safe-mode" do
