@@ -2,62 +2,6 @@
 # RightJS specific form features module
 #
 module RightRails::Helpers::Forms
-  CALENDAR_OPTION_KEYS = %w{
-    format
-    showTime
-    twentyFourHour
-    timePeriod
-    showButtons
-    minDate
-    maxDate
-    listYears
-    firstDay
-    numberOfMonths
-    fxName
-    fxDuration
-    hideOnPick
-  }
-  
-  AUTOCOMPLETER_OPTION_KEYS = %w{
-    param
-    method
-    minLength
-    threshold
-    cache
-    local
-    fxName
-    fxDuration
-    spinner
-  }
-  
-  SLIDER_OPTION_KEYS = %w{
-    min
-    max
-    snap
-    value
-    direction
-    update
-    round
-  }
-  
-  RATER_OPTION_KEYS = %w{
-    size
-    value
-    update
-    disabled
-    disableOnVote
-    url
-    param
-    Xhr
-  }
-  
-  COLORPICKER_OPTION_KEYS = %w{
-    format
-    update
-    updateBg
-    fxName
-    fxDuration
-  }
   
   #
   # Generates the calendar field tag
@@ -65,15 +9,18 @@ module RightRails::Helpers::Forms
   # The options might contain the usual html options along with the RightJS Calendar options
   #
   def calendar_field_tag(name, value=nil, options={})
-    text_field_tag name, value, __add_calendar_field_options(options)
+    text_field_tag name, value, Util.calendar_options(self, options)
   end
   
   #
   # The form_for level calendar field generator
   #
   def calendar_field(object_name, method, options={})
-    options = __add_calendar_field_options(options)
-    ActionView::Helpers::InstanceTag.new(object_name, method, self, options.delete(:object)).to_calendar_field_tag(options)
+    options = Util.calendar_options(self, options)
+    
+    ActionView::Helpers::InstanceTag.new(
+      object_name, method, self, options.delete(:object)
+    ).to_calendar_field_tag(options)
   end
   
   #
@@ -82,22 +29,29 @@ module RightRails::Helpers::Forms
   # The options should contain an url or a list of local options
   #
   def autocomplete_field_tag(name, value, options)
-    text_field_tag name, value, __add_autocomplete_field_options(options)
+    text_field_tag name, value, Util.autocompleter_options(self, options)
   end
   
   #
   # The form_for level autocomplete-field generator
   #
   def autocomplete_field(object_name, method, options)
-    options = __add_autocomplete_field_options(options)
-    ActionView::Helpers::InstanceTag.new(object_name, method, self, options.delete(:object)).to_autocomplete_field_tag(options)
+    options = Util.autocompleter_options(self, options)
+    
+    ActionView::Helpers::InstanceTag.new(
+      object_name, method, self, options.delete(:object)
+    ).to_autocomplete_field_tag(options)
   end
+  
+  alias_method :autocompleter_field,     :autocomplete_field
+  alias_method :autocompleter_field_tag, :autocomplete_field_tag
   
   #
   # The slider widget generator
   #
   def slider_tag(name, value=nil, options={})
-    hidden_field_tag(name, value, __add_slider_options(options)) + "\n" + __slider_generator(options.merge(:value => value), name)
+    hidden_field_tag(name, value, Util.slider_options(self, options)) +
+      "\n" + Util.slider_generator(self, options.merge(:value => value), name)
   end
   
   #
@@ -105,15 +59,16 @@ module RightRails::Helpers::Forms
   #
   def slider(object_name, method, options={})
     ActionView::Helpers::InstanceTag.new(object_name, method, self,
-      options.delete(:object)).to_slider_tag(__add_slider_options(options)) +
-      "\n" + __slider_generator(options, object_name, method)
+      options.delete(:object)).to_slider_tag(Util.slider_options(self, options)) +
+      "\n" + Util.slider_generator(self, options, object_name, method)
   end
   
   #
   # The rater widget basic generator
   #
   def rater_tag(name, value, options={})
-    hidden_field_tag(name, value, __add_rater_options(options)) + "\n" + __rater_generator(options.merge(:value => value), name)
+    hidden_field_tag(name, value, Util.rater_options(self, options)) +
+      "\n" + Util.rater_generator(self, options.merge(:value => value), name)
   end
   
   #
@@ -121,8 +76,8 @@ module RightRails::Helpers::Forms
   #
   def rater(object_name, method, options={})
     ActionView::Helpers::InstanceTag.new(object_name, method, self,
-      options.delete(:object)).to_rater_tag(__add_rater_options(options)) +
-      "\n" + __rater_generator(options, object_name, method)
+      options.delete(:object)).to_rater_tag(Util.rater_options(self, options)) +
+      "\n" + Util.rater_generator(self, options, object_name, method)
   end
   
   #
@@ -140,79 +95,179 @@ module RightRails::Helpers::Forms
   # a standalone colorpicker field tag
   #
   def colorpicker_field_tag(name, value, options={})
-    text_field_tag name, value, __add_colorpicker_field_options(options)
+    text_field_tag name, value, Util.colorpicker_options(self, options)
   end
   
   #
   # A colorpicker field for a form
   #
   def colorpicker_field(object_name, method, options={})
-    options = __add_colorpicker_field_options(options)
-    ActionView::Helpers::InstanceTag.new(object_name, method, self, options.delete(:object)).to_colorpicker_field_tag(options)
+    options = Util.colorpicker_options(self, options)
+    
+    ActionView::Helpers::InstanceTag.new(
+      object_name, method, self, options.delete(:object)
+    ).to_colorpicker_field_tag(options)
   end
   
 private
 
-  def __add_calendar_field_options(options={})
-    rightjs_require_module 'calendar'
+  #
+  # Local utility methods, just hidding the things in here
+  # so they didn't pollute the global scope
+  #
+  module Util
+    CALENDAR_OPTION_KEYS = %w{
+      format
+      showTime
+      twentyFourHour
+      timePeriod
+      showButtons
+      minDate
+      maxDate
+      listYears
+      firstDay
+      numberOfMonths
+      fxName
+      fxDuration
+      hideOnPick
+    }
+
+    AUTOCOMPLETER_OPTION_KEYS = %w{
+      param
+      method
+      minLength
+      threshold
+      cache
+      local
+      fxName
+      fxDuration
+      spinner
+    }
+
+    SLIDER_OPTION_KEYS = %w{
+      min
+      max
+      snap
+      value
+      direction
+      update
+      round
+    }
+
+    RATER_OPTION_KEYS = %w{
+      size
+      value
+      update
+      disabled
+      disableOnVote
+      url
+      param
+      Xhr
+    }
+
+    COLORPICKER_OPTION_KEYS = %w{
+      format
+      update
+      updateBg
+      fxName
+      fxDuration
+    }
     
-    options['rel'] = 'calendar'
-    
-    calendar_options = RightRails::Helpers.unit_options(options, CALENDAR_OPTION_KEYS)
-    options['data-calendar-options'] = calendar_options unless calendar_options == '{}'
-    
-    options
-  end
-  
-  def __add_autocomplete_field_options(options)
-    rightjs_require_module 'autocompleter'
-    
-    options['rel'] = "autocompleter[#{escape_javascript(url_for(options.delete(:url)))}]"
-    
-    autocompleter_options = RightRails::Helpers.unit_options(options, AUTOCOMPLETER_OPTION_KEYS)
-    options['data-autocompleter-options'] = autocompleter_options unless autocompleter_options == '{}'
-    options['autocomplete'] = 'off'
-    
-    options
-  end
-  
-  def __add_slider_options(options)
-    rightjs_require_module 'dnd', 'slider'
-    options.reject { |key, value| SLIDER_OPTION_KEYS.include?(key.to_s) }
-  end
-  
-  def __slider_generator(options, name, method=nil)
-    value   = options[:value]
-    value ||= ActionView::Helpers::InstanceTag.value_before_type_cast(instance_variable_get("@#{name}"), method.to_s) if method
-    name    = "#{name}[#{method}]" if method
-    id      = options[:id] || sanitize_to_id(name)
-    options = RightRails::Helpers.unit_options(options.merge(:value => value), SLIDER_OPTION_KEYS)
-    javascript_tag "new Slider(#{options}).insertTo('#{id}','after').assignTo('#{id}');"
-  end
-  
-  def __add_rater_options(options)
-    rightjs_require_module 'rater'
-    options.reject { |key, value| RATER_OPTION_KEYS.include?(key.to_s) }
-  end
-  
-  def __rater_generator(options, name, method=nil)
-    value   = options[:value]
-    value ||= ActionView::Helpers::InstanceTag.value_before_type_cast(instance_variable_get("@#{name}"), method.to_s) if method
-    name    = "#{name}[#{method}]" if method
-    id      = options[:id] || sanitize_to_id(name)
-    options = RightRails::Helpers.unit_options(options.merge(:value => value), RATER_OPTION_KEYS)
-    javascript_tag "new Rater(#{options}).insertTo('#{id}','after').assignTo('#{id}');"
-  end
-  
-  def __add_colorpicker_field_options(options)
-    rightjs_require_module 'colorpicker'
-    
-    options['rel'] = 'colorpicker'
-    
-    colorpicker_options = RightRails::Helpers.unit_options(options, COLORPICKER_OPTION_KEYS)
-    options['data-colorpicker-options'] = colorpicker_options unless colorpicker_options == '{}'
-    
-    options
+    class << self
+      #
+      # Requires RightJS modules in the given context
+      #
+      def require_modules(context, *list)
+        RightRails::Helpers.require_js_module context, *list
+      end
+      
+      #
+      # Preprocesses the RightJS module options
+      #
+      def unit_options(options, list)
+        RightRails::Helpers.unit_options(options, list)
+      end
+      
+      #
+      # Prepares a list of options for the calendar widget
+      #
+      def calendar_options(context, options={})
+        require_modules(context, 'calendar')
+        
+        options['rel'] = 'calendar'
+
+        calendar_options = unit_options(options, CALENDAR_OPTION_KEYS)
+        options['data-calendar-options'] = calendar_options unless calendar_options == '{}'
+
+        options
+      end
+      
+      #
+      # Prepares the autocompleter field options hash
+      #
+      def autocompleter_options(context, options={})
+        require_modules(context, 'autocompleter')
+        
+        options['rel'] = "autocompleter[#{context.escape_javascript(context.url_for(options.delete(:url)))}]"
+
+        autocompleter_options = unit_options(options, AUTOCOMPLETER_OPTION_KEYS)
+        options['data-autocompleter-options'] = autocompleter_options unless autocompleter_options == '{}'
+        options['autocomplete'] = 'off'
+
+        options
+      end
+      
+      #
+      # Prepares the list of slider options
+      #
+      def slider_options(context, options)
+        require_modules context, 'dnd', 'slider'
+        options.reject { |key, value| SLIDER_OPTION_KEYS.include?(key.to_s) }
+      end
+      
+      #
+      # Generates the slider initialization script
+      #
+      def slider_generator(context, options, name, method=nil)
+        value   = options[:value]
+        value ||= ActionView::Helpers::InstanceTag.value_before_type_cast(instance_variable_get("@#{name}"), method.to_s) if method
+        name    = "#{name}[#{method}]" if method
+        id      = options[:id] || context.send(:sanitize_to_id, name)
+        options = unit_options(options.merge(:value => value), SLIDER_OPTION_KEYS)
+        context.javascript_tag "new Slider(#{options}).insertTo('#{id}','after').assignTo('#{id}');"
+      end
+      
+      #
+      # Prepares the rater widget options
+      #
+      def rater_options(context, options)
+        require_modules context, 'rater'
+        options.reject { |key, value| RATER_OPTION_KEYS.include?(key.to_s) }
+      end
+      
+      #
+      # Generates the rater initialization script
+      #
+      def rater_generator(context, options, name, method=nil)
+        value   = options[:value]
+        value ||= ActionView::Helpers::InstanceTag.value_before_type_cast(instance_variable_get("@#{name}"), method.to_s) if method
+        name    = "#{name}[#{method}]" if method
+        id      = options[:id] || context.send(:sanitize_to_id, name)
+        options = unit_options(options.merge(:value => value), RATER_OPTION_KEYS)
+        context.javascript_tag "new Rater(#{options}).insertTo('#{id}','after').assignTo('#{id}');"
+      end
+      
+      def colorpicker_options(context, options)
+        require_modules context, 'colorpicker'
+
+        options['rel'] = 'colorpicker'
+
+        colorpicker_options = unit_options(options, COLORPICKER_OPTION_KEYS)
+        options['data-colorpicker-options'] = colorpicker_options unless colorpicker_options == '{}'
+
+        options
+      end
+    end
   end
   
   
