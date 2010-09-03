@@ -158,7 +158,7 @@ private
     
     options['rel'] = 'calendar'
     
-    calendar_options = rightjs_unit_options(options, CALENDAR_OPTION_KEYS)
+    calendar_options = RightRails::Helpers.unit_options(options, CALENDAR_OPTION_KEYS)
     options['data-calendar-options'] = calendar_options unless calendar_options == '{}'
     
     options
@@ -169,7 +169,7 @@ private
     
     options['rel'] = "autocompleter[#{escape_javascript(url_for(options.delete(:url)))}]"
     
-    autocompleter_options = rightjs_unit_options(options, AUTOCOMPLETER_OPTION_KEYS)
+    autocompleter_options = RightRails::Helpers.unit_options(options, AUTOCOMPLETER_OPTION_KEYS)
     options['data-autocompleter-options'] = autocompleter_options unless autocompleter_options == '{}'
     options['autocomplete'] = 'off'
     
@@ -186,7 +186,7 @@ private
     value ||= ActionView::Helpers::InstanceTag.value_before_type_cast(instance_variable_get("@#{name}"), method.to_s) if method
     name    = "#{name}[#{method}]" if method
     id      = options[:id] || sanitize_to_id(name)
-    options = rightjs_unit_options(options.merge(:value => value), SLIDER_OPTION_KEYS)
+    options = RightRails::Helpers.unit_options(options.merge(:value => value), SLIDER_OPTION_KEYS)
     javascript_tag "new Slider(#{options}).insertTo('#{id}','after').assignTo('#{id}');"
   end
   
@@ -200,7 +200,7 @@ private
     value ||= ActionView::Helpers::InstanceTag.value_before_type_cast(instance_variable_get("@#{name}"), method.to_s) if method
     name    = "#{name}[#{method}]" if method
     id      = options[:id] || sanitize_to_id(name)
-    options = rightjs_unit_options(options.merge(:value => value), RATER_OPTION_KEYS)
+    options = RightRails::Helpers.unit_options(options.merge(:value => value), RATER_OPTION_KEYS)
     javascript_tag "new Rater(#{options}).insertTo('#{id}','after').assignTo('#{id}');"
   end
   
@@ -209,7 +209,7 @@ private
     
     options['rel'] = 'colorpicker'
     
-    colorpicker_options = rightjs_unit_options(options, COLORPICKER_OPTION_KEYS)
+    colorpicker_options = RightRails::Helpers.unit_options(options, COLORPICKER_OPTION_KEYS)
     options['data-colorpicker-options'] = colorpicker_options unless colorpicker_options == '{}'
     
     options

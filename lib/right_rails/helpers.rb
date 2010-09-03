@@ -88,6 +88,37 @@ protected
     end
     
     #
+    # Collects the RightJS unit options out of the given list of options
+    #
+    # NOTE: will nuke matching keys out of the original options object
+    #
+    # @param user's options
+    # @param allowed unit options keys
+    #
+    def unit_options(options, unit_keys)
+      unit_options = []
+
+      options.dup.each do |key, value|
+        c_key = key.to_s.camelize.gsub!(/^[A-Z]/){ |m| m.downcase }
+
+        if unit_keys.include?(c_key)
+          value = options.delete key
+
+          value = case value.class.name.to_sym
+            when :NilClass then 'null'
+            when :Symbol   then c_key == 'method' ? "'#{value}'" : "#{value}"
+            when :String   then "'#{value}'"
+            else                value.inspect
+          end
+
+          unit_options << "#{c_key}:#{value}"
+        end
+      end
+
+      "{#{unit_options.sort.join(',')}}"
+    end
+    
+    #
     # Builds a RightJS based Xhr request call
     #
     def build_xhr_request(options)

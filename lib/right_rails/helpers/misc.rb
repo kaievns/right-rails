@@ -63,7 +63,7 @@ module RightRails::Helpers::Misc
     html_options[:rel] = 'lightbox'
     html_options[:rel] << "[roadtrip]" if html_options.delete(:roadtrip)
     
-    lightbox_options = rightjs_unit_options(html_options, LIGHTBOX_OPTION_KEYS)
+    lightbox_options = RightRails::Helpers.unit_options(html_options, LIGHTBOX_OPTION_KEYS)
     html_options['data-lightbox-options'] = lightbox_options unless lightbox_options == '{}'
     
     link_to name, url, html_options, &block
@@ -104,7 +104,7 @@ module RightRails::Helpers::Misc
       options['class'] << (options['class'] == '' ? '' : ' ') + 'right-tabs-carousel'
     end
     
-    tabs_options = rightjs_unit_options(options, TABS_OPTION_KEYS)
+    tabs_options = RightRails::Helpers.unit_options(options, TABS_OPTION_KEYS)
     options['data-tabs-options'] = tabs_options unless tabs_options == '{}'
     
     # extracting the tab id prefix option
@@ -170,7 +170,7 @@ module RightRails::Helpers::Misc
   def resizable(options={}, &block)
     rightjs_require_module 'resizable'
     
-    tabs_options = rightjs_unit_options(options, RESIZABLE_OPTION_KEYS)
+    tabs_options = RightRails::Helpers.unit_options(options, RESIZABLE_OPTION_KEYS)
     options['data-resizable-options'] = tabs_options unless tabs_options == '{}'
     
     options[:class] ||= ''

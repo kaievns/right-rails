@@ -86,7 +86,7 @@ module RightRails::Helpers::Rails
     
     # processing the options
     options[:url] = escape_javascript(url_for(options[:url])) if options[:url]
-    s_options = rightjs_unit_options(options, SORTABLE_OPTION_KEYS)
+    s_options = RightRails::Helpers.unit_options(options, SORTABLE_OPTION_KEYS)
     script << ",#{s_options}" unless s_options == '{}'
     
     script << ")"
