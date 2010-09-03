@@ -119,17 +119,19 @@ private
     CALENDAR_OPTION_KEYS = %w{
       format
       showTime
-      twentyFourHour
-      timePeriod
       showButtons
       minDate
       maxDate
+      twentyFourHour
+      timePeriod
       listYears
       firstDay
       numberOfMonths
       fxName
       fxDuration
       hideOnPick
+      update
+      trigger
     }
 
     AUTOCOMPLETER_OPTION_KEYS = %w{
@@ -155,6 +157,7 @@ private
     }
 
     RATER_OPTION_KEYS = %w{
+      html
       size
       value
       update
@@ -169,6 +172,7 @@ private
       format
       update
       updateBg
+      trigger
       fxName
       fxDuration
     }

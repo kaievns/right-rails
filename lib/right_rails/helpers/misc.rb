@@ -202,6 +202,7 @@ module RightRails::Helpers::Misc
   }
   
   LIGHTBOX_OPTION_KEYS = %w{
+    group
     endOpacity
     fxDuration
     hideOnEsc

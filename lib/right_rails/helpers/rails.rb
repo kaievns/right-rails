@@ -101,6 +101,9 @@ module RightRails::Helpers::Rails
     idParam
     posParam
     parseId
+    dragClass
+    accept
+    minLength
   }
 
 end
