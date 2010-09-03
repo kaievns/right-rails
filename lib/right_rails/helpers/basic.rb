@@ -14,8 +14,14 @@ module RightRails::Helpers::Basic
   #   <%= rightjs_scripts 'lightbox', 'calendar' %>
   #
   def rightjs_scripts(*modules)
+    options = modules.last.is_a?(Hash) ? modules.pop : nil
+    
     rightjs_require_module *modules
-    javascript_include_tag *RightRails::Helpers.required_js_files(self)
+    
+    scripts = RightRails::Helpers.required_js_files(self)
+    scripts << options unless options.nil?
+    
+    javascript_include_tag *scripts
   end
   
   #

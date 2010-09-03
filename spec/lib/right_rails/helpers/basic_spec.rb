@@ -9,6 +9,11 @@ describe RightRails::Helpers::Basic do
     rightjs_scripts
   end
   
+  it "should respect the options hash at the end" do
+    should_receive(:javascript_include_tag).with('right', 'right/rails', :cache => 'rightjs')
+    rightjs_scripts :cache => 'rightjs'
+  end
+  
   it "should catch the optional modules" do
     rightjs_require_module *%w{lightbox dnd}
     
