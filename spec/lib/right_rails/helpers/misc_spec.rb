@@ -21,6 +21,10 @@ describe RightRails::Helpers::Misc do
     content
   end
   
+  def rightjs_required_files
+    RightRails::Helpers.required_js_files(self)
+  end
+  
   
   it "should provide the basic #flashes builder" do
     should_receive(:flash).any_number_of_times.and_return({

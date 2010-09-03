@@ -15,7 +15,7 @@ module RightRails::Helpers::Basic
   #
   def rightjs_scripts(*modules)
     rightjs_require_module *modules
-    javascript_include_tag *rightjs_required_files
+    javascript_include_tag *RightRails::Helpers.required_js_files(self)
   end
   
   #
@@ -61,13 +61,6 @@ module RightRails::Helpers::Basic
   #
   def rightjs_require_module(*list)
     RightRails::Helpers.require_js_module self, *list
-  end
-  
-  #
-  # Returns the list of currently required JavaScript files for RightJS
-  #
-  def rightjs_required_files
-    RightRails::Helpers.required_js_files self
   end
   
   #

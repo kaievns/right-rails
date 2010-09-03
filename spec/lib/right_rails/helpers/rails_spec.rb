@@ -45,6 +45,9 @@ describe RightRails::Helpers::Rails do
   # stubbing the convertion methods
   def url_for(url)               url    end
   def protect_against_forgery?() false  end
+  def rightjs_required_files
+    RightRails::Helpers.required_js_files(self)
+  end
     
   before :each do
     RightRails::Config.reset!

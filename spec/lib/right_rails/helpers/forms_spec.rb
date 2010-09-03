@@ -9,6 +9,9 @@ describe RightRails::Helpers::Forms do
   
   def url_for(options)   options end
   def escape_javascript(str) str end
+  def rightjs_required_files
+    RightRails::Helpers.required_js_files(self)
+  end
   
   it "should generate a #calendar_field_tag" do
     calendar_field_tag('name', 'value').should == 
