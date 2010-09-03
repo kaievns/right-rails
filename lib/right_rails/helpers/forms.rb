@@ -87,8 +87,9 @@ module RightRails::Helpers::Forms
     rightjs_require_module 'rater'
     
     content_tag :div, RightRails::Helpers.html_safe((0...(options[:size] || 5)).to_a.collect{ |i|
-      content_tag :div, RightRails::Helpers.html_safe('&#9733;'), :class => i < value ? 'right-rater-glow' : nil
-    }.join('')), :class => 'right-rater right-rater-disabled'
+      content_tag :div, RightRails::Helpers.html_safe('&#9733;'),
+        :class => i < value ? RightRails::Config.rightjs_version < 2 ? "right-rater-glow" : "active" : nil
+    }.join('')), :class => "#{RightRails::Helpers.css_prefix}-rater #{RightRails::Helpers.css_prefix}-rater-disabled"
   end
   
   #
@@ -117,7 +118,6 @@ private
   #
   module Util
     
-    
     class << self
       #
       # Requires RightJS modules in the given context
@@ -134,14 +134,18 @@ private
       end
       
       #
+      # Checks if we are in the RightJS 1 mode
+      #
+      def in_rightjs_1
+        RightRails::Config.rightjs_version < 2
+      end
+      
+      #
       # Prepares a list of options for the calendar widget
       #
       def calendar_options(context, options={})
         require_modules(context, 'calendar')
-        
-        unit_options(options, 'calendar').merge({
-          :rel => 'calendar'
-        })
+        unit_options(options, 'calendar').merge(in_rightjs_1 ? {:rel => 'calendar'} : {})
       end
       
       #
@@ -150,10 +154,14 @@ private
       def autocompleter_options(context, options={})
         require_modules(context, 'autocompleter')
         
-        unit_options(options, 'autocompleter').merge({
-          :rel => "autocompleter[#{context.escape_javascript(context.url_for(options.delete(:url)))}]",
-          :autocomplete => 'off'
-        })
+        options[:url] = context.escape_javascript(context.url_for(options[:url]))
+        
+        url = options.delete(:url) if in_rightjs_1
+        
+        options = unit_options(options, 'autocompleter').merge({:autocomplete => 'off'})
+        options.merge!({:rel => "autocompleter[#{url}]"})  if in_rightjs_1
+        
+        options
       end
       
       #
@@ -201,10 +209,7 @@ private
       #
       def colorpicker_options(context, options)
         require_modules context, 'colorpicker'
-        
-        unit_options(options, 'colorpicker').merge({
-          :rel => 'colorpicker'
-        })
+        unit_options(options, 'colorpicker').merge(in_rightjs_1 ? {:rel => 'colorpicker'} : {})
       end
     end
   end
@@ -243,8 +248,9 @@ private
       options = options.stringify_keys
       
       # formatting the date/time value if the format is specified
-      if !options["value"] && options["data-calendar-options"]
-        format = options["data-calendar-options"].scan(/format:('|")(.+?)\1/)
+      calendar_options = (options["data-calendar-options"] || options["data-calendar"])
+      if !options["value"] && calendar_options
+        format = calendar_options.scan(/format:('|")(.+?)\1/)
         time = value_before_type_cast(object)
         if time && time.respond_to?(:to_time) && format.size == 1
           options["value"] = time.to_time.strftime(format[0][1])

@@ -25,6 +25,10 @@ describe RightRails::Helpers::Misc do
     RightRails::Helpers.required_js_files(self)
   end
   
+  before :each do 
+    RightRails::Config.reset!
+  end
+  
   
   it "should provide the basic #flashes builder" do
     should_receive(:flash).any_number_of_times.and_return({
@@ -82,18 +86,39 @@ describe RightRails::Helpers::Misc do
   
   describe "#link_to_lightbox" do
     it "should generate the link" do
-      link_to_lightbox('boo', 'boo').should == '<a href="boo" rel="lightbox">boo</a>'
+      link_to_lightbox('boo', 'boo').should == '<a href="boo" data-lightbox="{}">boo</a>'
       rightjs_required_files.should include('right/lightbox')
     end
-    
+  
     it "should generate lightbox with roadtrip" do
       link_to_lightbox('boo', 'boo', :roadtrip => true).should ==
-        %Q{<a href="boo" rel="lightbox[roadtrip]">boo</a>}
+        %Q{<a href="boo" data-lightbox="{group:'true'}">boo</a>}
     end
-    
+  
     it "should generate lightbox with options" do
       link_to_lightbox('boo', 'boo', :hide_on_out_click => false).should ==
-        %Q{<a href="boo" data-lightbox-options="{hideOnOutClick:false}" rel="lightbox">boo</a>}
+        %Q{<a href="boo" data-lightbox="{hideOnOutClick:false}">boo</a>}
+    end
+    
+    describe "in RightJS 1 mode" do
+      before :each do 
+        RightRails::Config.rightjs_version = 1
+      end
+      
+      it "should generate the link" do
+        link_to_lightbox('boo', 'boo').should == '<a href="boo" rel="lightbox">boo</a>'
+        rightjs_required_files.should include('right/lightbox')
+      end
+    
+      it "should generate lightbox with roadtrip" do
+        link_to_lightbox('boo', 'boo', :roadtrip => true).should ==
+          %Q{<a href="boo" rel="lightbox[roadtrip]">boo</a>}
+      end
+    
+      it "should generate lightbox with options" do
+        link_to_lightbox('boo', 'boo', :hide_on_out_click => false).should ==
+          %Q{<a href="boo" data-lightbox-options="{hideOnOutClick:false}" rel="lightbox">boo</a>}
+      end
     end
   end
   
@@ -102,7 +127,7 @@ describe RightRails::Helpers::Misc do
       tabs(:id => 'my-tabs') {
         tab("Tab 1", :id => 'tab-1'){ 'content 1' }
         tab("Tab 2", :id => 'tab-2'){ 'content 2' }
-      }.should == %Q{<ul id=\"my-tabs\"><ul><li><a href=\"#tab-1\">Tab 1</a></li>\n<li><a href=\"#tab-2\">Tab 2</a></li></ul>\n<li id=\"tab-1\">content 1</li>\n<li id=\"tab-2\">content 2</li>\n</ul>\n<script type=\"text/javascript\">\n//<![CDATA[\nnew Tabs('my-tabs');\n//]]>\n</script>}
+      }.should == %Q{<ul id="my-tabs"><ul><li><a href="#tab-1">Tab 1</a></li>\n<li><a href="#tab-2">Tab 2</a></li></ul>\n<li id="tab-1">content 1</li>\n<li id="tab-2">content 2</li>\n</ul>\n<script type="text/javascript">\n//<![CDATA[\nnew Tabs('my-tabs', {});\n//]]>\n</script>}
       
       rightjs_required_files.should include('right/tabs')
     end
@@ -111,50 +136,89 @@ describe RightRails::Helpers::Misc do
       tabs(:id => 'my-tabs', :id_prefix => 'foo-') {
         tab("Tab 1", :id => 'tab-1'){ 'content 1' }
         tab("Tab 2", :id => 'tab-2'){ 'content 2' }
-      }.should == %Q{<ul data-tabs-options=\"{idPrefix:'foo-'}\" id=\"my-tabs\"><ul><li><a href=\"#tab-1\">Tab 1</a></li>\n<li><a href=\"#tab-2\">Tab 2</a></li></ul>\n<li id=\"foo-tab-1\">content 1</li>\n<li id=\"foo-tab-2\">content 2</li>\n</ul>\n<script type=\"text/javascript\">\n//<![CDATA[\nnew Tabs('my-tabs');\n//]]>\n</script>}
+      }.should == %Q{<ul id="my-tabs"><ul><li><a href="#tab-1">Tab 1</a></li>\n<li><a href="#tab-2">Tab 2</a></li></ul>\n<li id="foo-tab-1">content 1</li>\n<li id="foo-tab-2">content 2</li>\n</ul>\n<script type="text/javascript">\n//<![CDATA[\nnew Tabs('my-tabs', {idPrefix:'foo-'});\n//]]>\n</script>}
     end
     
     it "should generate remote tabs" do
       tabs(:id => 'my-tabs') {
         tab("Tab 1", :url => '/tab/1')
         tab("Tab 2", :url => '/tab/2')
-      }.should == %Q{<ul id=\"my-tabs\"><ul><li><a href=\"/tab/1\">Tab 1</a></li>\n<li><a href=\"/tab/2\">Tab 2</a></li></ul>\n</ul>\n<script type=\"text/javascript\">\n//<![CDATA[\nnew Tabs('my-tabs');\n//]]>\n</script>}
+      }.should == %Q{<ul id="my-tabs"><ul><li><a href="/tab/1">Tab 1</a></li>\n<li><a href="/tab/2">Tab 2</a></li></ul>\n</ul>\n<script type="text/javascript">\n//<![CDATA[\nnew Tabs('my-tabs', {});\n//]]>\n</script>}
     end
     
     it "should generate carousel tabs" do
       tabs(:id => 'my-tabs', :type => :carousel) {
         tab("Tab 1", :id => 'tab-1'){ 'content 1' }
         tab("Tab 2", :id => 'tab-2'){ 'content 2' }
-      }.should == %Q{<ul class=\"right-tabs-carousel\" id=\"my-tabs\"><ul><li><a href=\"#tab-1\">Tab 1</a></li>\n<li><a href=\"#tab-2\">Tab 2</a></li></ul>\n<li id=\"tab-1\">content 1</li>\n<li id=\"tab-2\">content 2</li>\n</ul>\n<script type=\"text/javascript\">\n//<![CDATA[\nnew Tabs('my-tabs');\n//]]>\n</script>}
+      }.should == %Q{<ul class="#{RightRails::Helpers.css_prefix}-tabs-carousel" id="my-tabs"><ul><li><a href="#tab-1">Tab 1</a></li>\n<li><a href="#tab-2">Tab 2</a></li></ul>\n<li id="tab-1">content 1</li>\n<li id="tab-2">content 2</li>\n</ul>\n<script type="text/javascript">\n//<![CDATA[\nnew Tabs('my-tabs', {});\n//]]>\n</script>}
     end
     
     it "should generate harmonica tabs" do
       tabs(:id => 'my-tabs', :type => :harmonica) {
         tab("Tab 1", :id => 'tab-1'){ 'content 1' }
         tab("Tab 2", :id => 'tab-2'){ 'content 2' }
-      }.should == %Q{<dl id=\"my-tabs\"><dt><a href=\"#tab-1\">Tab 1</a></dt>\n<dd id=\"tab-1\">content 1</dd>\n<dt><a href=\"#tab-2\">Tab 2</a></dt>\n<dd id=\"tab-2\">content 2</dd></dl>\n<script type=\"text/javascript\">\n//<![CDATA[\nnew Tabs('my-tabs');\n//]]>\n</script>}
+      }.should == %Q{<dl id="my-tabs"><dt><a href="#tab-1">Tab 1</a></dt>\n<dd id="tab-1">content 1</dd>\n<dt><a href="#tab-2">Tab 2</a></dt>\n<dd id=\"tab-2\">content 2</dd></dl>\n<script type="text/javascript">\n//<![CDATA[\nnew Tabs('my-tabs', {});\n//]]>\n</script>}
     end
   end
   
   describe "#resizable generator" do
+    
     it "should generate a simple resizable" do
-      resizable {
-        "bla bla bla"
-      }.should == %Q{<div class=\"right-resizable\"><div class=\"right-resizable-content\">bla bla bla</div><div class=\"right-resizable-handle\"></div></div>}
-      
+      resizable { "bla bla bla" }.should == 
+      %Q{<div class="rui-resizable">}+
+        %Q{<div class="rui-resizable-content">bla bla bla</div>}+
+        %Q{<div class="rui-resizable-handle"></div>}+
+      %Q{</div>}
+    
       rightjs_required_files.should include('right/resizable')
     end
-    
+  
     it "should generate a resizable with directions" do
-      resizable(:direction => :bottom) {
-        'boo'
-      }.should == %Q{<div class=\"right-resizable-bottom\"><div class=\"right-resizable-content\">boo</div><div class=\"right-resizable-handle\"></div></div>}
+      resizable(:direction => :bottom) { 'boo' }.should == 
+      %Q{<div class="rui-resizable-bottom">}+
+        %Q{<div class="rui-resizable-content">boo</div>}+
+        %Q{<div class="rui-resizable-handle"></div>}+
+      %Q{</div>}
+    end
+  
+    it "should generate a resizable with constraints" do
+      resizable(:min_width => 100, :maxHeight => '10em'){ 'boo' }.should == 
+      %Q{<div class="rui-resizable" data-resizable="{maxHeight:'10em',minWidth:100}">}+
+        %Q{<div class="rui-resizable-content">boo</div>}+
+        %Q{<div class="rui-resizable-handle"></div>}+
+      %Q{</div>}
     end
     
-    it "should generate a resizable with constraints" do
-      resizable(:min_width => 100, :maxHeight => '10em'){
-        'boo'
-      }.should == %Q{<div class=\"right-resizable\" data-resizable-options=\"{maxHeight:'10em',minWidth:100}\"><div class=\"right-resizable-content\">boo</div><div class=\"right-resizable-handle\"></div></div>}
+    describe "in RightJS 1 mode" do
+      before :each do
+        RightRails::Config.rightjs_version = 1
+      end
+      
+      it "should generate a simple resizable" do
+        resizable { "bla bla bla" }.should == 
+        %Q{<div class="right-resizable">}+
+          %Q{<div class="right-resizable-content">bla bla bla</div>}+
+          %Q{<div class="right-resizable-handle"></div>}+
+        %Q{</div>}
+      
+        rightjs_required_files.should include('right/resizable')
+      end
+    
+      it "should generate a resizable with directions" do
+        resizable(:direction => :bottom) { 'boo' }.should == 
+        %Q{<div class="right-resizable-bottom">}+
+          %Q{<div class="right-resizable-content">boo</div>}+
+          %Q{<div class="right-resizable-handle"></div>}+
+        %Q{</div>}
+      end
+    
+      it "should generate a resizable with constraints" do
+        resizable(:min_width => 100, :maxHeight => '10em'){ 'boo' }.should == 
+        %Q{<div class="right-resizable" data-resizable-options="{maxHeight:'10em',minWidth:100}">}+
+          %Q{<div class="right-resizable-content">boo</div>}+
+          %Q{<div class="right-resizable-handle"></div>}+
+        %Q{</div>}
+      end
     end
   end
 end

@@ -47,6 +47,8 @@ module RightRails::Helpers::Misc
     content_tag :ul, RightRails::Helpers.html_safe(items)
   end
   
+  alias_method :autocompleter_result, :autocomplete_result
+  
   
   #
   # Generates a link that whil load the refered address in a lightbox
@@ -57,15 +59,21 @@ module RightRails::Helpers::Misc
   #
   #   <%= link_to_lightbox image_tag('/image.thmb'), '/image.full', :roadtrip => true %>
   #
-  def link_to_lightbox(name, url={}, html_options={}, &block)
+  def link_to_lightbox(name, url={}, options={}, &block)
     rightjs_require_module 'lightbox'
     
-    html_options[:rel] = 'lightbox'
-    html_options[:rel] << "[roadtrip]" if html_options.delete(:roadtrip)
+    group = options.delete(:roadtrip) || options.delete(:group)
     
-    RightRails::Helpers.add_unit_options(html_options, 'lightbox')
+    if RightRails::Config.rightjs_version < 2
+      options[:rel] = 'lightbox'
+      options[:rel] << "[roadtrip]" if group
+    else
+      options[:group] = group.to_s if group
+    end
     
-    link_to name, url, html_options, &block
+    RightRails::Helpers.add_unit_options(options, 'lightbox')
+    
+    link_to name, url, options, &block
   end
   
   #
@@ -100,13 +108,15 @@ module RightRails::Helpers::Misc
     # checking for the carousel class
     if tabs_type == :carousel
       options['class'] ||= ''
-      options['class'] << (options['class'] == '' ? '' : ' ') + 'right-tabs-carousel'
+      options['class'] << (options['class'] == '' ? '' : ' ') + "#{RightRails::Helpers.css_prefix}-tabs-carousel"
     end
     
     # extracting the tab id prefix option
     tab_id_prefix = options[:idPrefix] || options['idPrefix'] || options[:id_prefix] || options['id_prefix'] || ''
     
     RightRails::Helpers.add_unit_options(options, 'tabs')
+    
+    tabs_widget_options = options.delete('data-tabs') || options.delete('data-tabs-options')
     
     # simple tabs and carousels generator
     content = if tabs_type != :harmonica
@@ -142,7 +152,9 @@ module RightRails::Helpers::Misc
       
     end
     
-    concat(content + RightRails::Helpers.html_safe("\n") + javascript_tag("new Tabs('#{options['id']}');"))
+    concat(content + RightRails::Helpers.html_safe("\n") + javascript_tag(
+      "new Tabs('#{options['id']}', #{tabs_widget_options || '{}'});"
+    ))
   end
   
   def tab(title, options={}, &block)
@@ -168,13 +180,16 @@ module RightRails::Helpers::Misc
     
     RightRails::Helpers.add_unit_options(options, 'resizable')
     
+    options.delete('data-resizable') if options['data-resizable'] == "{}"
+    
     options[:class] ||= ''
-    options[:class] << " right-resizable#{options[:direction] ? "-#{options.delete(:direction)}" : ''}"
+    options[:class] << " #{RightRails::Helpers.css_prefix}-resizable#{options[:direction] ? "-#{options.delete(:direction)}" : ''}"
     options[:class].strip!
     
     concat(content_tag(:div, (
-        content_tag(:div, RightRails::Helpers.html_safe(capture(&block)), :class => 'right-resizable-content') +
-        content_tag(:div, '', :class => 'right-resizable-handle')
+        content_tag(:div, RightRails::Helpers.html_safe(capture(&block)),
+          :class => "#{RightRails::Helpers.css_prefix}-resizable-content") +
+        content_tag(:div, '', :class => "#{RightRails::Helpers.css_prefix}-resizable-handle")
       ), options
     ))
   end

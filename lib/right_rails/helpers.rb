@@ -38,6 +38,7 @@ module RightRails::Helpers
   }
 
   AUTOCOMPLETER_OPTION_KEYS = %w{
+    url
     param
     method
     minLength
@@ -139,6 +140,14 @@ protected
     #
     def prefix
       RightRails::Config.safe_mode? ? 'RightJS.' : ''
+    end
+    
+    #
+    # Switches between the css class-names prefixes
+    # depending on current RightJS version
+    #
+    def css_prefix
+      RightRails::Config.rightjs_version < 2 ? 'right' : 'rui'
     end
     
     #
@@ -252,7 +261,13 @@ protected
     #
     def add_unit_options(options, unit)
       options_string = unit_options(options, unit)
-      options["data-#{unit}-options"] = options_string unless options_string == '{}'
+      
+      if RightRails::Config.rightjs_version > 1
+        options["data-#{unit}"] = options_string
+      elsif options_string != '{}'
+        options["data-#{unit}-options"] = options_string 
+      end
+      
       options
     end
     
