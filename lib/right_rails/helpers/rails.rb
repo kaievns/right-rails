@@ -15,6 +15,9 @@ module RightRails::Helpers::Rails
     end
   end
   
+  #
+  # Overloading the `remote_function` helper so it used the RightJS semantics
+  #
   def remote_function(options)
     cmd = build_xhr_request(options)
     
@@ -27,8 +30,11 @@ module RightRails::Helpers::Rails
     cmd
   end
   
+  #
+  # Overloading the `submit_to_remote` so it used RightJS instead
+  #
   def submit_to_remote(name, value, options = {})
-    options[:submit] ||= '$(this.form)'
+    options[:submit] ||= "#{RightRails::Helpers.prefix}$(this.form)"
 
     html_options = options.delete(:html) || {}
     html_options[:name] = name
@@ -36,20 +42,27 @@ module RightRails::Helpers::Rails
     button_to_remote(value, options, html_options)
   end
   
+  #
+  # Replacing `periodically_call_remote` method
+  #
   def periodically_call_remote(options={})
     frequency = options[:frequency] || 10 # every ten seconds by default
     code = "function(){#{remote_function(options)}}.periodical(#{frequency * 1000})"
     javascript_tag(code)
   end
   
-  # stubbing the draggables generator to make our autoscripts stuff working
+  #
+  # replacing the draggables generator to make our autoscripts stuff working
+  #
   def draggable_element_js(*args)
     rightjs_require_module 'dnd'
     
     super *args
   end
   
-  # stubbing the droppables generator
+  #
+  # replace the droppables generator to be used with RightJS
+  #
   def drop_receiving_element_js(*args)
     rightjs_require_module 'dnd'
     
@@ -58,7 +71,9 @@ module RightRails::Helpers::Rails
       ).gsub!('(element)', '(draggable)')
   end
   
+  #
   # catching the sortables generator
+  #
   def sortable_element_js(id, options={})
     rightjs_require_module 'dnd', 'sortable'
     
@@ -101,7 +116,9 @@ protected
 
   # builds the xhr request string
   def build_xhr_request(options)
-    xhr = options[:submit] ? "new Xhr(" : "Xhr.load("
+    xhr = options[:submit] ?
+      "new #{RightRails::Helpers.prefix}Xhr(" :
+      "#{RightRails::Helpers.prefix}Xhr.load("
     
     # assigning the url address
     url = options[:url]
@@ -133,7 +150,9 @@ protected
     
     # checking the update option
     if options[:update]
-      template = options[:position] ? "$('%s').insert(this.text,'%s')" : "$('%s').update(this.text)%s"
+      template = options[:position] ?
+        "#{RightRails::Helpers.prefix}$('%s').insert(this.text,'%s')" :
+        "#{RightRails::Helpers.prefix}$('%s').update(this.text)%s"
       
       if options[:update].is_a?(Hash)
         xhr_options[:onSuccess]  << template % [options[:update][:success], options[:position]] if options[:update][:success]
@@ -164,7 +183,7 @@ protected
     
     # forms sending adjustements
     xhr << ".send(#{options[:submit]})" if options[:submit]
-    xhr.gsub! /^.+?(,|(\)))/, '$(this).send(\2'  if options[:form]
+    xhr.gsub! /^.+?(,|(\)))/, RightRails::Helpers.prefix + '$(this).send(\2'  if options[:form]
     
     xhr
   end

@@ -46,6 +46,10 @@ describe RightRails::Helpers::Rails do
   def url_for(url)               url    end
   def protect_against_forgery?() false  end
     
+  before :each do
+    RightRails::Config.reset!
+  end
+    
   describe "#include_javascript_tag" do
     it "should load the RightJS scripts by default" do
       should_receive(:rightjs_scripts).and_return('right.js')
@@ -118,6 +122,21 @@ describe RightRails::Helpers::Rails do
       remote_function(:url => '/foo', :confirm => 'Sure?').should == 
         "if(confirm('Sure?')){Xhr.load('/foo')}"
     end
+    
+    describe "in safe-mode" do
+      before :each do
+        RightRails::Config.safe_mode = true
+      end
+      
+      it "should prefix the 'Xhr' calls" do
+        remote_function(:url => '/foo').should == "RightJS.Xhr.load('/foo')"
+      end
+      
+      it "should prefix the '$' calls" do
+        remote_function(:url => '/foo', :update => 'boo').should ==
+          "RightJS.Xhr.load('/foo',{onComplete:function(request){RightJS.$('boo').update(this.text)}})"
+      end
+    end
   end
   
   describe "#link_to_function" do
@@ -171,6 +190,12 @@ describe RightRails::Helpers::Rails do
     it "should generate a proper remote form with options" do
       form_remote_tag(:url => '/boo', :spinner => 'spinner').should =~
         /<form[^>]+#{Regexp.escape(%Q{action="/boo" method="post" onsubmit="$(this).send({spinner:'spinner'}); return false;">})}/
+    end
+    
+    it "should prefix '$' with RightJS. in safe-mode" do
+      RightRails::Config.safe_mode = true
+      form_remote_tag(:url => '/boo').should =~
+        /<form[^>]+#{Regexp.escape(%Q{action="/boo" method="post" onsubmit="RightJS.$(this).send(); return false;">})}/
     end
   end
   
