@@ -45,6 +45,13 @@ describe RightRails::Helpers::Rails do
   # stubbing the convertion methods
   def url_for(url)               url    end
   def protect_against_forgery?() false  end
+    
+  describe "#include_javascript_tag" do
+    it "should load the RightJS scripts by default" do
+      should_receive(:rightjs_scripts).and_return('right.js')
+      include_javascript_tag(:default).should == 'right.js'
+    end
+  end
   
   describe "#remote_function" do
     it "should generatorate a simple request" do
