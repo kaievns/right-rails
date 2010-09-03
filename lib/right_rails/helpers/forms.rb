@@ -116,66 +116,7 @@ private
   # so they didn't pollute the global scope
   #
   module Util
-    CALENDAR_OPTION_KEYS = %w{
-      format
-      showTime
-      showButtons
-      minDate
-      maxDate
-      twentyFourHour
-      timePeriod
-      listYears
-      firstDay
-      numberOfMonths
-      fxName
-      fxDuration
-      hideOnPick
-      update
-      trigger
-    }
-
-    AUTOCOMPLETER_OPTION_KEYS = %w{
-      param
-      method
-      minLength
-      threshold
-      cache
-      local
-      fxName
-      fxDuration
-      spinner
-    }
-
-    SLIDER_OPTION_KEYS = %w{
-      min
-      max
-      snap
-      value
-      direction
-      update
-      round
-    }
-
-    RATER_OPTION_KEYS = %w{
-      html
-      size
-      value
-      update
-      disabled
-      disableOnVote
-      url
-      param
-      Xhr
-    }
-
-    COLORPICKER_OPTION_KEYS = %w{
-      format
-      update
-      updateBg
-      trigger
-      fxName
-      fxDuration
-    }
+    
     
     class << self
       #
@@ -188,8 +129,8 @@ private
       #
       # Preprocesses the RightJS module options
       #
-      def unit_options(options, list)
-        RightRails::Helpers.unit_options(options, list)
+      def unit_options(options, unit)
+        RightRails::Helpers.add_unit_options(options, unit)
       end
       
       #
@@ -198,12 +139,9 @@ private
       def calendar_options(context, options={})
         require_modules(context, 'calendar')
         
-        options['rel'] = 'calendar'
-
-        calendar_options = unit_options(options, CALENDAR_OPTION_KEYS)
-        options['data-calendar-options'] = calendar_options unless calendar_options == '{}'
-
-        options
+        unit_options(options, 'calendar').merge({
+          :rel => 'calendar'
+        })
       end
       
       #
@@ -212,13 +150,10 @@ private
       def autocompleter_options(context, options={})
         require_modules(context, 'autocompleter')
         
-        options['rel'] = "autocompleter[#{context.escape_javascript(context.url_for(options.delete(:url)))}]"
-
-        autocompleter_options = unit_options(options, AUTOCOMPLETER_OPTION_KEYS)
-        options['data-autocompleter-options'] = autocompleter_options unless autocompleter_options == '{}'
-        options['autocomplete'] = 'off'
-
-        options
+        unit_options(options, 'autocompleter').merge({
+          :rel => "autocompleter[#{context.escape_javascript(context.url_for(options.delete(:url)))}]",
+          :autocomplete => 'off'
+        })
       end
       
       #
@@ -226,7 +161,7 @@ private
       #
       def slider_options(context, options)
         require_modules context, 'dnd', 'slider'
-        options.reject { |key, value| SLIDER_OPTION_KEYS.include?(key.to_s) }
+        RightRails::Helpers.remove_unit_options(options, 'slider')
       end
       
       #
@@ -237,7 +172,7 @@ private
         value ||= ActionView::Helpers::InstanceTag.value_before_type_cast(instance_variable_get("@#{name}"), method.to_s) if method
         name    = "#{name}[#{method}]" if method
         id      = options[:id] || context.send(:sanitize_to_id, name)
-        options = unit_options(options.merge(:value => value), SLIDER_OPTION_KEYS)
+        options = RightRails::Helpers.unit_options(options.merge(:value => value), 'slider')
         context.javascript_tag "new Slider(#{options}).insertTo('#{id}','after').assignTo('#{id}');"
       end
       
@@ -246,7 +181,7 @@ private
       #
       def rater_options(context, options)
         require_modules context, 'rater'
-        options.reject { |key, value| RATER_OPTION_KEYS.include?(key.to_s) }
+        RightRails::Helpers.remove_unit_options(options, 'rater')
       end
       
       #
@@ -257,19 +192,19 @@ private
         value ||= ActionView::Helpers::InstanceTag.value_before_type_cast(instance_variable_get("@#{name}"), method.to_s) if method
         name    = "#{name}[#{method}]" if method
         id      = options[:id] || context.send(:sanitize_to_id, name)
-        options = unit_options(options.merge(:value => value), RATER_OPTION_KEYS)
+        options = RightRails::Helpers.unit_options(options.merge(:value => value), 'rater')
         context.javascript_tag "new Rater(#{options}).insertTo('#{id}','after').assignTo('#{id}');"
       end
       
+      #
+      # Prepares the Colorpicker widget options
+      #
       def colorpicker_options(context, options)
         require_modules context, 'colorpicker'
-
-        options['rel'] = 'colorpicker'
-
-        colorpicker_options = unit_options(options, COLORPICKER_OPTION_KEYS)
-        options['data-colorpicker-options'] = colorpicker_options unless colorpicker_options == '{}'
-
-        options
+        
+        unit_options(options, 'colorpicker').merge({
+          :rel => 'colorpicker'
+        })
       end
     end
   end

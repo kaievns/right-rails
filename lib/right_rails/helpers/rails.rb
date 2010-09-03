@@ -86,24 +86,10 @@ module RightRails::Helpers::Rails
     
     # processing the options
     options[:url] = escape_javascript(url_for(options[:url])) if options[:url]
-    s_options = RightRails::Helpers.unit_options(options, SORTABLE_OPTION_KEYS)
+    s_options = RightRails::Helpers.unit_options(options, 'sortable')
     script << ",#{s_options}" unless s_options == '{}'
     
     script << ")"
   end
   
-  SORTABLE_OPTION_KEYS = %w{
-    url
-    direction
-    tags
-    method
-    Xhr
-    idParam
-    posParam
-    parseId
-    dragClass
-    accept
-    minLength
-  }
-
 end

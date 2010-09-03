@@ -2,6 +2,134 @@
 # There is the namespace for the helpers and some private methods
 #
 module RightRails::Helpers
+  ##########################################################################
+  #  Varios RightJS unit keys
+  ##########################################################################
+  XHR_OPTION_KEYS = %w{
+    method
+    encoding
+    async
+    evalScripts
+    evalResponse
+    evalJSON
+    secureJSON
+    urlEncoded
+    spinner
+    spinnerFx
+    params
+  }
+  
+  CALENDAR_OPTION_KEYS = %w{
+    format
+    showTime
+    showButtons
+    minDate
+    maxDate
+    twentyFourHour
+    timePeriod
+    listYears
+    firstDay
+    numberOfMonths
+    fxName
+    fxDuration
+    hideOnPick
+    update
+    trigger
+  }
+
+  AUTOCOMPLETER_OPTION_KEYS = %w{
+    param
+    method
+    minLength
+    threshold
+    cache
+    local
+    fxName
+    fxDuration
+    spinner
+  }
+
+  SLIDER_OPTION_KEYS = %w{
+    min
+    max
+    snap
+    value
+    direction
+    update
+    round
+  }
+
+  RATER_OPTION_KEYS = %w{
+    html
+    size
+    value
+    update
+    disabled
+    disableOnVote
+    url
+    param
+    Xhr
+  }
+
+  COLORPICKER_OPTION_KEYS = %w{
+    format
+    update
+    updateBg
+    trigger
+    fxName
+    fxDuration
+  }
+  
+  TABS_OPTION_KEYS = %w{
+    idPrefix
+    tabsElement
+    resizeFx
+    resizeDuration
+    scrollTabs
+    scrollDuration
+    selected
+    disabled
+    closable
+    loop
+    loopPause
+    url
+    cache
+    Xhr
+    Cookie
+  }
+  
+  LIGHTBOX_OPTION_KEYS = %w{
+    group
+    endOpacity
+    fxDuration
+    hideOnEsc
+    hideOnOutClick
+    showCloseButton
+    blockContent
+    mediaWidth
+    mediaHeight
+  }
+  
+  RESIZABLE_OPTION_KEYS = %w{
+    minWidth
+    maxWidth
+    minHeight
+    maxHeight
+  }
+  
+  SORTABLE_OPTION_KEYS = %w{
+    url
+    direction
+    tags
+    method
+    Xhr
+    idParam
+    posParam
+    parseId
+    dragClass
+    accept
+    minLength
+  }
   
 protected
 
@@ -93,10 +221,11 @@ protected
     # NOTE: will nuke matching keys out of the original options object
     #
     # @param user's options
-    # @param allowed unit options keys
+    # @param unit name
     #
-    def unit_options(options, unit_keys)
+    def unit_options(options, unit)
       unit_options = []
+      unit_keys    = get_keys_for(unit)
 
       options.dup.each do |key, value|
         c_key = key.to_s.camelize.gsub!(/^[A-Z]/){ |m| m.downcase }
@@ -116,6 +245,28 @@ protected
       end
 
       "{#{unit_options.sort.join(',')}}"
+    end
+    
+    #
+    # Adds the unit options to the options list
+    #
+    def add_unit_options(options, unit)
+      options_string = unit_options(options, unit)
+      options["data-#{unit}-options"] = options_string unless options_string == '{}'
+      options
+    end
+    
+    #
+    # Removes the unit option keys out of the given options
+    #
+    def remove_unit_options(options, unit)
+      unit_keys = get_keys_for(unit)
+      options.reject{ |k, v| unit_keys.include?(k.to_s) }
+    end
+    
+    # returns a list of keys for the unit
+    def get_keys_for(unit)
+      const_get("#{unit.to_s.upcase}_OPTION_KEYS") || []
     end
     
     #
@@ -154,8 +305,8 @@ protected
       # checking the update option
       if options[:update]
         template = options[:position] ?
-          "#{RightRails::Helpers.prefix}$('%s').insert(this.text,'%s')" :
-          "#{RightRails::Helpers.prefix}$('%s').update(this.text)%s"
+          "#{prefix}$('%s').insert(this.text,'%s')" :
+          "#{prefix}$('%s').update(this.text)%s"
 
         if options[:update].is_a?(Hash)
           xhr_options[:onSuccess]  << template % [options[:update][:success], options[:position]] if options[:update][:success]
@@ -186,24 +337,10 @@ protected
 
       # forms sending adjustements
       xhr << ".send(#{options[:submit]})" if options[:submit]
-      xhr.gsub! /^.+?(,|(\)))/, RightRails::Helpers.prefix + '$(this).send(\2'  if options[:form]
+      xhr.gsub! /^.+?(,|(\)))/, prefix + '$(this).send(\2'  if options[:form]
 
       xhr
     end
-    
-    XHR_OPTION_KEYS = %w{
-      method
-      encoding
-      async
-      evalScripts
-      evalResponse
-      evalJSON
-      secureJSON
-      urlEncoded
-      spinner
-      spinnerFx
-      params
-    }
     
   end
   

@@ -63,8 +63,7 @@ module RightRails::Helpers::Misc
     html_options[:rel] = 'lightbox'
     html_options[:rel] << "[roadtrip]" if html_options.delete(:roadtrip)
     
-    lightbox_options = RightRails::Helpers.unit_options(html_options, LIGHTBOX_OPTION_KEYS)
-    html_options['data-lightbox-options'] = lightbox_options unless lightbox_options == '{}'
+    RightRails::Helpers.add_unit_options(html_options, 'lightbox')
     
     link_to name, url, html_options, &block
   end
@@ -104,12 +103,10 @@ module RightRails::Helpers::Misc
       options['class'] << (options['class'] == '' ? '' : ' ') + 'right-tabs-carousel'
     end
     
-    tabs_options = RightRails::Helpers.unit_options(options, TABS_OPTION_KEYS)
-    options['data-tabs-options'] = tabs_options unless tabs_options == '{}'
-    
     # extracting the tab id prefix option
-    tab_id_prefix = tabs_options.scan(/idPrefix:('|")(.+?)\1/)
-    tab_id_prefix = tab_id_prefix.size == 1 ? tab_id_prefix[0][1] : ''
+    tab_id_prefix = options[:idPrefix] || options['idPrefix'] || options[:id_prefix] || options['id_prefix'] || ''
+    
+    RightRails::Helpers.add_unit_options(options, 'tabs')
     
     # simple tabs and carousels generator
     content = if tabs_type != :harmonica
@@ -169,8 +166,7 @@ module RightRails::Helpers::Misc
   def resizable(options={}, &block)
     rightjs_require_module 'resizable'
     
-    tabs_options = RightRails::Helpers.unit_options(options, RESIZABLE_OPTION_KEYS)
-    options['data-resizable-options'] = tabs_options unless tabs_options == '{}'
+    RightRails::Helpers.add_unit_options(options, 'resizable')
     
     options[:class] ||= ''
     options[:class] << " right-resizable#{options[:direction] ? "-#{options.delete(:direction)}" : ''}"
@@ -182,42 +178,5 @@ module RightRails::Helpers::Misc
       ), options
     ))
   end
-  
-  TABS_OPTION_KEYS = %w{
-    idPrefix
-    tabsElement
-    resizeFx
-    resizeDuration
-    scrollTabs
-    scrollDuration
-    selected
-    disabled
-    closable
-    loop
-    loopPause
-    url
-    cache
-    Xhr
-    Cookie
-  }
-  
-  LIGHTBOX_OPTION_KEYS = %w{
-    group
-    endOpacity
-    fxDuration
-    hideOnEsc
-    hideOnOutClick
-    showCloseButton
-    blockContent
-    mediaWidth
-    mediaHeight
-  }
-  
-  RESIZABLE_OPTION_KEYS = %w{
-    minWidth
-    maxWidth
-    minHeight
-    maxHeight
-  }
   
 end
