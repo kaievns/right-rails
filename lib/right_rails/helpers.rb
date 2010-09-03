@@ -78,8 +78,6 @@ protected
       scripts
     end
     
-  private
-    
     #
     # Returns the rightjs-modules registry for the context
     #
@@ -88,6 +86,94 @@ protected
         return @___rightjs_modules_registry ||= []
       end
     end
+    
+    #
+    # Builds a RightJS based Xhr request call
+    #
+    def build_xhr_request(options)
+      xhr = options[:submit] ?
+        "new #{RightRails::Helpers.prefix}Xhr(" :
+        "#{RightRails::Helpers.prefix}Xhr.load("
+      
+      xhr << "'#{options[:url]}'"
+      
+      # building the options
+      xhr_options = { :onSuccess => '',  :onFailure => '', :onComplete => '' }
+
+      # grabbing the standard XHR options
+      options.each do |key, value|
+        if XHR_OPTION_KEYS.include?(key.to_s)
+          xhr_options[key] = case value.class.name.to_sym
+            when :NilClass then 'null'
+            when :String   then "'#{value}'"
+            when :Symbol   then key.to_s == 'method' ? "'#{value}'" : "#{value}"
+            else           value.inspect
+          end
+        end
+      end
+
+      # checking the parameters options
+      xhr_options[:params] = options[:with]        if options[:with]
+
+      # checking the callbacks
+      xhr_options[:onSuccess]  = "#{options[:success]};"  if options[:success]
+      xhr_options[:onFailure]  = "#{options[:failure]};"  if options[:failure]
+      xhr_options[:onComplete] = "#{options[:complete]};" if options[:complete]
+
+      # checking the update option
+      if options[:update]
+        template = options[:position] ?
+          "#{RightRails::Helpers.prefix}$('%s').insert(this.text,'%s')" :
+          "#{RightRails::Helpers.prefix}$('%s').update(this.text)%s"
+
+        if options[:update].is_a?(Hash)
+          xhr_options[:onSuccess]  << template % [options[:update][:success], options[:position]] if options[:update][:success]
+          xhr_options[:onFailure]  << template % [options[:update][:failure], options[:position]] if options[:update][:failure]
+        else
+          xhr_options[:onComplete] << template % [options[:update], options[:position]]
+        end
+      end
+
+      # converting the callbacks
+      [:onSuccess, :onFailure, :onComplete].each do |key|
+        if xhr_options[key] == '' then xhr_options.delete key
+        else xhr_options[key] = "function(request){#{xhr_options[key]}}"
+        end
+      end
+
+      # ebbedding the xhr options
+      pairs = xhr_options.collect do |key, value|
+        if value == '' then nil
+        else
+          "#{key}:#{value}"
+        end
+      end.compact.sort
+
+      xhr << ",{#{pairs.join(',')}}" unless pairs.empty?
+
+      xhr << ')'
+
+      # forms sending adjustements
+      xhr << ".send(#{options[:submit]})" if options[:submit]
+      xhr.gsub! /^.+?(,|(\)))/, RightRails::Helpers.prefix + '$(this).send(\2'  if options[:form]
+
+      xhr
+    end
+    
+    XHR_OPTION_KEYS = %w{
+      method
+      encoding
+      async
+      evalScripts
+      evalResponse
+      evalJSON
+      secureJSON
+      urlEncoded
+      spinner
+      spinnerFx
+      params
+    }
+    
   end
   
 end
