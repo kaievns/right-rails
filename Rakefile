@@ -121,6 +121,11 @@ namespace :rjs do
       cp build/*.js #{OUTPUT_JSS_DIR}/right;
     })
     
+    system(%Q{
+      cd #{RIGHTJS_UI_DIR};
+      cp img/* #{OUTPUT_IMG_DIR};
+    })
+    
     puts "\e[32mDONE \e[0m"
   end
   

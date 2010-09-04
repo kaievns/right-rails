@@ -1,8 +1,0 @@
-/**
- * The behavior definitions library for RightJS
- *
- * See http://rightjs.org/goods/behave for more details
- *
- * Copyright (C) 2009-2010 Nikolay V. Nemshilov
- */
-eval((function(s,d){for(var i=d.length-1;i>-1;i--)if(d[i])s=s.replace(new RegExp(i,'g'),d[i]);return s})("8 4=28 Class({extend:{29:2(){8 a=$A(6);8 b=28 4(a.18());5 b.on.7(b,a).25()},16:2(r){8 b=4.10[r];if(b)b.16();5 b},delegate:2(r){5 2(a){8 e=$(a.target);24(8 s in r)if(e.match(s))5 r[s].7(3,6)}},9:2(){24(8 k in 4.10)4.10[k].9()},10:{}},12:21,17:21,14:21,initialize:2(){8 a=$A(6);3.12=a.18();3.on.7(3,a);3.14=[]},25:2(){5 4.10[3.12]=3.9()},16:2(){8 a=3.17;if(!isHash(a[0])){8 h={};h[a.18()]=a;a=h}27 a=a[0];$$(3.12).20(2(e){8 u=26(e);if(3.14[u])24(8 k in a){if(15(a[k])){a[k].20(2(o){if(15(o))e.11.7(e,[k].13(options[0]))});if(!15(a[k][0]))e.11.7(e,[k].13(a[k][0]))}27 e.11.7(e,[k].13(a[k]))}},3);3.14=[];delete(4.10[3.12]);5 3},10:2(){5 4.10[3.12]===3},on:2(){3.17=$A(6);5 3},9:2(){$$(3.12).20(2(e){8 u=26(e);if(!3.14[u]){e.on.7(e,3.17);3.14[u]=1}},3);5 3}});document.onReady(4.9);19.include((2(a){8 o=a.23;8 b=a.22;5{23:2(){o.7(3,6);4.9();5 3},22:2(c){b.7(3,6);if(is30(c))4.9();5 3}}})(19.Methods));$ext(30.prototype,{behave:2(){5 4.29.7(4,[''+3].13($A(6)))},16Behave:2(){5 4.16.7(4,[''+3].13($A(6)))}});",",,function,this,Behavior,return,arguments,apply,var,refresh,active,stopObserving,rule,concat,regs,isArray,stop,args,shift,Element,each,null,update,insert,for,start,$uid,else,new,add,String".split(",")));
