@@ -54,7 +54,7 @@ describe RightRails::ControllerExtensions do
     @generator.should_receive(:to_s).and_return('the script')
     
     @controller.rjs.update.should == {
-      :text => 'the script', :content_type => Mime::HTML, :layout => 'iframed'
+      :text => 'the script', :content_type => Mime::HTML, :layout => 'iframed.html.erb'
     }
   end
 end

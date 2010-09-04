@@ -74,8 +74,8 @@ describe RightRails::Helpers::Basic do
   end
   
   describe ".rjs_tag" do
-    def javascript_tag(&block)
-      "<javascript>#{yield(block)}</javascript>"
+    def javascript_tag(rjs)
+      "<javascript>#{rjs}</javascript>"
     end
     
     it "should generate a proper javascript tag construction" do

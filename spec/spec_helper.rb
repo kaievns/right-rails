@@ -21,4 +21,8 @@ module Rails
       "#{root}/public"
     end
   end
+  
+  module VERSION
+    MAJOR = 2 
+  end
 end

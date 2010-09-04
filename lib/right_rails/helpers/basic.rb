@@ -49,9 +49,7 @@ module RightRails::Helpers::Basic
   #   end %>
   #
   def rjs_tag(&block)
-    javascript_tag do
-      rjs(&block)
-    end
+    javascript_tag rjs(&block).to_s
   end
   
   #
@@ -59,7 +57,7 @@ module RightRails::Helpers::Basic
   # so that the #link_to_function method was working properly
   #
   def update_page(&block)
-    rjs(&block)
+    rjs(&block).to_s
   end
   
   #

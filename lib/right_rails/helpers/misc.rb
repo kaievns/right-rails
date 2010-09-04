@@ -152,9 +152,11 @@ module RightRails::Helpers::Misc
       
     end
     
-    concat(content + RightRails::Helpers.html_safe("\n") + javascript_tag(
+    content = content + RightRails::Helpers.html_safe("\n") + javascript_tag(
       "new Tabs('#{options['id']}', #{tabs_widget_options || '{}'});"
-    ))
+    )
+    
+    defined?(Rails) && Rails::VERSION::MAJOR < 3 ? concat(content) : content
   end
   
   def tab(title, options={}, &block)
@@ -186,12 +188,14 @@ module RightRails::Helpers::Misc
     options[:class] << " #{RightRails::Helpers.css_prefix}-resizable#{options[:direction] ? "-#{options.delete(:direction)}" : ''}"
     options[:class].strip!
     
-    concat(content_tag(:div, (
+    content = content_tag(:div, (
         content_tag(:div, RightRails::Helpers.html_safe(capture(&block)),
           :class => "#{RightRails::Helpers.css_prefix}-resizable-content") +
         content_tag(:div, '', :class => "#{RightRails::Helpers.css_prefix}-resizable-handle")
       ), options
-    ))
+    )
+    
+    defined?(Rails) && Rails::VERSION::MAJOR < 3 ? concat(content) : content
   end
   
 end

@@ -30,9 +30,14 @@ module RightRails::ControllerExtensions
   #   end
   #
   def rjs(options={}, &block)
-    @template.send(:_evaluate_assigns_and_ivars)
+    template = if @template
+      @template.send(:_evaluate_assigns_and_ivars)
+      @template
+    else
+      view_context
+    end
     
-    wrapper = RenderWrapper.new(@template, options)
+    wrapper = RenderWrapper.new(template, options)
         
     if block_given?
       wrapper.render_block(&block)
@@ -75,7 +80,7 @@ private
       
       # iframed uploads context overloading
       if @template.request.content_type == 'multipart/form-data'
-        result.merge! :content_type => Mime::HTML, :layout => 'iframed'
+        result.merge! :content_type => Mime::HTML, :layout => 'iframed.html.erb'
       end
       
       result.merge! @options

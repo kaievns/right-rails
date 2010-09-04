@@ -252,7 +252,6 @@ protected
     def to_js_type(value)
       case value.class.name.to_sym
         when :Float, :Fixnum, :TrueClass, :FalseClass, :Symbol then value.to_s
-        when :String   then "\"#{@template.escape_javascript(value)}\""
         when :NilClass then 'null'
         when :Array    then "[#{to_js_args(value)}]"
         when :Proc     then proc_to_function(&value)
@@ -270,6 +269,10 @@ protected
             @thread.reject!{ |item| item == top }
             
             value.to_s
+          
+          # converting all sorts of strings
+          elsif value.is_a?(String)
+            "\"#{@template.escape_javascript(value)}\""
             
           # simple hashes processing
           elsif value.is_a?(Hash)
