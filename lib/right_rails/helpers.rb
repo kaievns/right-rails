@@ -2,6 +2,12 @@
 # There is the namespace for the helpers and some private methods
 #
 module RightRails::Helpers
+  
+  autoload :Basic, 'right_rails/helpers/basic'
+  autoload :Rails, 'right_rails/helpers/rails'
+  autoload :Forms, 'right_rails/helpers/forms'
+  autoload :Misc,  'right_rails/helpers/misc'
+  
   ##########################################################################
   #  Varios RightJS unit keys
   ##########################################################################
