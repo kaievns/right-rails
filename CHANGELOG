@@ -1,3 +1,11 @@
+2010-09-06 Nikolay Nemshilov
+  o Version 1.0.0
+    * RightJS v2.0.0-rc2
+    * All new RightJS UI 2.0 widgets
+    * RightRails configuration interface
+    * Full Rails 3 support
+    
+
 2010-01-16 Nikolay V. Nemshilov aka St.
   o Version 0.4.4
     * RightJS v 1.5.3

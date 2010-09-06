@@ -1,12 +1,13 @@
 Gem::Specification.new do |s|
   s.name    = 'right-rails'
   s.version = '1.0.0'
-  s.date    = '2010-09-04'
+  s.date    = '2010-09-06'
   
   s.summary = "RightJS plugin for Rails"
   s.description = "RightRails is a RubyOnRails plugin for the RightJS JavaScript framework. "\
-    "It has transparent Prototype helpers replacement, plus there is a new RJS generator, "\
-    "the most common ajax operations interface, RightJS own features support, remote files uploading handler, etc."
+    "It has transparent Prototype helpers replacement, a new RJS generator, "\
+    "the most common ajax operations interface and RightJS own features support "\
+    "like remote files uploading handler, UI, plugins, etc."
   
   s.authors  = ['Nikolay Nemshilov']
   s.email    = 'nemshilov@gmail.com'
@@ -27,7 +28,7 @@ Gem::Specification.new do |s|
   
   s.files = Dir['generators/**/*'] + Dir['public/**/*'] + Dir['lib/**/*'] + Dir['spec/**/*']
   s.files+= %w(
-    README.textile
+    README.rdoc
     CHANGELOG
     MIT-LICENSE
     Rakefile
