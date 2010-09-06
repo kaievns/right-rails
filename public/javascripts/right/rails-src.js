@@ -6,7 +6,7 @@
  */
 (function(window, document, RightJS) {
 /**
- * RR is the common ajax operations wrapper for ruby on rails
+ * Underscored aliases for Ruby On Rails
  *
  * Copyright (C) 2009-2010 Nikolay Nemshilov
  */
@@ -17,10 +17,162 @@
  * Copyright (C) 2010 Nikolay Nemshilov
  */
 
-var R  = RightJS,
-    $  = RightJS.$;
+var R      = RightJS,
+    $      = RightJS.$,
+    $$     = RightJS.$$,
+    $E     = RightJS.$E,
+    Xhr    = RightJS.Xhr,
+    Object = RightJS.Object;
 
 
+
+// the language and window level aliases
+R([
+  RightJS.String.prototype,
+  RightJS.Array.prototype,
+  RightJS.Function.prototype,
+  RightJS.Object,
+  RightJS.Options,
+  RightJS.Observer,
+  RightJS.Observer.prototype,
+  window,
+  document
+]).each(function(object) {
+  for (var key in object) {
+    try { // some keys are not accessable
+      
+      if (/[A-Z]/.test(key) && typeof(object[key]) === 'function') {
+        var u_key = R(key).underscored();
+        if (object[u_key] === null || object[u_key] === undefined) {
+          object[u_key] = object[key];
+        }
+      }
+    } catch (e) {}
+  }
+});
+
+
+// DOM package aliases
+R([
+  RightJS.Element,
+  RightJS.Event,
+  RightJS.Form,
+  RightJS.Input
+]).each(function(object) {
+  if (!object) { return; }
+  
+  var aliases = {}, methods = object.prototype;
+    
+  for (var key in methods) {
+    if (/[A-Z]/.test(key) && typeof(methods[key]) === 'function') {
+      object.prototype[R(key).underscored()] = methods[key];
+    }
+  }
+});
+
+// various ruby-like method aliases
+RightJS.$alias(RightJS.String.prototype, {
+  index_of:      'indexOf',
+  last_index_of: 'lastIndexOf',
+  to_f:          'toFloat',
+  to_i:          'toInt',
+  gsub:          'replace',
+  downcase:      'toLowerCase',
+  upcase:        'toUpperCase',
+  index:         'indexOf',
+  rindex:        'lastIndexOf',
+  strip:         'trim'
+});
+
+RightJS.$alias(RightJS.Array.prototype, {
+  collect:       'map',
+  detect:        'filter',
+  index_of:      'indexOf',
+  last_index_of: 'lastIndexOf',
+  index:         'indexOf',
+  rindex:        'lastIndexOf'
+});
+
+/**
+ * Rails 3 UJS support module
+ *
+ * Copyright (C) 2010 Nikolay Nemshilov
+ */
+(function() {
+  // tries to cancel the event via confirmation
+  var user_cancels = function(event, element) {
+    var message = element.get('data-confirm');
+    if (message && !confirm(message)) {
+      event.stop();
+      return true;
+    }
+  };
+  
+  // adds XHR events to the element
+  var add_xhr_events = function(element, options) {
+    return Object.merge({
+      onCreate:   function() { element.fire('ajax:loading',  this); },
+      onComplete: function() { element.fire('ajax:complete', this); },
+      onSuccess:  function() { element.fire('ajax:success',  this); },
+      onFailure:  function() { element.fire('ajax:failure',  this); }
+    }, options);
+  };
+  
+  // processes link clicks
+  var try_link_submit = function(event) {
+    var link   = event.target,
+        method = link.get('data-method'),
+        remote = link.get('data-remote'),
+        url    = link.get('href');
+    
+    if (user_cancels(event, link)) { return; }
+    if (method || remote) { event.stop(); }
+    
+    if (remote) {
+      Xhr.load(url, add_xhr_events(link, {
+        method:     method || 'get',
+        spinner:    link.get('data-spinner')
+      }));
+      
+    } else if (method) {
+      var param = $$('meta[name=csrf-param]')[0],
+          token = $$('meta[name=csrf-token]')[0],
+          form  = $E('form', {action: url, method: 'post'});
+      
+      if (param && token) {
+        form.insert('<input type="hidden" name="'+param.get('content')+'" value="'+token.get('content')+'" />');
+      }
+      
+      form.insert('<input type="hidden" name="_method" value="'+method+'"/>')
+        .insertTo(document.body).submit();
+    }
+  };
+
+  // global events listeners
+  $(document).on({
+    click: function(event) {
+      var tag = event.target._.tagName;
+      if (tag === 'A' || tag === 'BUTTON') {
+        try_link_submit(event);
+      }
+    },
+    
+    submit: function(event) {
+      var form = event.target;
+      if (form.has('data-remote') && !user_cancels(event, form)) {
+        event.stop();
+        form.send(add_xhr_events(form));
+      }
+    }
+  });
+})();
+
+
+/**
+ * RR is the common ajax operations wrapper for ruby on rails
+ *
+ * Copyright (C) 2009-2010 Nikolay Nemshilov
+ */
 var RR = {
   /**
    * Basic options
@@ -142,7 +294,7 @@ var RR = {
    */
   remove: function(id) {
     if ($(id)) {
-      $(id).remove(this.Options.removeFx, {onFinish: remove_element});
+      $(id).remove(this.Options.removeFx);
     }
   },
   
@@ -197,17 +349,14 @@ var RR = {
    * @param Event event
    */
   process_click: function(event) {
-    var target = event.target, link = [target].concat(target.parents()).first('match', 'a');
+    var link;
     
-    if (link) {
-      if (link.match(this.Options.linkToAjaxEdit)) {
-        event.stop();
-        Xhr.load(link.href + '.' + this.Options.format);
-        
-      } else if (link.match(this.Options.linkToAjaxDelete) && link.has('onclick')) {
-        event.stop();
-        eval('({f:'+ link.onclick.toString().replace('.submit', '.send')+'})').f.call(link);
-      }
+    if ((link = event.find('a'+ this.Options.linkToAjaxEdit))) {
+      event.stop();
+      Xhr.load(link.get('href') + '.' + this.Options.format);
+    } else if ((link = event.find('a'+ this.Options.linkToAjaxDelete)) && link.has('onclick')) {
+      event.stop();
+      eval('({f:'+ link.onclick.toString().replace('.submit', '.send')+'})').f.call(link);
     }
   },
   
@@ -230,89 +379,6 @@ var RR = {
 
 
 /**
- * Rails 3 UJS support module
- *
- * Copyright (C) 2010 Nikolay Nemshilov
- */
-(function() {
-  // tries to cancel the event via confirmation
-  var user_cancels = function(event, element) {
-    var message = element.get('data-confirm');
-    if (message && !confirm(message)) {
-      event.stop();
-      return true;
-    }
-  };
-  
-  // adds XHR events to the element
-  var add_xhr_events = function(element, options) {
-    return Object.merge({
-      onCreate:   function() { element.fire('ajax:loading',  this); },
-      onComplete: function() { element.fire('ajax:complete', this); },
-      onSuccess:  function() { element.fire('ajax:success',  this); },
-      onFailure:  function() { element.fire('ajax:failure',  this); }
-    }, options);
-  };
-  
-  // processes link clicks
-  var try_link_submit = function(event, link) {
-    var method = link.get('data-method'), remote = link.get('data-remote');
-    
-    if (user_cancels(event, link)) { return; }
-    if (method || remote) { event.stop(); }
-    
-    if (remote) {
-      Xhr.load(link.href, add_xhr_events(link, {
-        method:     method || 'get',
-        spinner:    link.get('data-spinner')
-      }));
-      
-    } else if (method) {
-      var param = $$('meta[name=csrf-param]')[0],
-          token = $$('meta[name=csrf-token]')[0],
-          form  = $E('form', {action: link.href, method: 'post'});
-      
-      if (param && token) {
-        form.insert('<input type="hidden" name="'+param.get('content')+'" value="'+token.get('content')+'" />');
-      }
-      
-      form.insert('<input type="hidden" name="_method" value="'+method+'"/>')
-        .insertTo(document.body).submit();
-    }
-  };
-
-  // processes form submits
-  var try_form_submit = function(event, button) {
-    if (!user_cancels(event, button) && $(button.form).has('data-remote')) {
-      event.stop();
-      button.form.send(add_xhr_events(button.form));
-    }
-  };
-
-  // global events listeners
-  $(document).on({
-    click: function (event) {
-      var target = event.target, form = target.form,
-        link = [target].concat(target.parents()).first('match', 'a');
-      
-      if (form && ['submit', 'image'].include(target.type)) {
-        try_form_submit(event, target);
-      } else if (link) {
-        try_link_submit(event, link);
-      }
-    },
-
-    keydown: function(event) {
-      var target = event.target, form = target.form;
-      if (form && target.tagName === 'INPUT' && event.keyCode == 13) {
-        try_form_submit(event, target);
-      }
-    }
-  });
-})();
-
-
-/**
  * the document onload hooks
  *
  * Copyright (C) 2010 Nikolay Nemshilov
@@ -325,79 +391,6 @@ $(document).on({
   click: function(event) {
     RR.process_click(event);
   }
-});
-
-/**
- * Underscored aliases for Ruby On Rails
- *
- * Copyright (C) 2009-2010 Nikolay Nemshilov
- */
-
-// the language and window level aliases
-R([
-  RightJS.String.prototype,
-  RightJS.Array.prototype,
-  RightJS.Function.prototype,
-  RightJS.Object,
-  RightJS.Options,
-  RightJS.Observer,
-  RightJS.Observer.prototype,
-  window,
-  document
-]).each(function(object) {
-  for (var key in object) {
-    try { // some keys are not accessable
-      
-      if (/[A-Z]/.test(key) && typeof(object[key]) === 'function') {
-        var u_key = R(key).underscored();
-        if (object[u_key] === null || object[u_key] === undefined) {
-          object[u_key] = object[key];
-        }
-      }
-    } catch (e) {}
-  }
-});
-
-
-// DOM package aliases
-R([
-  RightJS.Element,
-  RightJS.Event,
-  RightJS.Form,
-  RightJS.Input
-]).each(function(object) {
-  if (!object) { return; }
-  
-  var aliases = {}, methods = object.prototype;
-    
-  for (var key in methods) {
-    if (/[A-Z]/.test(key) && typeof(methods[key]) === 'function') {
-      object.prototype[R(key).underscored()] = methods[key];
-    }
-  }
-});
-
-// various ruby-like method aliases
-RightJS.$alias(RightJS.String.prototype, {
-  index_of:      'indexOf',
-  last_index_of: 'lastIndexOf',
-  to_f:          'toFloat',
-  to_i:          'toInt',
-  gsub:          'replace',
-  downcase:      'toLowerCase',
-  upcase:        'toUpperCase',
-  index:         'indexOf',
-  rindex:        'lastIndexOf',
-  strip:         'trim'
-});
-
-RightJS.$alias(RightJS.Array.prototype, {
-  collect:       'map',
-  detect:        'filter',
-  index_of:      'indexOf',
-  last_index_of: 'lastIndexOf',
-  index:         'indexOf',
-  rindex:        'lastIndexOf'
 });
   
 window.RR = RR;

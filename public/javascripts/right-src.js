@@ -3361,6 +3361,16 @@ var Form = RightJS.Form = Element_wrappers.FORM = new Wrapper(Element, {
    */
   serialize: function() {
     return Object.toQueryString(this.values());
+  },
+  
+  /**
+   * Delegating the submit method
+   *
+   * @return Form this
+   */
+  submit: function() {
+    this._.submit();
+    return this;
   }
 });
 
@@ -4283,6 +4293,19 @@ $ext(Observer_create(Xhr), {
  *
  * Copyright (C) 2009-2010 Nikolay V. Nemshilov
  */
+
+/**
+ * Catches the form submit events and sends the form remotely
+ *
+ * @param Event submit
+ * @param Object xhr options
+ * @return void
+ */
+function remote_send(event, options) {
+  event.stop();
+  this.send(Object.merge({spinner: this.first('.spinner')}, options));
+}
+
 Form.include({
   /**
    * sends the form via xhr request
@@ -4292,15 +4315,15 @@ Form.include({
    */
   send: function(options) {
     options = options || {};
-    options.method = options.method || this.method || 'post';
-    
-    new Xhr(this.get('action') || document.location.href, options
-      ).onRequest(this.disable.bind(this)
-      ).onComplete(this.enable.bind(this)).send(this);
-    
+    options.method = options.method || this._.method || 'post';
+
+    new Xhr(this._.action || document.location.href, options)
+      .onRequest((function() {this.disable.bind(this).delay(20);}).bind(this))
+      .onComplete(this.enable.bind(this)).send(this);
+
     return this;
   },
-  
+
   /**
    * makes the form be remote by default
    *
@@ -4308,28 +4331,26 @@ Form.include({
    * @return Form this
    */
   remotize: function(options) {
-    this.onsubmit = function() {
-      this.send.bind(this, Object.merge({spinner: this.first('.spinner')}, options)).delay(20);
-      return false;
-    };
-      
-    this.remote   = true;
+    if (!this.observes('submit', remote_send)) {
+      this.on('submit', remote_send, options);
+      this.remote = true;
+    }
     return this;
   },
-  
+
   /**
    * removes the remote call hook
-   *
-   * NOTE: will nuke onsubmit attribute
    *
    * @return Form this
    */
   unremotize: function() {
-    this.onsubmit = dummy();
-    this.remote   = false;
+    this.stopObserving('submit', remote_send);
+    this.remote = false;
+
     return this;
   }
 });
+
 
 /**
  * this module contains the Element unit XHR related extensions
@@ -4385,25 +4406,17 @@ Xhr.IFramed = new Class({
    */
   initialize: function(form) {
     this.form = form;
+    this.id   = 'xhr_'+ new Date().getTime();
     
-    var id = this.id = 'xhr_'+ new Date().getTime();
-    $(document.body).insert('<i><iframe name="'+id+'" id="'+id+'" width="0" height="0" frameborder="0" src="about:blank"></iframe></i>');
-    $(id).on('load', this.onLoad.bind(this));
+    form.insert('<i><iframe name="'+this.id+'" id="'+this.id+
+      '" width="0" height="0" frameborder="0" src="about:blank"></iframe></i>',
+      'after');
+      
+    $(this.id).on('load', this.onLoad.bind(this));
   },
   
   send: function() {
-    // stubbing the onsubmit method so it allowed us to submit the form
-    var form         = this.form,
-        old_onsubmit = form.onsubmit,
-        old_target   = form.target;
-    
-    form.onsubmit = dummy();
-    form.target   = this.id;
-    
-    form.submit();
-    
-    form.onsubmit = old_onsubmit;
-    form.target   = old_target;
+    this.form.set('target', this.id).submit();
   },
   
   onLoad: function() {
