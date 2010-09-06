@@ -49,18 +49,19 @@ module RightRails::Helpers::Forms
   #
   # The slider widget generator
   #
-  def slider_tag(name, value=nil, options={})
+  def slider_tag(name, value, options={})
     hidden_field_tag(name, value, Util.slider_options(self, options)) +
-      "\n" + Util.slider_generator(self, options.merge(:value => value), name)
+      "\n" + Util.slider_generator(self, name, value, options)
   end
   
   #
   # The form_for level slider widget generator
   #
   def slider(object_name, method, options={})
-    ActionView::Helpers::InstanceTag.new(object_name, method, self,
-      options.delete(:object)).to_slider_tag(Util.slider_options(self, options)) +
-      "\n" + Util.slider_generator(self, options, object_name, method)
+    object = options.delete(:object)
+    ActionView::Helpers::InstanceTag.new(object_name, method, self, object
+      ).to_slider_tag(Util.slider_options(self, options)) + "\n" +
+      Util.slider_generator(self, object_name, nil, options, method)
   end
   
   #
@@ -68,16 +69,17 @@ module RightRails::Helpers::Forms
   #
   def rater_tag(name, value, options={})
     hidden_field_tag(name, value, Util.rater_options(self, options)) +
-      "\n" + Util.rater_generator(self, options.merge(:value => value), name)
+      "\n" + Util.rater_generator(self, name, value, options)
   end
   
   #
   # The form level rater generator
   #
   def rater(object_name, method, options={})
-    ActionView::Helpers::InstanceTag.new(object_name, method, self,
-      options.delete(:object)).to_rater_tag(Util.rater_options(self, options)) +
-      "\n" + Util.rater_generator(self, options, object_name, method)
+    object = options.delete(:object)
+    ActionView::Helpers::InstanceTag.new(object_name, method, self, object
+      ).to_rater_tag(Util.rater_options(self, options)) +
+      "\n" + Util.rater_generator(self, object_name, nil, options, method)
   end
   
   #
@@ -175,9 +177,9 @@ private
       #
       # Generates the slider initialization script
       #
-      def slider_generator(context, options, name, method=nil)
-        value   = options[:value]
-        value ||= ActionView::Helpers::InstanceTag.value_before_type_cast(instance_variable_get("@#{name}"), method.to_s) if method
+      def slider_generator(context, name, value, options, method=nil)
+        value ||= ActionView::Helpers::InstanceTag.value_before_type_cast(
+          context.instance_variable_get("@#{name}"), method.to_s ) if method
         name    = "#{name}[#{method}]" if method
         id      = options[:id] || context.send(:sanitize_to_id, name)
         options = RightRails::Helpers.unit_options(options.merge(:value => value), 'slider')
@@ -195,9 +197,9 @@ private
       #
       # Generates the rater initialization script
       #
-      def rater_generator(context, options, name, method=nil)
-        value   = options[:value]
-        value ||= ActionView::Helpers::InstanceTag.value_before_type_cast(instance_variable_get("@#{name}"), method.to_s) if method
+      def rater_generator(context, name, value, options, method=nil)
+        value ||= ActionView::Helpers::InstanceTag.value_before_type_cast(
+          context.instance_variable_get("@#{name}"), method.to_s) if method
         name    = "#{name}[#{method}]" if method
         id      = options[:id] || context.send(:sanitize_to_id, name)
         options = RightRails::Helpers.unit_options(options.merge(:value => value), 'rater')

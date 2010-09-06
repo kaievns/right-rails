@@ -150,8 +150,12 @@ describe RightRails::Helpers::Forms do
     end
   
     it "should generate a slider with options" do
+      model = {}
+      model.should_receive('method').twice.and_return(22)
+      should_receive(:instance_variable_get).twice.with('@object').and_return(model)
+      
       slider('object', 'method', :value => 22, :min => 20, :max => 80).should ==
-        %Q{<input id="object_method" name="object[method]" type="hidden" />\n}+
+        %Q{<input id="object_method" name="object[method]" type="hidden" value="22" />\n}+
           %Q{<script type="text/javascript">\n//<![CDATA[\n}+
             %Q{new Slider({max:80,min:20,value:22}).insertTo('object_method','after').assignTo('object_method');\n}+
           %Q{//]]>\n}+
@@ -161,8 +165,12 @@ describe RightRails::Helpers::Forms do
   
   describe ".rater" do
     it "should generate a simple rater" do
+      model = {}
+      model.should_receive('method').twice.and_return(2)
+      should_receive(:instance_variable_get).twice.with('@object').and_return(model)
+      
       rater('object', 'method', :value => 2).should ==
-        %Q{<input id="object_method" name="object[method]" type="hidden" />\n}+
+        %Q{<input id="object_method" name="object[method]" type="hidden" value="2" />\n}+
         %Q{<script type="text/javascript">\n//<![CDATA[\n}+
           %Q{new Rater({value:2}).insertTo('object_method','after').assignTo('object_method');\n}+
         %Q{//]]>\n</script>}
