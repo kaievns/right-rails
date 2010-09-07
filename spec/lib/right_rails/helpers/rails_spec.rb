@@ -53,10 +53,10 @@ describe RightRails::Helpers::Rails do
     RightRails::Config.reset!
   end
     
-  describe "#include_javascript_tag" do
+  describe "#javascript_include_tag" do
     it "should load the RightJS scripts by default" do
       should_receive(:rightjs_scripts).and_return('right.js')
-      include_javascript_tag(:default).should == 'right.js'
+      javascript_include_tag(:defaults).should == 'right.js'
     end
   end
   

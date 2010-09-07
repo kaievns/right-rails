@@ -7,8 +7,8 @@ module RightRails::Helpers::Rails
   # Overloading the rails method so it loaded
   # RightJS by default
   #
-  def include_javascript_tag(first, *others)
-    if (first == :default)
+  def javascript_include_tag(first, *others)
+    if (first == :defaults)
       rightjs_scripts *others
     else
       super first, *others
