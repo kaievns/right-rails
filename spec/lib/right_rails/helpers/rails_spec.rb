@@ -52,13 +52,6 @@ describe RightRails::Helpers::Rails do
   before :each do
     RightRails::Config.reset!
   end
-    
-  describe "#javascript_include_tag" do
-    it "should load the RightJS scripts by default" do
-      should_receive(:rightjs_scripts).and_return('right.js')
-      javascript_include_tag(:defaults).should == 'right.js'
-    end
-  end
   
   describe "#remote_function" do
     it "should generatorate a simple request" do

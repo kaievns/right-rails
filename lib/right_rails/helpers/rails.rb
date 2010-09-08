@@ -9,7 +9,15 @@ module RightRails::Helpers::Rails
   #
   def javascript_include_tag(first, *others)
     if (first == :defaults)
-      rightjs_scripts *others
+      options = others.last.is_a?(Hash) ? modules.pop : nil
+
+      rightjs_require_module *others
+
+      scripts = RightRails::Helpers.required_js_files(self)
+      scripts << 'application'
+      scripts << options unless options.nil?
+      
+      super scripts
     else
       super first, *others
     end
