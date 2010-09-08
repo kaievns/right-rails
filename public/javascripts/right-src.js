@@ -3286,6 +3286,16 @@ var Form = RightJS.Form = Element_wrappers.FORM = new Wrapper(Element, {
   },
   
   /**
+   * Accessing an input by name
+   *
+   * @param String name
+   * @return Input field
+   */
+  input: function(name) {
+    return $(this._[name]);
+  },
+  
+  /**
    * focuses on the first input element on the form
    *
    * @return Form this
@@ -3430,6 +3440,15 @@ new Wrapper(Element, {
     }
     
     this.$super(element, options);
+  },
+  
+  /**
+   * Returns a reference to the input's form
+   *
+   * @return Form wrapped form
+   */
+  form: function() {
+    return $(this._.form);
   },
   
   /**
@@ -3612,7 +3631,7 @@ if (Browser.IE) {
  * @retrun Boolean check result
  */
 function event_support_for(name, tag) {
-  var e = $E(tag)._;
+  var e = document.createElement('DIV');
   e.setAttribute(name, ';');
   return isFunction(e[name]);
 }
