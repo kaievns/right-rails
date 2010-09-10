@@ -2073,13 +2073,17 @@ var Event = RightJS.Event = new Wrapper({
    * @return Element element or null
    */
   find: function(css_rule) {
-    var target   = this.target,
-        targets  = [target].concat(target.parents()),
-        search   = this.currentTarget.find(css_rule);
-    
-    return targets.first(function(element) {
-      return search.include(element);
-    });
+    if (this.target instanceof Element) {
+      var target   = this.target,
+          targets  = [target].concat(target.parents()),
+          search   = this.currentTarget.find(css_rule);
+
+      return targets.first(function(element) {
+        return search.include(element);
+      });
+    } else {
+      return undefined;
+    }
   }
 }),
 
@@ -2295,13 +2299,14 @@ Element.include({
   },
   
   /**
-   * replaces the current element by the given content
+   * A shortcut to uppend several units into the element
    *
-   * @param mixed content (a String, an Element or a list of elements)
-   * @return Element self
+   * @param mixed data
+   * ..................
+   * @return Element this
    */
-  replace: function(content) {
-    return this.insert(content, 'instead');
+  append: function() {
+    return this.insert(arguments);
   },
   
   /**
@@ -2339,6 +2344,16 @@ Element.include({
    */
   html: function(content) {
     return content === undefined ? this._.innerHTML : this.update(content);
+  },
+
+  /**
+   * replaces the current element by the given content
+   *
+   * @param mixed content (a String, an Element or a list of elements)
+   * @return Element self
+   */
+  replace: function(content) {
+    return this.insert(content, 'instead');
   },
   
   /**
@@ -3381,6 +3396,16 @@ var Form = RightJS.Form = Element_wrappers.FORM = new Wrapper(Element, {
   submit: function() {
     this._.submit();
     return this;
+  },
+  
+  /**
+   * Delegating the 'reset' method
+   *
+   * @return Form this
+   */
+  reset: function() {
+    this._.reset();
+    return this;
   }
 });
 
@@ -3521,7 +3546,7 @@ new Wrapper(Element, {
    * @return mixed this or the value
    */
   value: function(value) {
-    return this[value ? 'setValue' : 'getValue'](value);
+    return this[value === undefined ? 'getValue' : 'setValue'](value);
   },
   
   /**
@@ -3631,7 +3656,7 @@ if (Browser.IE) {
  * @retrun Boolean check result
  */
 function event_support_for(name, tag) {
-  var e = document.createElement('DIV');
+  var e = document.createElement(tag);
   e.setAttribute(name, ';');
   return isFunction(e[name]);
 }
@@ -3737,7 +3762,7 @@ if (!event_support_for('onchange', 'input')) {
    * if it was changed later on
    */
   document.attachEvent('onbeforeactivate', function(event) {
-    var element = $(event).target, checked = 'checked';
+    var element = $(event).target;
     
     if (element instanceof Input) {
       element._prev_value = get_input_value(element);
