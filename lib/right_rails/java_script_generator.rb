@@ -2,14 +2,14 @@
 # The right-rails scripts generator
 #
 class RightRails::JavaScriptGenerator
-  
+
   def initialize(template, thread=nil)
     @util = Util.new(template, thread)
   end
-  
+
   # the top-level constants that the generator should respond to transparently
-  JS_CONSTANTS = [:document, :window, :top, :RR]
-  
+  JS_CONSTANTS = [:top, :RR]
+
   # method calls catchup
   def method_missing(name, *args)
     cmd = if JS_CONSTANTS.include?(name)
@@ -19,15 +19,15 @@ class RightRails::JavaScriptGenerator
     else
       "#{name}(#{@util.to_js_args(args)})"
     end
-    
+
     @util.record(cmd)
   end
-  
+
   # returns the result script
   def to_s
     @util.build_script
   end
-  
+
   #
   # This module contains the predefined methods collection
   #
@@ -58,15 +58,23 @@ class RightRails::JavaScriptGenerator
       @util.record("var #{name}=#{@util.to_js_type(value)}")
     end
 
+    def document
+      @util.record('$(document)')
+    end
+
+    def window
+      @util.record('$(window)')
+    end
+
     # generates the redirection script
     def redirect_to(location)
-      self.document[:location].href = (location.is_a?(String) ? location : @util.template.url_for(location))
+      self.get(:document)[:location].href = (location.is_a?(String) ? location : @util.template.url_for(location))
       self
     end
 
     # generates the page reload script
     def reload
-      self.document[:location].reload
+      self.get(:document)[:location].reload
       self
     end
 
@@ -74,7 +82,7 @@ class RightRails::JavaScriptGenerator
     def insert(record, position=nil)
       self.RR.insert(*[record.class.table_name, @util.render(record), position].compact)
     end
-    
+
     # generates a script that inserts the record partial, then updates the form and the flashes block
     def insert_and_care(record, position=nil)
       insert(record, position)
@@ -108,93 +116,93 @@ class RightRails::JavaScriptGenerator
     def replace_form_for(record)
       self.RR.replace_form(@util.form_id_for(record), @util.render('form'))
     end
-    
+
     # updates the flashes block
     def update_flash(content=nil)
       self.RR.update_flash(content || @util.template.flashes)
       @util.template.flash.clear
     end
   end
-  
+
   include Methods
-  
+
 protected
 
   #
   # Keeps the javascript method calls sequence and then represents iteslf like a string of javascript
   #
   class MethodCall
-    
+
     def initialize(this, util, parent)
       @this   = this
       @util   = util
       @parent = parent
     end
-    
+
     # catches the properties request
     def [](name)
       @child = @util.make_call(".#{name}", self)
     end
-    
+
     # attribute assignment hook
     def []=(name, value)
       send "#{name}=", value
     end
-    
+
     OPERATIONS = %w{+ - * / % <<}
-    
+
     # catches all the method calls
     def method_missing(name, *args, &block)
       name = name.to_s
       args << block if block_given?
-      
-      
+
+
       cmd = if name[name.size-1, name.size] == '='
         # assignments
         ".#{name[0,name.size-1]}=#{@util.to_js_type(args.first)}"
-        
+
       # operation calls
       elsif OPERATIONS.include?(name)
         name = "+=" if name == '<<'
         "#{name}#{@util.to_js_type(args.first)}"
-        
+
       # usual method calls
       else
         ".#{name}(#{@util.to_js_args(args)})"
       end
-      
+
       @child = @util.make_call(cmd, self)
     end
-    
+
     # exports the whole thing into a javascript string
     def to_s
       nodes = []
       node = self
-      
+
       while node
         nodes << node
         node = node.instance_variable_get(@parent.nil? ? "@child" : "@parent")
       end
-      
+
       # reversing the calls list if building from the right end
       nodes.reverse! unless @parent.nil?
-      
+
       nodes.collect{|n| n.instance_variable_get("@this").to_s }.join('')
     end
   end
-  
+
   #
   # We use this class to cleanup the main namespace of the JavaScriptGenerator instances
   # So that the mesod_missing didn't interferate with the util methods
   #
   class Util
     attr_reader :template
-    
+
     def initialize(template, thread=nil)
       @template = template
       @thread   = thread || []
     end
-    
+
     # returns a conventional dom id for the record
     def dom_id(record)
       if [String, Symbol].include?(record.class)
@@ -203,7 +211,7 @@ protected
         @template.dom_id(record)
       end
     end
-    
+
     # generates the form-id for the given record
     def form_id_for(record)
       record.new_record? ? "new_#{record.class.table_name.singularize}" : "edit_#{dom_id(record)}"
@@ -213,29 +221,29 @@ protected
     def render(what)
       @template.render(what)
     end
-    
+
     # builds a new method call object
     def make_call(string, parent=nil)
       MethodCall.new(string, self, parent)
     end
-    
+
     # Records a new call
     def record(command)
       @thread << (line = make_call(command))
       line
     end
-    
+
     # writes a pline script code into the thread
     def write(script)
       @thread << script
     end
-    
+
     # builds the end script
     def build_script
       list = @thread.collect do |line|
         line.is_a?(String) ? line : (line.to_s + ';')
       end
-      
+
       list.join('')
     end
 
@@ -244,10 +252,10 @@ protected
       list = args.collect do |value|
         to_js_type(value)
       end
-      
+
       list.join(',')
     end
-    
+
     # converts any ruby type into an javascript type
     def to_js_type(value)
       case value.class.name.to_sym
@@ -256,7 +264,7 @@ protected
         when :Array    then "[#{to_js_args(value)}]"
         when :Proc     then proc_to_function(&value)
         else
-            
+
           # the other method-calls processing
           if value.is_a?(MethodCall)
             # removing the call out of the calls thread
@@ -267,13 +275,13 @@ protected
               parent = parent.instance_variable_get('@parent')
             end
             @thread.reject!{ |item| item == top }
-            
+
             value.to_s
-          
+
           # converting all sorts of strings
           elsif value.is_a?(String)
             "\"#{@template.escape_javascript(value)}\""
-            
+
           # simple hashes processing
           elsif value.is_a?(Hash)
             pairs = []
@@ -281,18 +289,18 @@ protected
               pairs << "#{to_js_type(key)}:#{to_js_type(value)}"
             end
             "{#{pairs.sort.join(',')}}"
-          
+
           # JSON exportable values processing
           elsif value.respond_to?(:to_json)
             to_js_type(value.to_json)
-          
+
           # throwing an ansupported class name
           else
             throw "RightRails::JavaScriptGenerator doesn't support instances of #{value.class.name} yet"
           end
       end
     end
-    
+
     # converts a proc into a javascript function
     def proc_to_function(&block)
       thread = []
@@ -300,24 +308,24 @@ protected
       names  = []
       name   = 'a'
       page   = RightRails::JavaScriptGenerator.new(@template, thread)
-      
+
       block.arity.times do |i|
         args  << page.get(name)
         names << name
         name = name.succ
       end
-      
+
       # swapping the current thread with the block's one
       old_thread = @thread
       @thread = thread
-      
+
       yield(*args)
-      
+
       # swapping the current therad back
       @thread = old_thread
-      
+
       "function(#{names.join(',')}){#{page.to_s}}"
     end
   end
-  
+
 end
