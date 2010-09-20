@@ -1,10 +1,16 @@
+2010-09-20 Nikolay Nemshilov
+  o Version 1.0.4
+    * RightJS 2.0.0 release updates
+    * page.document now returns '$(document)'
+    * page.window now returns '$(window)'
+
 2010-09-06 Nikolay Nemshilov
   o Version 1.0.0
     * RightJS v2.0.0-rc2
     * All new RightJS UI 2.0 widgets
     * RightRails configuration interface
     * Full Rails 3 support
-    
+
 
 2010-01-16 Nikolay V. Nemshilov aka St.
   o Version 0.4.4
@@ -13,7 +19,7 @@
     * Updated JSON and Events
     * New in-place edit plugin
     * Dutch i18n module
-    
+
 
 2009-12-26 Nikolay V. Nemshilov aka St.
   o Version 0.4.3
