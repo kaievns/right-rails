@@ -37,13 +37,13 @@ var R      = RightJS,
  * @param String tag-name or Object methods
  * @param Object methods
  * @return Widget wrapper
- */ 
+ */
 function Widget(tag_name, methods) {
   if (!methods) {
     methods = tag_name;
     tag_name = 'DIV';
   }
-  
+
   /**
    * An Abstract Widget Unit
    *
@@ -60,17 +60,17 @@ function Widget(tag_name, methods) {
     initialize: function(key, options) {
       this.key = key;
       var args = [{'class': 'rui-' + key}];
-      
+
       // those two have different constructors
       if (!(this instanceof RightJS.Input || this instanceof RightJS.Form)) {
         args.unshift(tag_name);
       }
       this.$super.apply(this, args);
-      
+
       if (RightJS.isString(options)) {
         options = RightJS.$(options);
       }
-      
+
       // if the options is another element then
       // try to dynamically rewrap it with our widget
       if (options instanceof RightJS.Element) {
@@ -103,16 +103,16 @@ function Widget(tag_name, methods) {
       return this;
     }
   });
-  
+
   /**
    * Creating the actual widget class
    *
    */
   var Klass = new RightJS.Wrapper(AbstractWidget, methods);
-  
+
   // creating the widget related shortcuts
   RightJS.Observer.createShortcuts(Klass.prototype, Klass.EVENTS || []);
-  
+
   return Klass;
 }
 
@@ -125,7 +125,7 @@ function Widget(tag_name, methods) {
 var Uploader = new Widget({
   extend: {
     version: '2.0.0',
-    
+
     EVENTS: $w('start update finish error'),
 
     Options: {
@@ -148,7 +148,7 @@ var Uploader = new Widget({
    */
   initialize: function(form, options) {
     this.form = form = $(form);
-    
+
     // trying to find an existing progress-bar
     var element = form.first('.rui-uploader');
 
@@ -160,7 +160,7 @@ var Uploader = new Widget({
         this.bar = this.first('.bar') || $E('div', {'class': 'bar'}),
         this.num = this.first('.num') || $E('div', {'class': 'num'})
       ]);
-    
+
     if (!element) {
       this.insertTo(form);
     }
@@ -209,7 +209,7 @@ var Uploader = new Widget({
     }
 
     this.percent = R(percent * 100).round(this.options.round);
-    
+
     if (this.percent === 0 || !RightJS.Fx || !this.options.fxDuration) {
       this.bar._.style.width = this.percent + '%';
       this.num._.innerHTML   = this.percent + '%';
@@ -242,17 +242,18 @@ var Uploader = new Widget({
   prepare: function() {
     this.uid = "";
     for (i = 0; i < 32; i++) { this.uid += Math.random(0, 15).toString(16); }
-    
+
     var param = this.options.param;
     var url = this.form.get('action').replace(new RegExp('(\\?|&)'+RegExp.escape(param) + '=[^&]*', 'i'), '');
     this.form.set('action', (R(url).includes('?') ? '&' : '?') + param + '=' + this.uid);
-    
+
     this.show();
-    
+
     return this;
   }
 
 });
+
 
 /**
  * Overloading the Form#send method so we could
@@ -264,18 +265,19 @@ var old_send = Form.prototype.send;
 
 Form.include({
   send: function() {
-    
+
     if (!this.uploader && (this.match(Uploader.Options.cssRule) || this.first('.rui-uploader'))) {
       this.uploader = new Uploader(this);
     }
-    
+
     if (this.uploader) {
       this.uploader.start();
     }
-    
+
     return old_send.apply(this, arguments);
   }
 });
+
 
 document.write("<style type=\"text/css\">div.rui-progress-bar,div.rui-progress-bar *{margin:0;padding:0;border:none;background:none}div.rui-progress-bar{position:relative;height:1.4em;line-height:1.4em;width:20em;border:1px solid #999}div.rui-progress-bar,div.rui-progress-bar div.bar{border-radius:0.25em;-moz-border-radius:0.25em;-webkit-border-radius:0.25em}div.rui-progress-bar div.bar{position:absolute;left:0;top:0;width:0%;height:100%;background:#CCC;z-index:1}div.rui-progress-bar div.num{position:absolute;width:100%;height:100%;z-index:2;text-align:center}div.rui-progress-bar-failed{border-color:red;color:red;background:pink}.rui-uploader{display:none}</style>");
 

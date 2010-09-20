@@ -36,13 +36,13 @@ var R        = RightJS,
  * @param String tag-name or Object methods
  * @param Object methods
  * @return Widget wrapper
- */ 
+ */
 function Widget(tag_name, methods) {
   if (!methods) {
     methods = tag_name;
     tag_name = 'DIV';
   }
-  
+
   /**
    * An Abstract Widget Unit
    *
@@ -59,17 +59,17 @@ function Widget(tag_name, methods) {
     initialize: function(key, options) {
       this.key = key;
       var args = [{'class': 'rui-' + key}];
-      
+
       // those two have different constructors
       if (!(this instanceof RightJS.Input || this instanceof RightJS.Form)) {
         args.unshift(tag_name);
       }
       this.$super.apply(this, args);
-      
+
       if (RightJS.isString(options)) {
         options = RightJS.$(options);
       }
-      
+
       // if the options is another element then
       // try to dynamically rewrap it with our widget
       if (options instanceof RightJS.Element) {
@@ -102,16 +102,16 @@ function Widget(tag_name, methods) {
       return this;
     }
   });
-  
+
   /**
    * Creating the actual widget class
    *
    */
   var Klass = new RightJS.Wrapper(AbstractWidget, methods);
-  
+
   // creating the widget related shortcuts
   RightJS.Observer.createShortcuts(Klass.prototype, Klass.EVENTS || []);
-  
+
   return Klass;
 }
 
@@ -123,7 +123,7 @@ function Widget(tag_name, methods) {
  * Copyright (C) 2010 Nikolay Nemshilov
  */
 var Updater = {
-  
+
   /**
    * Assigns the unit to work with an input element
    *
@@ -136,7 +136,7 @@ var Updater = {
         element[element.setValue ? 'setValue' : 'update'](event.target.getValue());
       }
     }).curry(element);
-    
+
     var connect = R(function(element, object) {
       element = $(element);
       if (element && element.onChange) {
@@ -145,7 +145,7 @@ var Updater = {
         }).bind(object));
       }
     }).curry(element);
-    
+
     if ($(element)) {
       assign({target: this});
       connect(this);
@@ -155,7 +155,7 @@ var Updater = {
         connect(this);
       }.bind(this)));
     }
-    
+
     return this.onChange(assign);
   }
 };
@@ -168,28 +168,28 @@ var Updater = {
  */
 var Rater = new Widget({
   include: Updater,
-  
+
   extend: {
     version: '2.0.0',
-    
+
     EVENTS: $w('change hover send'),
-    
+
     Options: {
       html:          '&#9733;', // the dot html code
-      
+
       size:          5,      // number of stars in the line
       value:         null,   // default value
       update:        null,   // an element to update
-      
+
       disabled:      false,  // if it should be disabled
       disableOnVote: false,  // if it should be disabled when user clicks a value
-      
+
       url:           null,   // an url to send results with AJAX
-      param:         'rate', // the value param name 
+      param:         'rate', // the value param name
       Xhr:           null    // additional Xhr options
     }
   },
-  
+
   /**
    * basic constructor
    *
@@ -204,30 +204,30 @@ var Rater = new Widget({
         mouseover:  this._hovered,
         mouseout:   this._left
       });
-    
+
     if (this.empty()) {
       for (var i=0; i < this.options.size; i++) {
         this.insert('<div>'+ this.options.html + '</div>');
       }
     }
-    
+
     options = this.options;
-    
+
     if (options.value === null) {
       options.value = this.find('.active').length;
     }
-    
+
     this.setValue(options.value);
-    
+
     if (options.disabled) {
       this.disable();
     }
-    
+
     if (options.update) {
       this.assignTo(options.update);
     }
   },
-  
+
   /**
    * Sets the element value
    *
@@ -239,22 +239,22 @@ var Rater = new Widget({
       // converting the type and rounding the value
       value = isString(value) ? R(value).toInt() : value;
       value = isNumber(value) ? R(value).round() : 0;
-      
+
       // checking constraints
       value = R(value).max(this.options.size);
       value = R(value).min(0);
-      
+
       // highlighting the value
       this.highlight(value);
-      
+
       if (this.value != value) {
-        this.fire('change', this.value = value, this);
+        this.fire('change', {value: this.value = value});
       }
     }
-    
+
     return this;
   },
-  
+
   /**
    * Returns the current value of the rater
    *
@@ -263,7 +263,7 @@ var Rater = new Widget({
   getValue: function() {
     return this.value;
   },
-  
+
   /**
    * Sends an Xhr request with the current value to the options.url address
    *
@@ -273,11 +273,11 @@ var Rater = new Widget({
     if (this.options.url) {
       this.request = new Xhr(this.options.url, this.options.Xhr)
         .send(this.options.param+"="+this.value);
-      this.fire('send', this.value, this);
+      this.fire('send', {value: this.value});
     }
     return this;
   },
-  
+
   /**
    * Disables the instance
    *
@@ -286,7 +286,7 @@ var Rater = new Widget({
   disable: function() {
     return this.addClass('rui-rater-disabled');
   },
-  
+
   /**
    * Enables this instance
    *
@@ -295,7 +295,7 @@ var Rater = new Widget({
   enable: function() {
     return this.removeClass('rui-rater-disabled');
   },
-  
+
   /**
    * Checks if the instance is disabled
    *
@@ -304,7 +304,7 @@ var Rater = new Widget({
   disabled: function() {
     return this.hasClass('rui-rater-disabled');
   },
-  
+
 // protected
 
   // callback for 'hover' event
@@ -312,10 +312,10 @@ var Rater = new Widget({
     var index = this.children().indexOf(event.target);
     if (!this.disabled() && index > -1) {
       this.highlight(index + 1);
-      this.fire('hover', index + 1, this);
+      this.fire('hover', {value: index + 1});
     }
   },
-  
+
   // callback for user-click
   _clicked: function(event) {
     var index = this.children().indexOf(event.target);
@@ -327,12 +327,12 @@ var Rater = new Widget({
       this.send();
     }
   },
-  
+
   // callback when user moves the mouse out
   _left: function() {
     this.setValue(this.value);
   },
-  
+
   // visually highlights the value
   highlight: function(value) {
     this.children().each(function(element, i) {
@@ -341,6 +341,7 @@ var Rater = new Widget({
   }
 });
 
+
 /**
  * Document level on-demand auto-initialization
  *
@@ -348,17 +349,18 @@ var Rater = new Widget({
  */
 $(document).onMouseover(function(event) {
   var target = event.target, element = event.find('.rui-rater');
-  
+
   if (element) {
     if (!(element instanceof Rater)) {
       element = new Rater(element);
-      
+
       if (target.parent() === element) {
         target.fire('mouseover');
       }
     }
   }
 });
+
 
 document.write("<style type=\"text/css\">div.rui-rater,div.rui-rater div{margin:0;padding:0;background:none;border:none;display:inline-block; *display:inline; *zoom:1;font-family:Arial;font-size:110%}div.rui-rater{width:6em;height:1em;vertical-align:middle}div.rui-rater div{float:left;width:1em;height:1em;line-height:1em;text-align:center;cursor:pointer;color:#888}div.rui-rater div.active{color:brown;text-shadow:#666 .05em .05em .15em}div.rui-rater-disabled div{cursor:default}</style>");
 

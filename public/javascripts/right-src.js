@@ -10,7 +10,7 @@
  * Copyright (C) 2010 Nikolay Nemshilov
  */
 var RightJS = (function(window, document, Object, Array, String, Function, Number, Math) {
-  
+
 /**
  * The framework description object
  *
@@ -20,7 +20,7 @@ var RightJS = function(value) {
   return value; // <- a dummy method to emulate the safe-mode
 };
 
-RightJS.version = "2.0.0-rc2";
+RightJS.version = "2.0.0";
 RightJS.modules =["core", "dom", "form", "events", "xhr", "fx", "cookie"];
 
 
@@ -39,13 +39,13 @@ RightJS.modules =["core", "dom", "form", "events", "xhr", "fx", "cookie"];
 /**
  * Some top-level variables to shortify the things
  */
-var 
+var
 PROTO = 'prototype', A_proto = Array[PROTO],
 to_s = Object[PROTO].toString, slice = A_proto.slice,
 dummy = function() { return function() {}; },
 HTML = document.documentElement, UID = 1,  // !#server
-Wrappers_Cache = [], UID_KEY = '_rid'+ new Date().getTime(), // !#server
- 
+Wrappers_Cache = [], UID_KEY = '_rjs_id',  // !#server
+
 /**
  * extends the first object with the keys and values of the second one
  *
@@ -57,7 +57,7 @@ Wrappers_Cache = [], UID_KEY = '_rid'+ new Date().getTime(), // !#server
  * @param Boolean flag if the function should not overwrite intersecting values
  * @return Object extended destination object
  */
-$ext = RightJS.$ext = function(dest, source, dont_overwrite) { 
+$ext = RightJS.$ext = function(dest, source, dont_overwrite) {
   var src = source || {}, key;
 
   for (key in src) {
@@ -212,7 +212,7 @@ $ = RightJS.$ = function(object) {
   if (typeof object === 'string') {
     object = document.getElementById(object);
   }
-  
+
   if (object) {
     if (UID_KEY in object && object[UID_KEY] in Wrappers_Cache) {
       object = Wrappers_Cache[object[UID_KEY]];
@@ -226,7 +226,7 @@ $ = RightJS.$ = function(object) {
       object = new Window(object);
     }
   }
-  
+
   return object;
 },
 
@@ -304,10 +304,10 @@ if (isHash(HTML)) {
  */
 var i=0, natives = 'Array Function Number String Date RegExp'.split(' '),
 include_native = function() {
-  for (var i=0, args = arguments; i < args.length; i++) {
-    if (isHash(args[i])) {
-      $ext(this[PROTO],  args[i]);
-      $ext(this.Methods, args[i]);
+  for (var i=0; i < arguments.length; i++) {
+    if (isHash(arguments[i])) {
+      $ext(this[PROTO],  arguments[i]);
+      $ext(this.Methods, arguments[i]);
     }
   }
 };
@@ -371,7 +371,7 @@ $ext(Object, {
     }
     return keys;
   },
-  
+
   /**
    * extracts the list of the attribute values of the given object
    *
@@ -385,7 +385,7 @@ $ext(Object, {
     }
     return values;
   },
-  
+
   /**
    * Calls the function with every key/value pair on the hash
    *
@@ -398,10 +398,10 @@ $ext(Object, {
     for (var key in object) {
       callback.call(scope, key, object[key]);
     }
-    
+
     return object;
   },
-  
+
   /**
    * checks if the object-hash has no keys
    *
@@ -412,7 +412,7 @@ $ext(Object, {
     for (var key in object) { return false; }
     return true;
   },
-  
+
   /**
    * returns a copy of the object which contains
    * all the same keys/values except the key-names
@@ -425,16 +425,16 @@ $ext(Object, {
    */
   without: function() {
     var filter = $A(arguments), object = filter.shift(), copy = {}, key;
-    
+
     for (key in object) {
       if (!filter.includes(key)) {
         copy[key] = object[key];
       }
     }
-    
+
     return copy;
   },
-  
+
   /**
    * returns a copy of the object which contains all the
    * key/value pairs from the specified key-names list
@@ -449,21 +449,21 @@ $ext(Object, {
   only: function() {
     var filter = $A(arguments), object = filter.shift(), copy = {},
         i=0, length = filter.length;
-    
+
     for (; i < length; i++) {
       if (filter[i] in object) {
         copy[filter[i]] = object[filter[i]];
       }
     }
-    
+
     return copy;
   },
-    
+
   /**
    * merges the given objects and returns the result
    *
    * NOTE this method _DO_NOT_ change the objects, it creates a new object
-   *      which conatins all the given ones. 
+   *      which conatins all the given ones.
    *      if there is some keys introspections, the last object wins.
    *      all non-object arguments will be omitted
    *
@@ -481,7 +481,7 @@ $ext(Object, {
     }
     return object;
   },
-  
+
   /**
    * converts a hash-object into an equivalent url query string
    *
@@ -499,6 +499,7 @@ $ext(Object, {
     return tokens.join('&');
   }
 }, true);
+
 
 /**
  * here are the starndard Math object extends
@@ -524,16 +525,17 @@ var Math_old_random = Math.random;
  * @return Float random between 0 and 1 if there's no arguments or an integer in the given range
  */
 Math.random = function(min, max) {
-  
+
   if (arguments.length === 0) {
     return Math_old_random();
   } else if (arguments.length === 1) {
     max = min;
     min = 0;
   }
-  
+
   return ~~(Math_old_random() * (max-min+1) + ~~min);
 };
+
 
 /**
  * The Array class extentions
@@ -550,12 +552,12 @@ var original_sort = A_proto.sort,
 build_loop = function(pre, body, ret) {
   return eval('[function(c,s){'+
     'for(var '+pre+'i=0,l=this.length;i<l;i++){'+
-      body.replace('_', 'c.call(s,this[i],i,this)') + 
+      body.replace('_', 'c.call(s,this[i],i,this)') +
     '}' +
     ret +
   '}]')[0];
 },
-  
+
 // JavaScript 1.6 methods recatching up or faking
 for_each = A_proto.forEach || build_loop('', '_', ''),
 filter   = A_proto.filter  || build_loop('r=[],j=0,', 'if(_)r[j++]=this[i]', 'return r'),
@@ -572,8 +574,8 @@ last     = function(callback, scope) {
   }
   return null;
 };
-  
-  
+
+
 //
 // RightJS callbacks magick preprocessing
 //
@@ -581,7 +583,7 @@ last     = function(callback, scope) {
 // prepares a correct callback function
 function guess_callback(argsi, array) {
   var callback = argsi[0], args = slice.call(argsi, 1), scope = array, attr;
-  
+
   if (isString(callback)) {
     attr = callback;
     if (array.length && isFunction(array[0][attr])) {
@@ -592,18 +594,18 @@ function guess_callback(argsi, array) {
   } else {
     scope = args[0];
   }
-  
+
   return [callback, scope];
 }
 
 // calls the given method with preprocessing the arguments
 function call_method(func, scope, args) {
   var result;
-  
+
   try {
     result = func.apply(scope, guess_callback(args, scope));
   } catch(e) { if (!(e instanceof RightJS.Break)) { throw(e); } }
-  
+
   return result;
 }
 
@@ -616,7 +618,7 @@ function boolean_check(i) {
 function default_sort(a, b) {
   return a > b ? 1 : a < b ? -1 : 0;
 }
-  
+
 Array.include({
   /**
    * IE fix
@@ -634,7 +636,7 @@ Array.include({
     }
     return -1;
   },
-  
+
   /**
    * IE fix
    * returns the last index of the value in the array
@@ -650,7 +652,7 @@ Array.include({
     }
     return -1;
   },
-  
+
   /**
    * returns the first element of the array
    *
@@ -659,7 +661,7 @@ Array.include({
   first: function() {
     return arguments.length ? call_method(first, this, arguments) : this[0];
   },
-  
+
   /**
    * returns the last element of the array
    *
@@ -668,7 +670,7 @@ Array.include({
   last: function() {
     return arguments.length ? call_method(last, this, arguments) : this[this.length-1];
   },
-  
+
   /**
    * returns a random item of the array
    *
@@ -677,7 +679,7 @@ Array.include({
   random: function() {
     return this.length ? this[Math.random(this.length-1)] : null;
   },
-  
+
   /**
    * returns the array size
    *
@@ -686,7 +688,7 @@ Array.include({
   size: function() {
     return this.length;
   },
-  
+
   /**
    * cleans the array
    * @return Array this
@@ -695,7 +697,7 @@ Array.include({
     this.length = 0;
     return this;
   },
-  
+
   /**
    * checks if the array has no elements in it
    *
@@ -704,7 +706,7 @@ Array.include({
   empty: function() {
     return !this.length;
   },
-  
+
   /**
    * creates a copy of the given array
    *
@@ -713,7 +715,7 @@ Array.include({
   clone: function() {
     return this.slice(0);
   },
-  
+
   /**
    * calls the given callback function in the given scope for each element of the array
    *
@@ -726,7 +728,7 @@ Array.include({
     return this;
   },
   forEach: for_each,
-  
+
   /**
    * creates a list of the array items converted in the given callback function
    *
@@ -737,7 +739,7 @@ Array.include({
   map: function() {
     return call_method(map, this, arguments);
   },
-  
+
   /**
    * creates a list of the array items which are matched in the given callback function
    *
@@ -748,7 +750,7 @@ Array.include({
   filter: function() {
     return call_method(filter, this, arguments);
   },
-  
+
   /**
    * creates a list of the array items that are not matching the give callback function
    *
@@ -759,7 +761,7 @@ Array.include({
   reject: function() {
     return call_method(reject, this, arguments);
   },
-  
+
   /**
    * checks if any of the array elements is logically true
    *
@@ -770,7 +772,7 @@ Array.include({
   some: function(value) {
     return call_method(some, this, value ? arguments : [boolean_check]);
   },
-  
+
   /**
    * checks if all the array elements are logically true
    *
@@ -781,7 +783,7 @@ Array.include({
   every: function(value) {
     return call_method(every, this, value ? arguments : [boolean_check]);
   },
-  
+
   /**
    * applies the given lambda to each element in the array
    *
@@ -795,7 +797,7 @@ Array.include({
     this.map.apply(this, arguments).forEach(function(value, i) { this[i] = value; }, this);
     return this;
   },
-    
+
   /**
    * similar to the concat function but it adds only the values which are not on the list yet
    *
@@ -807,7 +809,7 @@ Array.include({
     for (var copy = this.clone(), arg, i=0, j, length = arguments.length; i < length; i++) {
       arg = arguments[i];
       arg = ensure_array(arg);
-      
+
       for (j=0; j < arg.length; j++) {
         if (copy.indexOf(arg[j]) == -1) {
           copy.push(arg[j]);
@@ -816,7 +818,7 @@ Array.include({
     }
     return copy;
   },
-  
+
   /**
    * flats out complex array into a single dimension array
    *
@@ -833,7 +835,7 @@ Array.include({
     });
     return copy;
   },
-  
+
   /**
    * returns a copy of the array whithout any null or undefined values
    *
@@ -842,7 +844,7 @@ Array.include({
   compact: function() {
     return this.without(null, undefined);
   },
-  
+
   /**
    * returns a copy of the array which contains only the unique values
    *
@@ -851,7 +853,7 @@ Array.include({
   uniq: function() {
     return [].merge(this);
   },
-  
+
   /**
    * checks if all of the given values
    * exists in the given array
@@ -868,7 +870,7 @@ Array.include({
     }
     return true;
   },
-  
+
   /**
    * returns a copy of the array without the items passed as the arguments
    *
@@ -882,7 +884,7 @@ Array.include({
       return !filter.includes(value);
     });
   },
-  
+
   /**
    * Shuffles the array items in a random order
    *
@@ -890,12 +892,12 @@ Array.include({
    */
   shuffle: function() {
     var shuff = this.clone(), j, x, i = shuff.length;
-    
+
     for (; i > 0; j = Math.random(i-1), x = shuff[--i], shuff[i] = shuff[j], shuff[j] = x) {}
-    
+
     return shuff;
   },
-  
+
   /**
    * Default sort fix for numeric values
    *
@@ -905,7 +907,7 @@ Array.include({
   sort: function(callback) {
     return original_sort.apply(this, (callback || !isNumber(this[0])) ? arguments : [default_sort]);
   },
-  
+
   /**
    * sorts the array by running its items though a lambda or calling their attributes
    *
@@ -915,7 +917,7 @@ Array.include({
    */
   sortBy: function() {
     var pair = guess_callback(arguments, this);
-    
+
     return this.sort(function(a, b) {
       return default_sort(
         pair[0].call(pair[1], a),
@@ -923,7 +925,7 @@ Array.include({
       );
     });
   },
-  
+
   /**
    * Returns the minimal value on the list
    *
@@ -932,7 +934,7 @@ Array.include({
   min: function() {
     return Math.min.apply(Math, this);
   },
-  
+
   /**
    * Returns the maximal value
    *
@@ -941,7 +943,7 @@ Array.include({
   max: function() {
     return Math.max.apply(Math, this);
   },
-  
+
   /**
    * Returns a summ of all the items on the list
    *
@@ -978,7 +980,7 @@ String.include({
   empty: function() {
     return this == '';
   },
-  
+
   /**
    * checks if the string contains only white-spaces
    *
@@ -987,9 +989,9 @@ String.include({
   blank: function() {
     return (/^\s*$/).test(this);
   },
-  
+
   /**
-   * removes trailing whitespaces   
+   * removes trailing whitespaces
    *
    * @return String trimmed version
    */
@@ -998,7 +1000,7 @@ String.include({
     while ((/\s/).test(str.charAt(--i))) {}
     return str.slice(0, i + 1);
   },
-  
+
   /**
    * returns a copy of the string with all the tags removed
    * @return String without tags
@@ -1006,10 +1008,10 @@ String.include({
   stripTags: function() {
     return this.replace(/<\/?[^>]+>/ig, '');
   },
-  
+
   /**
    * removes all the scripts declarations out of the string
-   * @param mixed option. If it equals true the scrips will be executed, 
+   * @param mixed option. If it equals true the scrips will be executed,
    *                      if a function the scripts will be passed in it
    * @return String without scripts
    */
@@ -1018,16 +1020,16 @@ String.include({
       scripts += source + "\n";
       return '';
     });
-    
+
     if (option === true) {
       $eval(scripts);
     } else if (isFunction(option)) {
       option(scripts, text);
     }
-    
+
     return text;
   },
-  
+
   /**
    * extracts all the scripts out of the string
    *
@@ -1038,7 +1040,7 @@ String.include({
     this.stripScripts(function(s) { scripts = s; });
     return scripts;
   },
-  
+
   /**
    * evals all the scripts in the string
    *
@@ -1048,7 +1050,7 @@ String.include({
     this.stripScripts(true);
     return this;
   },
-  
+
   /**
    * converts underscored or dasherized string to a camelized one
    * @returns String camelized version
@@ -1058,7 +1060,7 @@ String.include({
       return chr ? chr.toUpperCase() : '';
     });
   },
-  
+
   /**
    * converts a camelized or dasherized string into an underscored one
    * @return String underscored version
@@ -1075,7 +1077,7 @@ String.include({
   capitalize: function() {
     return this.charAt(0).toUpperCase() + this.substring(1).toLowerCase();
   },
-  
+
   /**
    * checks if the string contains the given substring
    *
@@ -1085,7 +1087,7 @@ String.include({
   includes: function(string) {
     return this.indexOf(string) != -1;
   },
-  
+
   /**
    * checks if the string starts with the given substring
    *
@@ -1095,10 +1097,10 @@ String.include({
    */
   startsWith: function(string, ignorecase) {
     var start_str = this.substr(0, string.length);
-    return ignorecase ? start_str.toLowerCase() === string.toLowerCase() : 
+    return ignorecase ? start_str.toLowerCase() === string.toLowerCase() :
       start_str === string;
   },
-  
+
   /**
    * checks if the string ends with the given substring
    *
@@ -1111,7 +1113,7 @@ String.include({
     return ignorecase ? end_str.toLowerCase() === string.toLowerCase() :
       end_str === string;
   },
-  
+
   /**
    * converts the string to an integer value
    * @param Integer base
@@ -1120,7 +1122,7 @@ String.include({
   toInt: function(base) {
     return parseInt(this, base || 10);
   },
-  
+
   /**
    * converts the string to a float value
    * @param boolean flat if the method should not use a flexible matching
@@ -1129,10 +1131,11 @@ String.include({
   toFloat: function(strict) {
     return parseFloat(strict ? this : this.replace(',', '.').replace(/(\d)-(\d)/g, '$1.$2'));
   }
-  
+
 });
 
 $alias(String[PROTO], {include: 'includes'});
+
 
 /**
  * The Function class extentions
@@ -1184,7 +1187,7 @@ Function.include({
   curry: function() {
     return this.bind.apply(this, [this].concat($A(arguments)));
   },
-  
+
   /**
    * The right side curry feature
    *
@@ -1232,7 +1235,7 @@ Function.include({
 
     return timer;
   },
-  
+
   /**
    * Chains the given function after the current one
    *
@@ -1250,6 +1253,7 @@ Function.include({
     };
   }
 });
+
 
 /**
  * The Number class extentions
@@ -1274,45 +1278,46 @@ Number.include({
     }
     return this;
   },
-  
+
   upto: function(number, callback, scope) {
     for (var i=this+0; i <= number; i++) {
       callback.call(scope, i);
     }
     return this;
   },
-  
+
   downto: function(number, callback, scope) {
     for (var i=this+0; i >= number; i--) {
       callback.call(scope, i);
     }
     return this;
   },
-  
+
   abs: function() {
     return Math.abs(this);
   },
-  
+
   round: function(size) {
     return size ? parseFloat(this.toFixed(size)) : Math.round(this);
   },
-  
+
   ceil: function() {
     return Math.ceil(this);
   },
-  
+
   floor: function() {
     return Math.floor(this);
   },
-  
+
   min: function(value) {
     return this < value ? value : this + 0;
   },
-  
+
   max: function(value) {
     return this > value ? value : this + 0;
   }
 });
+
 
 /**
  * The Regexp class extentions
@@ -1335,6 +1340,7 @@ RegExp.escape = function(string) {
   return (''+string).replace(/([.*+?\^=!:${}()|\[\]\/\\])/g, '\\$1');
 };
 
+
 /**
  * The basic Class unit
  *
@@ -1349,7 +1355,7 @@ RegExp.escape = function(string) {
 var Class = RightJS.Class = function() {
   var args = $A(arguments), properties = args.pop() || {},
     parent = args.pop();
-  
+
   // basic class object definition
   function klass() {
     if ('prebind' in this && isArray(this.prebind)) {
@@ -1357,7 +1363,7 @@ var Class = RightJS.Class = function() {
         this[method] = this[method].bind(this);
       }, this);
     }
-    
+
     return this.initialize ? this.initialize.apply(this, arguments) : this;
   }
 
@@ -1365,13 +1371,13 @@ var Class = RightJS.Class = function() {
   if (!args.length && !isHash(properties)) {
     parent = properties; properties = {};
   }
-  
+
   // attaching main class-level methods
   $ext(klass, Class_Methods).inherit(parent);
-  
+
   // catching the injections
   Class_attachInjections(klass, properties);
-  
+
   return klass.include(properties);
 },
 
@@ -1430,9 +1436,9 @@ Class_Methods = {
   extend: function() {
     $A(arguments).filter(isHash).each(function(module) {
       var callback = module.selfExtended || module.self_extended;
-      
+
       $ext(this, clean_module(module, true));
-      
+
       if (callback) {
         callback.call(module, this);
       }
@@ -1455,10 +1461,10 @@ Class_Methods = {
 
     $A(arguments).filter(isHash).each(function(module) {
       var callback = module.selfIncluded || module.self_included;
-      
+
       Object.each(clean_module(module, false), function(key, method) {
         var ancestor = ancestors.first(function(proto) { return key in proto && isFunction(proto[key]); });
-        
+
         this[PROTO][key] = !ancestor ? method : function() {
           this.$super = ancestor[key];
           return method.apply(this, arguments);
@@ -1508,9 +1514,10 @@ function Class_findSet(object, property) {
     constructor = object.constructor,
     candidates = [object, constructor].concat('ancestors' in constructor ? constructor.ancestors : []),
     holder = candidates.first(function(o) { return o && (upcased in o || capcased in o); });
-    
+
   return holder ? holder[upcased] || holder[capcased] : null;
 }
+
 
 /**
  * This is a simple mix-in module to be included in other classes
@@ -1533,7 +1540,7 @@ var Options = RightJS.Options = {
    */
   setOptions: function(opts) {
     var options = this.options = Object.merge(Class_findSet(this, 'options'), opts), match, key;
-    
+
     // hooking up the observer options
     if (isFunction(this.on)) {
       for (key in options) {
@@ -1543,10 +1550,10 @@ var Options = RightJS.Options = {
         }
       }
     }
-    
+
     return this;
   },
-  
+
   /**
    * Cuts of an options hash from the end of the arguments list
    * assigns them using the #setOptions method and then
@@ -1562,8 +1569,9 @@ var Options = RightJS.Options = {
   }
 };
 
+
 /**
- * standard Observer class. 
+ * standard Observer class.
  *
  * Might be used as a usual class or as a builder over another objects
  *
@@ -1575,18 +1583,18 @@ var Options = RightJS.Options = {
  */
 var Observer = RightJS.Observer = new Class({
   include: Options,
-  
+
   /**
    * general constructor
    *
    * @param Object options
    */
   initialize: function(options) {
-    this.setOptions(options);    
+    this.setOptions(options);
     Observer_createShortcuts(this, Class_findSet(this, 'events'));
     return this;
   },
-  
+
   /**
    * binds an event listener
    *
@@ -1599,7 +1607,7 @@ var Observer = RightJS.Observer = new Class({
    */
   on: function() {
     var args = $A(arguments), event = args.shift(), name;
-    
+
     if (isString(event)) {
       if (!('$listeners' in this)) { this.$listeners = []; }
 
@@ -1611,14 +1619,14 @@ var Observer = RightJS.Observer = new Class({
 
         case "function":
           var hash = {};
-          
+
           // DON'T move it in the one-line hash variable definition,
           // it causes problems with the Konqueror 3 later on
           hash.e = event;
           hash.f = callback;
           hash.a = args;
           hash.r = name;
-          
+
           this.$listeners.push(hash);
           break;
 
@@ -1631,7 +1639,7 @@ var Observer = RightJS.Observer = new Class({
             }
           }
       }
-      
+
     } else {
       // assuming it's a hash of key-value pairs
       for (name in event) {
@@ -1640,12 +1648,12 @@ var Observer = RightJS.Observer = new Class({
         ).concat(args));
       }
     }
-    
-    
-    
+
+
+
     return this;
   },
-  
+
   /**
    * checks if the observer observes given event and/or callback
    *
@@ -1659,13 +1667,13 @@ var Observer = RightJS.Observer = new Class({
   observes: function(event, callback) {
     if (!isString(event)) { callback = event; event = null; }
     if (isString(callback)) { callback = this[callback]; }
-    
+
     return (this.$listeners || []).some(function(i) {
       return (event && callback) ? i.e === event && i.f === callback :
         event ? i.e === event : i.f === callback;
     });
   },
-  
+
   /**
    * stops observing an event or/and function
    *
@@ -1684,16 +1692,16 @@ var Observer = RightJS.Observer = new Class({
     } else {
       if (!isString(event)) {  callback = event; event = null; }
       if (isString(callback)){ callback = this[callback]; }
-      
+
       this.$listeners = (this.$listeners || []).filter(function(i) {
         return (event && callback) ? (i.e !== event || i.f !== callback) :
           (event ? i.e !== event : i.f !== callback);
       }, this);
     }
-    
+
     return this;
   },
-  
+
   /**
    * returns the listeners list for the event
    *
@@ -1708,7 +1716,7 @@ var Observer = RightJS.Observer = new Class({
       return !event || i.e === event;
     }).map(function(i) { return i.f; }).uniq();
   },
-  
+
   /**
    * initiates the event handling
    *
@@ -1719,13 +1727,13 @@ var Observer = RightJS.Observer = new Class({
    */
   fire: function() {
     var args = $A(arguments), event = args.shift();
-    
+
     (this.$listeners || []).each(function(i) {
       if (i.e === event) {
         i.f.apply(this, i.a.concat(args));
       }
     }, this);
-    
+
     return this;
   }
 }),
@@ -1758,7 +1766,7 @@ Observer_createShortcuts = Observer.createShortcuts = function(object, names) {
       };
     }
   });
-  
+
   return object;
 };
 
@@ -1771,6 +1779,7 @@ Observer_createShortcuts = Observer.createShortcuts = function(object, names) {
 var Break = RightJS.Break = new Class(Error, {
   message: "Manual break"
 });
+
 
 /**
  * this object will contain info about the current browser
@@ -1791,6 +1800,7 @@ Browser = RightJS.Browser = {
   OLD:          looks_like_ie && !looks_like_opera && !document.querySelector
 };
 
+
 /**
  * The dom-wrapper main unit
  *
@@ -1802,13 +1812,13 @@ Browser = RightJS.Browser = {
  */
 
 var Wrapper = RightJS.Wrapper = function(parent, methods) {
-  
+
   // creating the actual wrapper class
   var Klass = function(object, options) {
     this.initialize(object, options);
-    
+
     var instance = this, unit = instance._, uid;
-    
+
     // dynamically typecasting in case if the user is creating
     // an element of a subtype via the basic Element constructor
     if (this.constructor === Element && unit.tagName in Element_wrappers) {
@@ -1817,30 +1827,31 @@ var Wrapper = RightJS.Wrapper = function(parent, methods) {
         instance.$listeners = this.$listeners;
       }
     }
-    
+
     uid  = UID_KEY in unit ? unit[UID_KEY] : (unit[UID_KEY] = UID++);
-    
+
     return (Wrappers_Cache[uid] = instance);
   };
-  
+
   // finding the parent
   if (!methods) {
     methods = parent;
     parent  = null;
   }
-  
+
   // hooking up the extedning tools and methods
   $ext(Klass, Class_Methods).inherit(parent || Wrapper);
-  
+
   // checking for the injections
   Class_attachInjections(Klass, methods);
-  
+
   // including the basic tools
   return Klass.include({_: undefined}, methods);
 };
 
 // exposing the cache so it could be manupulated externally
 Wrapper.Cache = Wrappers_Cache;
+
 
 /**
  * A simple document wrapper
@@ -1851,12 +1862,13 @@ var Document = RightJS.Document = new Wrapper({
   initialize: function(document) {
     this._ = document;
   },
-  
+
   // returns the window reference
   window: function() {
     return $(this._.defaultView || this._.parentWindow);
   }
 });
+
 
 /**
  * the window object extensions
@@ -1874,7 +1886,7 @@ var Window = RightJS.Window = new Wrapper({
     this._ = window;
     this.d = window.document;
   },
-  
+
   /**
    * Generic API reference
    *
@@ -1883,7 +1895,7 @@ var Window = RightJS.Window = new Wrapper({
   window: function() {
     return this;
   },
-  
+
   /**
    * returns the inner-size of the window
    *
@@ -1902,9 +1914,9 @@ var Window = RightJS.Window = new Wrapper({
    */
   scrolls: function() {
     var win = this._, doc = this.d, body = doc.body, html = doc.documentElement;
-    
+
     return (win.pageXOffset || win.pageYOffset) ? {x: win.pageXOffset, y: win.pageYOffset} :
-      (body.scrollLeft || body.scrollTop) ? {x: body.scrollLeft, y: body.scrollTop} :
+      (body && (body.scrollLeft || body.scrollTop)) ? {x: body.scrollLeft, y: body.scrollTop} :
       {x: html.scrollLeft, y: html.scrollTop};
   },
 
@@ -1918,7 +1930,7 @@ var Window = RightJS.Window = new Wrapper({
    */
   scrollTo: function(left, top, fx_options) {
     var left_pos = left, top_pos = top, element = $(left); // moving the values into new vars so they didn't get screwed later on
-    
+
     if(element && element instanceof Element) {
       left = element.position();
     }
@@ -1927,7 +1939,7 @@ var Window = RightJS.Window = new Wrapper({
       top_pos  = left.y;
       left_pos = left.x;
     }
-    
+
     // checking if a smooth scroll was requested
     if (isHash(fx_options = fx_options || top) && RightJS.Fx) {
       new Fx.Scroll(this, fx_options).start({x: left_pos, y: top_pos});
@@ -1954,17 +1966,17 @@ var Window = RightJS.Window = new Wrapper({
 var Event = RightJS.Event = new Wrapper({
   // predefining the keys to spped up the assignments
   type:          null,
-  
+
   which:         null,
   keyCode:       null,
-  
+
   target:        null,
   currentTarget: null,
   relatedTarget: null,
-  
+
   pageX:         null,
   pageY:         null,
-  
+
   /**
    * the class constructor
    *
@@ -1976,39 +1988,39 @@ var Event = RightJS.Event = new Wrapper({
     if (typeof event === 'string') {
       event = Object.merge({type: event}, bound_element);
       this.stopped = event.bubbles === false;
-      
+
       if (isHash(bound_element)) {
         $ext(this, bound_element);
       }
     }
-    
+
     this._             = event;
     this.type          = event.type;
-    
+
     this.which         = event.which;
     this.keyCode       = event.keyCode;
-  
+
     this.target        = $(event.target);
     this.currentTarget = $(event.currentTarget);
     this.relatedTarget = $(event.relatedTarget);
-  
+
     this.pageX         = event.pageX;
     this.pageY         = event.pageY;
-  
+
     if (!('target' in event) && 'srcElement' in event) {
       // grabbin the IE properties
       this.which = event.button == 2 ? 3 : event.button == 4 ? 2 : 1;
-    
-      // faking the target property  
+
+      // faking the target property
       this.target = $(event.srcElement) || bound_element;
-    
+
       // faking the relatedTarget, currentTarget and other targets
       this.relatedTarget = this.target._ === event.fromElement ? $(event.toElement) : this.target;
       this.currentTarget = bound_element;
-    
+
       // faking the mouse position
       var scrolls = this.target.window().scrolls();
-    
+
       this.pageX = event.clientX + scrolls.x;
       this.pageY = event.clientY + scrolls.y;
     } else if (event.target && 'nodeType' in event.target && event.target.nodeType === 3) {
@@ -2016,7 +2028,7 @@ var Event = RightJS.Event = new Wrapper({
       this.target = $(event.target.parentNode);
     }
   },
-  
+
   /**
    * Stops the event bubbling process
    *
@@ -2031,7 +2043,7 @@ var Event = RightJS.Event = new Wrapper({
     this.stopped = true;
     return this;
   },
-  
+
   /**
    * Prevents the default browser action on the event
    *
@@ -2045,7 +2057,7 @@ var Event = RightJS.Event = new Wrapper({
     }
     return this;
   },
-  
+
   /**
    * Fully stops the event
    *
@@ -2054,7 +2066,7 @@ var Event = RightJS.Event = new Wrapper({
   stop: function() {
     return this.stopPropagation().preventDefault();
   },
-  
+
   /**
    * Returns the event position
    *
@@ -2063,7 +2075,7 @@ var Event = RightJS.Event = new Wrapper({
   position: function() {
     return {x: this.pageX, y: this.pageY};
   },
-  
+
   /**
    * Finds the element between the event target
    * and the boundary element that matches the
@@ -2088,6 +2100,7 @@ var Event = RightJS.Event = new Wrapper({
 }),
 
 Event_delegation_shortcuts = [];
+
 
 /**
  * The DOM Element unit handling
@@ -2141,16 +2154,17 @@ element_constructor = function(element, options) {
   }
 };
 
-if (Browser.IE) {
-  //
-  // IE browsers have a bug with checked input elements
-  // and we kinda hacking the Element constructor so that
-  // it affected IE browsers only
-  //
+//
+// IE 6,7,8 (not 9!) browsers have a bug with checkbox and radio input elements
+// it doesn't place the 'checked' property correctly, so we kinda hacking
+// the Element constructor a bit for them
+//
+try {
+  document.createElement('<input/>'); // <- works for IE < 9 only
   element_constructor = patch_function(element_constructor, /(\((\w+),\s*(\w+)\)\s*\{)/,
     '$1if($2==="input"&&$3)$2="<input name="+$3.name+" type="+$3.type+($3.checked?" checked":"")+"/>";'
   );
-}
+} catch (e) {}
 
 /**
  * The actual elements wrapper
@@ -2174,9 +2188,9 @@ var Element = RightJS.Element = new Wrapper({
       this._ = element;
     }
   },
-  
+
 // protected
-  
+
   // constructs the event
   construct: element_constructor
 });
@@ -2206,37 +2220,37 @@ Element.include({
   parent: function(css_rule) {
     return css_rule ? this.parents(css_rule)[0] : $(this._.parentNode || null); // <- IE6 need that || null
   },
-  
+
   parents: function(css_rule) {
     return recursively_collect(this, 'parentNode', css_rule);
   },
-  
+
   children: function(css_rule) {
     return this.find(css_rule).filter(function(element) {
       return element._.parentNode === this._;
     }, this);
   },
-  
+
   siblings: function(css_rule) {
     return this.prevSiblings(css_rule).reverse().concat(this.nextSiblings(css_rule));
   },
-  
+
   nextSiblings: function(css_rule) {
     return recursively_collect(this, 'nextSibling', css_rule);
   },
-  
+
   prevSiblings: function(css_rule) {
     return recursively_collect(this, 'previousSibling', css_rule);
   },
-  
+
   next: function(css_rule) {
     return this.nextSiblings(css_rule)[0];
   },
-  
+
   prev: function(css_rule) {
     return this.prevSiblings(css_rule)[0];
   },
-  
+
   /**
    * removes the elemnt out of this parent node
    *
@@ -2249,7 +2263,7 @@ Element.include({
     }
     return this;
   },
-  
+
   /**
    * handles the elements insertion functionality
    *
@@ -2257,35 +2271,35 @@ Element.include({
    *
    *  o) an element instance
    *  o) a String, which will be converted into content to insert (all the scripts will be parsed out and executed)
-   *  o) a list of Elements 
+   *  o) a list of Elements
    *  o) a hash like {position: content}
    *
    * @param mixed data to insert
    * @param String position to insert  top/bottom/before/after/instead
    * @return Element self
    */
-  insert: function(content, position) {    
+  insert: function(content, position) {
     var scripts = null, element = this._;
     position = (position||'bottom').toLowerCase();
-    
+
     if (typeof(content) !== 'object') {
       scripts = content = (''+content);
     } else if (content && content instanceof Element) {
       content = content._;
     }
-    
+
     Element_insertions[position](element, content.tagName ? content :
       Element_createFragment.call(
         (position === 'bottom' || position === 'top') ?
           element : element.parentNode, content
       )
     );
-    
+
     if (scripts !== null) { scripts.evalScripts(); }
-    
+
     return this;
   },
-  
+
   /**
    * Inserts the element inside the given one at the given position
    *
@@ -2297,7 +2311,7 @@ Element.include({
     $(element).insert(this, position);
     return this;
   },
-  
+
   /**
    * A shortcut to uppend several units into the element
    *
@@ -2305,10 +2319,10 @@ Element.include({
    * ..................
    * @return Element this
    */
-  append: function() {
-    return this.insert(arguments);
+  append: function(first) {
+    return this.insert(isString(first) ? $A(arguments).join('') : arguments);
   },
-  
+
   /**
    * updates the content of the element by the given content
    *
@@ -2318,21 +2332,21 @@ Element.include({
   update: function(content) {
     if (typeof(content) !== 'object') {
       content = '' + content;
-      
+
       try {
         this._.innerHTML = content;
       } catch(e) {
         return this.clean().insert(content);
       }
-      
+
       content.evalScripts();
-      
+
       return this;
     } else {
       return this.clean().insert(content);
     }
   },
-  
+
   /**
    * Works with the Element's innerHTML property
    * This method works both ways! if a content is provided
@@ -2355,7 +2369,7 @@ Element.include({
   replace: function(content) {
     return this.insert(content, 'instead');
   },
-  
+
   /**
    * wraps the element with the given element
    *
@@ -2371,7 +2385,7 @@ Element.include({
     }
     return this;
   },
-  
+
   /**
    * removes all the child nodes out of the element
    *
@@ -2381,10 +2395,10 @@ Element.include({
     while (this._.firstChild) {
       this._.removeChild(this._.firstChild);
     }
-    
+
     return this;
   },
-  
+
   /**
    * checks if the element has no child nodes
    *
@@ -2393,7 +2407,7 @@ Element.include({
   empty: function() {
     return this.html().blank();
   },
-  
+
   /**
    * Creates a clean clone of the element without any events attached to it
    *
@@ -2414,7 +2428,7 @@ Element.include({
  * @param name String pointer attribute name
  * @param rule String optional css-atom rule
  * @return Array found elements
- */ 
+ */
 function recursively_collect(where, attr, css_rule) {
   var node = where._, result = [];
 
@@ -2423,7 +2437,7 @@ function recursively_collect(where, attr, css_rule) {
       result.push($(node));
     }
   }
-  
+
   return result;
 }
 
@@ -2433,7 +2447,7 @@ var Element_insertions = {
   bottom: function(target, content) {
     target.appendChild(content);
   },
-  
+
   top: function(target, content) {
     if (target.firstChild !== null) {
       target.insertBefore(content, target.firstChild);
@@ -2441,7 +2455,7 @@ var Element_insertions = {
       target.appendChild(content);
     }
   },
-  
+
   after: function(target, content) {
     var parent = target.parentNode, sibling = target.nextSibling;
     if (sibling !== null) {
@@ -2450,11 +2464,11 @@ var Element_insertions = {
       parent.appendChild(content);
     }
   },
-  
+
   before: function(target, content) {
     target.parentNode.insertBefore(content, target);
   },
-  
+
   instead: function(target, content) {
     target.parentNode.replaceChild(content, target);
   }
@@ -2477,27 +2491,27 @@ $alias(Element_wraps, {
   TFOOT:    'TBODY',
   TH:       'TD'
 });
-  
+
 // converts any data into a html fragment unit
 var fragment = document.createDocumentFragment(),
     tmp_cont = document.createElement('DIV');
-    
+
 function Element_createFragment(content) {
   if (typeof(content) === 'string') {
     var tag   = this.tagName,
         tmp   = tmp_cont,
         wrap  = Element_wraps[tag] || ['', '', 1],
         depth = wrap[2];
-          
+
     tmp.innerHTML = wrap[0] + '<'+ tag + '>' + content + '</'+ tag + '>' + wrap[1];
-    
+
     while (depth-- > 0) {
       tmp = tmp.firstChild;
     }
-    
+
     content = tmp.childNodes;
   }
-  
+
   for (var i=0, length = content.length, node; i < length; i++) {
     // in case of NodeList unit, the elements will be removed out of the list during the appends
     // therefore if that's an array we use the 'i' variable, and if it's a collection of nodes
@@ -2505,15 +2519,16 @@ function Element_createFragment(content) {
     node = content[content.length === length ? i : 0];
     fragment.appendChild(node instanceof Element ? node._ : node);
   }
-  
+
   return fragment;
 }
+
 
 /**
  * this module contains the element unit styles related methods
  *
  * Credits:
- *   Some of the functionality is inspired by 
+ *   Some of the functionality is inspired by
  *     - Prototype (http://prototypejs.org)   Copyright (C) Sam Stephenson
  *     - MooTools  (http://mootools.net)      Copyright (C) Valerio Proietti
  *     - Dojo      (www.dojotoolkit.org)      Copyright (C) The Dojo Foundation
@@ -2532,7 +2547,7 @@ Element.include({
    */
   setStyle: function(hash, value) {
     var key, c_key, style = {}, element_style = this._.style;
-    
+
     if (value) { style[hash] = value; hash = style; }
     else if(isString(hash)) {
       hash.split(';').each(function(option) {
@@ -2543,11 +2558,11 @@ Element.include({
       });
       hash = style;
     }
-    
-    
+
+
     for (key in hash) {
       c_key = key.indexOf('-') < 0 ? key : key.camelize();
-      
+
       if (key === 'opacity') {
         if (Browser.IE) {
           element_style.filter = 'alpha(opacity='+ hash[key] * 100 +')';
@@ -2557,13 +2572,13 @@ Element.include({
       } else if (key === 'float') {
         c_key = Browser.IE ? 'styleFloat' : 'cssFloat';
       }
-      
+
       element_style[c_key] = hash[key];
     }
-    
+
     return this;
   },
-  
+
   /**
    * returns style of the element
    *
@@ -2575,7 +2590,7 @@ Element.include({
   getStyle: function(key) {
     return clean_style(this._.style, key) || clean_style(this.computedStyles(), key);
   },
-  
+
   /**
    * returns the hash of computed styles for the element
    *
@@ -2586,17 +2601,17 @@ Element.include({
     //     old IE,                 IE8,                    W3C
     return element.currentStyle || element.runtimeStyle || element.ownerDocument.defaultView.getComputedStyle(element, null) || {};
   },
-  
+
   /**
    * checks if the element has the given class name
-   * 
+   *
    * @param String class name
    * @return boolean check result
    */
   hasClass: function(name) {
     return (' '+this._.className+' ').indexOf(' '+name+' ') != -1;
   },
-  
+
   /**
    * sets the whole class-name string for the element
    *
@@ -2621,7 +2636,7 @@ Element.include({
     }
     return this;
   },
-  
+
   /**
    * removes the given class name
    *
@@ -2632,7 +2647,7 @@ Element.include({
     this._.className = (' '+this._.className+' ').replace(' '+name+' ', ' ').trim();
     return this;
   },
-  
+
   /**
    * toggles the given class name on the element
    *
@@ -2642,7 +2657,7 @@ Element.include({
    toggleClass: function(name) {
      return this[this.hasClass(name) ? 'removeClass' : 'addClass'](name);
    },
-   
+
    /**
     * adds the given class-name to the element
     * and removes it from all the element siblings
@@ -2665,27 +2680,28 @@ Element.include({
  */
 function clean_style(style, in_key) {
   var value, key = in_key.camelize();
-  
+
   switch (key) {
     case 'opacity':
       value = !Browser.IE ? style[key].replace(',', '.') :
         ((/opacity=(\d+)/i.exec(style.filter || '') || ['', '100'])[1].toInt() / 100)+'';
       break;
-      
+
     case 'float':
       key = Browser.IE ? 'styleFloat' : 'cssFloat';
-      
+
     default:
       value = style[key];
-      
+
       // Opera returns named colors with quotes
       if (Browser.Opera && /color/i.test(key) && value) {
         value = value.replace(/"/g, '');
       }
   }
-  
+
   return value || null;
 }
+
 
 /**
  * Common DOM Element unit methods
@@ -2706,9 +2722,9 @@ Element.include({
    */
   set: function(hash, value) {
     if (typeof(hash) === 'string') { var val = {}; val[hash] = value; hash = val; }
-    
+
     var key, element = this._;
-    
+
     for (key in hash) {
       // some attributes are not available as properties
       if (!(key in element)) {
@@ -2716,10 +2732,10 @@ Element.include({
       }
       element[key] = hash[key];
     }
-      
+
     return this;
   },
-  
+
   /**
    * returns the attribute value for the name
    *
@@ -2730,7 +2746,7 @@ Element.include({
     var element = this._, value = element[name] || element.getAttribute(name);
     return value === '' ? null : value;
   },
-  
+
   /**
    * checks if the element has that attribute
    *
@@ -2740,7 +2756,7 @@ Element.include({
   has: function(name) {
     return this.get(name) !== null;
   },
-  
+
   /**
    * erases the given attribute of the element
    *
@@ -2751,7 +2767,7 @@ Element.include({
     this._.removeAttribute(name);
     return this;
   },
-  
+
   /**
    * checks if the elemnt is hidden
    *
@@ -2762,7 +2778,7 @@ Element.include({
   hidden: function() {
     return this.getStyle('display') === 'none';
   },
-  
+
   /**
    * checks if the element is visible
    *
@@ -2771,7 +2787,7 @@ Element.include({
   visible: function() {
     return !this.hidden();
   },
-  
+
   /**
    * hides the element
    *
@@ -2784,10 +2800,10 @@ Element.include({
       this._d = this.getStyle('display');
       this._.style.display = 'none';
     }
-    
+
     return this;
   },
-  
+
   /**
    * shows the element
    *
@@ -2799,13 +2815,13 @@ Element.include({
     if (this.hidden()) {
       // setting 'block' for the divs and 'inline' for the other elements hidden on the css-level
       var element = this._, value = element.tagName == 'DIV' ? 'block' : 'inline';
-      
+
       element.style.display = this._d == 'none' ? value : this._d || value;
     }
-    
+
     return this;
   },
-  
+
   /**
    * toggles the visibility state of the element
    *
@@ -2814,9 +2830,9 @@ Element.include({
    * @return Element self
    */
   toggle: function(effect, options) {
-    return this[this.hidden() ? 'show' : 'hide'](effect, options);
+    return this[this.visible() ? 'hide' : 'show'](effect, options);
   },
-  
+
   /**
    * shows the element and hides all the sibligns
    *
@@ -2830,8 +2846,9 @@ Element.include({
   }
 });
 
+
 /**
- * this module contains the Element's part of functionality 
+ * this module contains the Element's part of functionality
  * responsible for the dimensions and positions getting/setting
  *
  * Copyright (C) 2008-2010 Nikolay Nemshilov
@@ -2845,7 +2862,7 @@ Element.include({
   document: function() {
     return $(this._.ownerDocument);
   },
-  
+
   /**
    * Returns the reference to this elements window
    *
@@ -2854,7 +2871,7 @@ Element.include({
   window: function() {
     return this.document().window();
   },
-  
+
   /**
    * Returns the element size as a hash
    *
@@ -2863,7 +2880,7 @@ Element.include({
   size: function() {
     return { x: this._.offsetWidth, y: this._.offsetHeight };
   },
-  
+
   /**
    * Returns the element absolute position
    *
@@ -2875,13 +2892,13 @@ Element.include({
     var rect    = this._.getBoundingClientRect(),
         html    = this.document()._.documentElement,
         scrolls = this.window().scrolls();
-    
+
     return {
       x: rect.left + scrolls.x - html.clientLeft,
       y: rect.top  + scrolls.y - html.clientTop
     };
   },
-  
+
   /**
    * Returns the element scrolls
    *
@@ -2890,7 +2907,7 @@ Element.include({
   scrolls: function() {
     return { x: this._.scrollLeft, y: this._.scrollTop };
   },
-  
+
   /**
    * returns the element dimensions hash
    *
@@ -2900,7 +2917,7 @@ Element.include({
     var size     = this.size(),
         scrolls  = this.scrolls(),
         position = this.position();
-    
+
     return {
       top:        position.y,
       left:       position.x,
@@ -2910,7 +2927,7 @@ Element.include({
       scrollTop:  scrolls.y
     };
   },
-  
+
   /**
    * Checks if the element overlaps the given position
    *
@@ -2919,11 +2936,11 @@ Element.include({
    */
   overlaps: function(target) {
     var pos = this.position(), size = this.size();
-    
+
     return target.x > pos.x && target.x < (pos.x + size.x) &&
            target.y > pos.y && target.y < (pos.y + size.y);
   },
-  
+
   /**
    * sets the width of the element in pixels
    *
@@ -2939,7 +2956,7 @@ Element.include({
     style.width = (2 * width_px - this._.offsetWidth) + 'px';
     return this;
   },
-  
+
   /**
    * sets the width of the element in pixels
    *
@@ -2955,7 +2972,7 @@ Element.include({
     style.height = (2 * height_px - this._.offsetHeight) + 'px';
     return this;
   },
-  
+
   /**
    * sets the size of the element in pixels
    *
@@ -2973,7 +2990,7 @@ Element.include({
     }
     return this.setWidth(width).setHeight(height);
   },
-  
+
   /**
    * sets the element position (against the window corner)
    *
@@ -2986,13 +3003,13 @@ Element.include({
       top  = left.y;
       left = left.x;
     }
-    
+
     return this.setStyle({
       left: left + 'px',
       top:  top  + 'px'
     });
   },
-  
+
   /**
    * sets the scroll position
    *
@@ -3005,13 +3022,13 @@ Element.include({
       top  = left.y;
       left = left.x;
     }
-    
+
     this._.scrollLeft = left;
     this._.scrollTop  = top;
-    
+
     return this;
   },
-  
+
   /**
    * makes the window be scrolled to the element
    *
@@ -3024,10 +3041,11 @@ Element.include({
   }
 });
 
+
 /**
  * DOM Element events handling methods
  *
- * Copyright (C) 2008-2010 Nikolay V. Nemshilov
+ * Copyright (C) 2008-2010 Nikolay Nemshilov
  */
 var Element_observer = Observer_create({});
 
@@ -3041,29 +3059,31 @@ function hack_observer(name, re, text) {
   Element_observer[name] = patch_function(Element_observer[name], re, text);
 }
 
-hack_observer('on', 
+hack_observer('on',
   /(\$listeners\.push\((\w+?)\);)/,
-  
+
   // aliasing the 'rightclick' to the 'contextmenu' event
   '$1$2.e=$2.n=$2.e==="rightclick"?"contextmenu":$2.e;'+
-  
+
   // swapping a browser related event names
   (Browser.Gecko      ? 'if($2.n==="mousewheel")$2.n="DOMMouseScroll";' : '') +
   (Browser.Konqueror  ? 'if($2.n==="contextmenu")$2.n="rightclick";'    : '') +
-  
+
   '$2.w=function(){'+
-    'var a=$A(arguments);$2.r&&$2.r!=="stopEvent"?a.shift():a[0]=new RightJS.Event(a[0],this);'+
-    '$2.f.apply($2.t,a.concat($2.a))};$2.t=this;' + (
-      looks_like_ie ?
-        '$2.w=$2.w.bind(this);this._.attachEvent("on"+$2.n,$2.w);' :
-        'this._.addEventListener($2.n,$2.w,false);'
-      )
+    'var a=$A(arguments),_;'+
+    '$2.r&&$2.r!=="stopEvent"?a.shift():_=a[0]=new RightJS.Event(a[0],this);'+
+    '$2.f.apply($2.t,a.concat($2.a))===false&&_.stop()'+
+  '};$2.t=this;' + (
+    looks_like_ie ?
+      '$2.w=$2.w.bind(this);this._.attachEvent("on"+$2.n,$2.w);' :
+      'this._.addEventListener($2.n,$2.w,false);'
+  )
 );
 
 hack_observer('stopObserving',
-  /(function\s*\((\w+)\)\s*\{\s*)(return\s*)([^}]+)/m, 
+  /(function\s*\((\w+)\)\s*\{\s*)(return\s*)([^}]+)/m,
   '$1var r=$4;'+
-  'if(!r)' + (looks_like_ie ? 
+  'if(!r)' + (looks_like_ie ?
     'this._.detachEvent("on"+$2.n,$2.w);' :
     'this._.removeEventListener($2.n,$2.w,false);'
   )+'$3 r'
@@ -3105,7 +3125,7 @@ Observer_createShortcuts(Window[PROTO], $w('blur focus scroll resize load'));
 function Element_add_event_shortcuts(tokens) {
   tokens = $w(tokens);
   Event_delegation_shortcuts = Event_delegation_shortcuts.concat(tokens);
-  
+
   Observer_createShortcuts(Element[PROTO], tokens);
   Observer_createShortcuts(Document[PROTO], tokens);
 }
@@ -3147,7 +3167,7 @@ function stub_rule(css_rule, tag) {
   first: function(css_rule) {
     return $(this._.querySelector(stub_rule(css_rule, this)));
   },
-  
+
   /**
    * Finds a list of matching nodes, or all the descendant nodes if no css-rule provided
    *
@@ -3158,7 +3178,7 @@ function stub_rule(css_rule, tag) {
     return $A(this._.querySelectorAll(stub_rule(css_rule, this))).map($);
   }
 });
- 
+
 Element.include({
   /**
    * checks if the element matches this css-rule
@@ -3170,12 +3190,12 @@ Element.include({
    */
   match: function(css_rule) {
     var result, parent = this._.tagName === 'HTML' ? this._.ownerDocument : this.parents().last();
-    
+
     // if it's a single node putting it into the context
     result = $(parent || $E('p').insert(this)).find(css_rule).include(this);
-    
+
     if (!parent) { this.remove(); }
-    
+
     return result;
   }
 });
@@ -3192,17 +3212,17 @@ Element.include({
  */
 [Window, Document].each(function(object) {
   var proto = object[PROTO], old_on = proto.on;
-  
+
   // redefining the observer method to catch up
   proto.on = function(name) {
     if (name == 'ready' && !this._wR) {
       var document = this._, ready = this.fire.bind(this, 'ready');
       document = document.nodeType == 9 ? document : document.document;
-      
+
       // IE and Konqueror browsers
       if ('readyState' in document) {
         (function() {
-          if (['loaded','complete'].includes(document.readyState)) { 
+          if (['loaded','complete'].includes(document.readyState)) {
             ready();
           } else {
             arguments.callee.delay(50);
@@ -3211,12 +3231,12 @@ Element.include({
       } else {
         document.addEventListener('DOMContentLoaded', ready, false);
       }
-      
+
       this._wR = true;
     }
     return old_on.apply(this, arguments);
   };
-  
+
   Observer_createShortcuts(proto, ['ready']);
 });
 
@@ -3241,6 +3261,7 @@ $alias(Document[PROTO], {
 $alias(Window[PROTO], {
   sizes: 'size'
 });
+
 
 /**
  * The form unit class and extensions
@@ -3267,19 +3288,19 @@ var Form = RightJS.Form = Element_wrappers.FORM = new Wrapper(Element, {
    */
   initialize: function(in_options) {
     var options = in_options || {}, remote = 'remote' in options, element = options;
-    
+
     if (isHash(options)) {
       element = 'form';
       options = Object.without(options, 'remote');
     }
-    
+
     this.$super(element, options);
-  
+
     if (remote) {
       this.remotize();
     }
   },
-  
+
   /**
    * returns the form elements as an array of extended units
    *
@@ -3288,7 +3309,7 @@ var Form = RightJS.Form = Element_wrappers.FORM = new Wrapper(Element, {
   elements: function() {
     return this.find('input,button,select,textarea');
   },
-  
+
   /**
    * returns the list of all the input elements on the form
    *
@@ -3299,7 +3320,7 @@ var Form = RightJS.Form = Element_wrappers.FORM = new Wrapper(Element, {
       return !['submit', 'button', 'reset', 'image', null].includes(input._.type);
     });
   },
-  
+
   /**
    * Accessing an input by name
    *
@@ -3309,7 +3330,7 @@ var Form = RightJS.Form = Element_wrappers.FORM = new Wrapper(Element, {
   input: function(name) {
     return $(this._[name]);
   },
-  
+
   /**
    * focuses on the first input element on the form
    *
@@ -3319,12 +3340,12 @@ var Form = RightJS.Form = Element_wrappers.FORM = new Wrapper(Element, {
     var element = this.inputs().first(function(input) {
       return input._.type !== 'hidden';
     });
-    
+
     if (element) { element.focus(); }
-    
+
     return this;
   },
-  
+
   /**
    * removes focus out of all the form elements
    *
@@ -3334,7 +3355,7 @@ var Form = RightJS.Form = Element_wrappers.FORM = new Wrapper(Element, {
     this.elements().each('blur');
     return this;
   },
-  
+
   /**
    * disables all the elements on the form
    *
@@ -3344,7 +3365,7 @@ var Form = RightJS.Form = Element_wrappers.FORM = new Wrapper(Element, {
     this.elements().each('disable');
     return this;
   },
-  
+
   /**
    * enables all the elements on the form
    *
@@ -3354,7 +3375,7 @@ var Form = RightJS.Form = Element_wrappers.FORM = new Wrapper(Element, {
     this.elements().each('enable');
     return this;
   },
-  
+
   /**
    * returns the list of the form values
    *
@@ -3362,7 +3383,7 @@ var Form = RightJS.Form = Element_wrappers.FORM = new Wrapper(Element, {
    */
   values: function() {
     var values = {}, value, name, element, input;
-    
+
     this.inputs().each(function(element) {
       input = element._;
       name  = input.name;
@@ -3371,14 +3392,14 @@ var Form = RightJS.Form = Element_wrappers.FORM = new Wrapper(Element, {
         if (name.endsWith('[]')) {
           value = (values[name] || []).concat([value]);
         }
-        
+
         values[name] = value;
       }
     });
-    
+
     return values;
   },
-  
+
   /**
    * returns the key/values organized ready to be sent via a get request
    *
@@ -3387,7 +3408,7 @@ var Form = RightJS.Form = Element_wrappers.FORM = new Wrapper(Element, {
   serialize: function() {
     return Object.toQueryString(this.values());
   },
-  
+
   /**
    * Delegating the submit method
    *
@@ -3397,7 +3418,7 @@ var Form = RightJS.Form = Element_wrappers.FORM = new Wrapper(Element, {
     this._.submit();
     return this;
   },
-  
+
   /**
    * Delegating the 'reset' method
    *
@@ -3425,13 +3446,13 @@ $alias(Form[PROTO], {
  */
 var old_insert = Element[PROTO].insert,
 
-Input = RightJS.Input = 
+Input = RightJS.Input =
 
 // retgistering the typecasted wrappers
-Element_wrappers.INPUT    = 
+Element_wrappers.INPUT    =
 Element_wrappers.BUTTON   =
 Element_wrappers.SELECT   =
-Element_wrappers.TEXTAREA = 
+Element_wrappers.TEXTAREA =
 Element_wrappers.OPTGROUP =
 
 new Wrapper(Element, {
@@ -3455,7 +3476,7 @@ new Wrapper(Element, {
     // type to tag name conversion
     if (!element || isHash(element)) {
       options = element || {};
-    
+
       if (/textarea|select/.test(options.type || '')) {
         element = options.type;
         delete(options.type);
@@ -3463,10 +3484,10 @@ new Wrapper(Element, {
         element = 'input';
       }
     }
-    
+
     this.$super(element, options);
   },
-  
+
   /**
    * Returns a reference to the input's form
    *
@@ -3475,7 +3496,7 @@ new Wrapper(Element, {
   form: function() {
     return $(this._.form);
   },
-  
+
   /**
    * SELECT element has a bug in FF that screws the selected options
    *
@@ -3485,17 +3506,17 @@ new Wrapper(Element, {
    */
   insert: function(content, position) {
     old_insert.call(this, content, position);
-    
+
     // FF doesn't marks selected options correctly with a textual content
     if (this._.tagName === 'SELECT' && isString(content)) {
       $A(this._.getElementsByTagName('option')).each(function(option) {
         option.selected = !!option.getAttribute('selected');
       });
     }
-    
+
     return this;
   },
-  
+
   /**
    * Overloading the method so it always called the '#insert' method
    *
@@ -3505,7 +3526,7 @@ new Wrapper(Element, {
   update: function(content) {
     return this.clean().insert(content);
   },
-  
+
   /**
    * uniform access to the element values
    *
@@ -3538,7 +3559,7 @@ new Wrapper(Element, {
     }
     return this;
   },
-  
+
   /**
    * Both ways getter/setter for the value parameter
    *
@@ -3548,7 +3569,7 @@ new Wrapper(Element, {
   value: function(value) {
     return this[value === undefined ? 'getValue' : 'setValue'](value);
   },
-  
+
   /**
    * focuses on the first input element on the form
    *
@@ -3560,7 +3581,7 @@ new Wrapper(Element, {
     if (Browser.IE) { this.fire('focus', {bubbles: false}); }
     return this;
   },
-  
+
   /**
    * removes focus out of all the form elements
    *
@@ -3572,7 +3593,7 @@ new Wrapper(Element, {
     if (Browser.IE) { this.fire('blur', {bubbles: false}); }
     return this;
   },
-  
+
   /**
    * focuses on the element and selects its content
    *
@@ -3582,7 +3603,7 @@ new Wrapper(Element, {
     this._.select();
     return this.focus();
   },
-  
+
   /**
    * disables all the elements on the form
    *
@@ -3592,7 +3613,7 @@ new Wrapper(Element, {
     this._.disabled = true;
     return this.fire('disable');
   },
-  
+
   /**
    * enables all the elements on the form
    *
@@ -3601,6 +3622,33 @@ new Wrapper(Element, {
   enable: function() {
     this._.disabled = false;
     return this.fire('enable');
+  },
+
+  /**
+   * A bidirectional method to set/get the disabled status of the input field
+   *
+   * @param boolean optional value
+   * @return Input in setter mode boolean in getter
+   */
+  disabled: function(value) {
+    return value === undefined ? this._.disabled : this[value ? 'disable' : 'enable']();
+  },
+
+  /**
+   * A bidirectional method to set/get the checked status of the input field
+   *
+   * @param boolean optional value
+   * @return Input in setter mode boolean in getter
+   */
+  checked: function(value) {
+    if (value === undefined) {
+      value = this._.checked;
+    } else {
+      this._.checked = value;
+      value = this;
+    }
+
+    return value;
   }
 });
 
@@ -3629,9 +3677,9 @@ function focus_boobler(raw_event) {
   var event  = new Event(raw_event),
       target = event.target,
       parent = target.parent && target.parent();
-  
+
   event.type = (raw_event.type === 'focusin' || raw_event.type === 'focus') ? 'focus' : 'blur';
-  
+
   if (parent) { parent.fire(event); }
 }
 
@@ -3671,7 +3719,7 @@ if (!event_support_for('onsubmit', 'form')) {
   var submit_boobler = function(raw_event) {
     var event = $(raw_event), element = event.target._,
         type = element.type, form = element.form, parent;
-    
+
     if (form && (parent = $(form).parent()) && (
       (raw_event.keyCode === 13   && (type === 'text'   || type === 'password')) ||
       (raw_event.type === 'click' && (type === 'submit' || type === 'image'))
@@ -3681,21 +3729,21 @@ if (!event_support_for('onsubmit', 'form')) {
       parent.fire(event);
     }
   };
-  
+
   document.attachEvent('onclick',    submit_boobler);
   document.attachEvent('onkeypress', submit_boobler);
 }
 
 if (!event_support_for('onchange', 'input')) {
-  
+
   var get_input_value = function(target) {
     var element = target._,
         type    = element.type;
-        
+
     return type === 'radio' || type === 'checkbox' ?
       element.checked : target.getValue();
   },
-  
+
   /**
    * Emulates the 'change' event bubbling
    *
@@ -3713,7 +3761,7 @@ if (!event_support_for('onchange', 'input')) {
       parent.fire(event);
     }
   },
-  
+
   /**
    * Catches the input field changes
    *
@@ -3726,7 +3774,7 @@ if (!event_support_for('onchange', 'input')) {
         type   = target._.type,
         tag    = target._.tagName,
         input_is_radio = (type === 'radio' || type === 'checkbox');
-    
+
     if (
       (event.type === 'click' && (input_is_radio || tag === 'SELECT')) ||
       (event.type === 'keydown' && (
@@ -3737,7 +3785,7 @@ if (!event_support_for('onchange', 'input')) {
       change_boobler(event, target);
     }
   },
-  
+
   /**
    * Catch inputs blur
    *
@@ -3747,28 +3795,29 @@ if (!event_support_for('onchange', 'input')) {
   catch_input_left = function(raw_event) {
     var event  = $(raw_event),
         target = event.target;
-    
+
     if (target instanceof Input) {
       change_boobler(event, target);
     }
   };
-  
+
   document.attachEvent('onclick',    catch_inputs_access);
   document.attachEvent('onkeydown',  catch_inputs_access);
   document.attachEvent('onfocusout', catch_input_left);
-  
+
   /**
    * storing the input element previous value, so we could figure out
    * if it was changed later on
    */
   document.attachEvent('onbeforeactivate', function(event) {
     var element = $(event).target;
-    
+
     if (element instanceof Input) {
       element._prev_value = get_input_value(element);
     }
   });
 }
+
 
 /**
  * This module the standard events delegation interface
@@ -3803,15 +3852,15 @@ if (!event_support_for('onchange', 'input')) {
       for (i=0, list = rules[css_rule]; i < list.length; i++) {
         // registering the delegative listener
         this.on(event, build_delegative_listener(css_rule, list[i], this));
-        
+
         // adding the css-rule and callback references to the store
         $ext(this.$listeners.last(), { dr: css_rule, dc: list[i][0] });
       }
     }
-    
+
     return this;
   },
-  
+
   /**
    * Removes a delegative event listener from the element
    *
@@ -3839,10 +3888,10 @@ if (!event_support_for('onchange', 'input')) {
     delegation_listeners(arguments, this).each(function(h) {
       this.stopObserving(h.n, h.f);
     }, this);
-    
+
     return this;
   },
-  
+
   /**
    * Checks if there is sucha delegative event listener
    *
@@ -3897,7 +3946,7 @@ function build_delegative_listener(css_rule, entry, scope) {
  */
 function delegation_rules(raw_args) {
   var args = $A(raw_args), rules = args[1] || {}, hash = {}, css_rule;
-  
+
   if (isString(rules)) {
     hash[rules] = args.slice(2);
     if (isArray(hash[rules][0])) {
@@ -3906,13 +3955,13 @@ function delegation_rules(raw_args) {
   } else {
     hash = rules;
   }
-  
+
   // converting everything into a hash of lists of callbacks
   for (css_rule in hash) {
     hash[css_rule] = ensure_array(hash[css_rule]);
     hash[css_rule] = isArray(hash[css_rule][0]) ? hash[css_rule] : [hash[css_rule]];
   }
-  
+
   return hash;
 }
 
@@ -3927,7 +3976,7 @@ function delegation_listeners(args, object) {
   var event = args[0], i, list,
      rules = delegation_rules(args),
      rules_are_empty = !Object.keys(rules).length;
-  
+
   return (object.$listeners || []).filter(function(hash) {
     return hash.dr && hash.n === event && (
       rules_are_empty || (function() {
@@ -3940,7 +3989,7 @@ function delegation_listeners(args, object) {
             }
           }
         }
-        
+
         return false;
       })()
     );
@@ -3983,19 +4032,30 @@ Object.each({
 }, function(name, method) {
   String[PROTO][name] = function() {
     var doc = $(document), args = $A(arguments), result;
-    
+
     args.splice(1,0,''+this);
     result = doc[method].apply(doc, args);
-    
+
     return result === doc ? this : result;
   };
 });
+var old_on = String[PROTO].on;
+String[PROTO].on = function(hash) {
+  if (isHash(hash)) {
+    for (var key in hash) {
+      old_on.apply(this, [key].concat([hash[key]]));
+    }
+  } else {
+    old_on.apply(this, arguments);
+  }
+  return this;
+};
 
 /**
  * building the list of String#onEvent shortucts
  *
  * USAGE:
- *    
+ *
  *    "#css.rule".onClick(function() {...});
  *    "#css.rule".onMouseover('method_name');
  */
@@ -4004,6 +4064,7 @@ Event_delegation_shortcuts.each(function(name) {
     return this.on.apply(this, [name].concat($A(arguments)));
   };
 });
+
 
 /**
  * XMLHttpRequest wrapper
@@ -4020,7 +4081,7 @@ var Xhr = RightJS.Xhr = new Class(Observer, {
   extend: {
     // supported events list
     EVENTS: $w('success failure complete request cancel create'),
-    
+
     // default options
     Options: {
       headers: {
@@ -4042,7 +4103,7 @@ var Xhr = RightJS.Xhr = new Class(Observer, {
       iframed:      false,
       jsonp:        false
     },
-    
+
     /**
      * Shortcut to initiate and send an XHR in a single call
      *
@@ -4054,7 +4115,7 @@ var Xhr = RightJS.Xhr = new Class(Observer, {
       return new this(url, Object.merge({method: 'get'}, options)).send();
     }
   },
-  
+
   /**
    * basic constructor
    *
@@ -4063,20 +4124,20 @@ var Xhr = RightJS.Xhr = new Class(Observer, {
    */
   initialize: function(url, options) {
     this.initCallbacks(); // system level callbacks should be initialized before the user callbacks
-    
+
     this.url = url;
 
     // copying some options to the instance level attributes
     $ext(this.$super(options), this.options);
-    
+
     // removing the local spinner if it's the same as the global one
     if (Xhr.Options.spinner && $(this.spinner) === $(Xhr.Options.spinner)) {
       this.spinner = null;
     }
   },
-  
+
   /**
-   * sets a header 
+   * sets a header
    *
    * @param name String header name
    * @param value String header value
@@ -4086,7 +4147,7 @@ var Xhr = RightJS.Xhr = new Class(Observer, {
     this.headers[name] = value;
     return this;
   },
-  
+
   /**
    * tries to get a response header
    *
@@ -4099,7 +4160,7 @@ var Xhr = RightJS.Xhr = new Class(Observer, {
     } catch(e) {}
     return value;
   },
-  
+
   /**
    * checks if the request was successful
    *
@@ -4108,7 +4169,7 @@ var Xhr = RightJS.Xhr = new Class(Observer, {
   successful: function() {
     return (this.status >= 200) && (this.status < 300);
   },
-  
+
   /**
    * performs the actual request sending
    *
@@ -4117,46 +4178,46 @@ var Xhr = RightJS.Xhr = new Class(Observer, {
    */
   send: function(params) {
     var add_params = {}, url = this.url, method = this.method.toLowerCase(), headers = this.headers, key, xhr;
-    
+
     if (method == 'put' || method == 'delete') {
       add_params._method = method;
       method = 'post';
     }
-    
+
     var data = this.prepareData(this.params, this.prepareParams(params), add_params);
-    
+
     if (this.urlEncoded && method == 'post' && !headers['Content-type']) {
       this.setHeader('Content-type', 'application/x-www-form-urlencoded;charset='+this.encoding);
     }
-    
+
     if (method == 'get') {
       if (data) { url += (url.includes('?') ? '&' : '?') + data; }
       data = null;
     }
-    
+
     xhr = this.xhr = this.createXhr();
     this.fire('create');
-    
+
     xhr.open(method, url, this.async);
-    
+
     xhr.onreadystatechange = this.stateChanged.bind(this);
-    
+
     for (key in headers) {
       xhr.setRequestHeader(key, headers[key]);
     }
-    
+
     xhr.send(data);
     this.fire('request');
-    
+
     if (!this.async) { this.stateChanged(); }
-    
+
     return this;
   },
-  
+
   /**
-   * elements automaticall update method, creates an Xhr request 
+   * elements automaticall update method, creates an Xhr request
    * and updates the element innerHTML value onSuccess.
-   * 
+   *
    * @param Element element
    * @param Object optional request params
    * @return Xhr self
@@ -4164,7 +4225,7 @@ var Xhr = RightJS.Xhr = new Class(Observer, {
   update: function(element, params) {
     return this.onSuccess(function(r) { element.update(r.text); }).send(params);
   },
-  
+
   /**
    * stops the request processing
    *
@@ -4172,22 +4233,22 @@ var Xhr = RightJS.Xhr = new Class(Observer, {
    */
   cancel: function() {
     var xhr = this.xhr;
-    
+
     if (!xhr || xhr.canceled) { return this; }
-    
+
     xhr.abort();
     xhr.onreadystatechange = dummy();
     xhr.canceled = true;
-    
+
     return this.fire('cancel');
   },
-  
+
 // protected
   // wrapping the original method to send references to the xhr objects
   fire: function(name) {
     return this.$super(name, this, this.xhr);
   },
-  
+
   // creates new request instance
   createXhr: function() {
     if (this.jsonp) {
@@ -4202,7 +4263,7 @@ var Xhr = RightJS.Xhr = new Class(Observer, {
       }
     }
   },
-  
+
   // prepares user sending params
   prepareParams: function(params) {
     if (params && params instanceof Form) {
@@ -4211,7 +4272,7 @@ var Xhr = RightJS.Xhr = new Class(Observer, {
     }
     return params;
   },
-  
+
   // converts all the params into a url params string
   prepareData: function() {
     return $A(arguments).map(function(param) {
@@ -4225,22 +4286,22 @@ var Xhr = RightJS.Xhr = new Class(Observer, {
   // handles the state change
   stateChanged: function() {
     var xhr = this.xhr;
-    
+
     if (xhr.readyState != 4 || xhr.canceled) { return; }
-    
+
     try { this.status = xhr.status;
     } catch(e) { this.status = 0; }
-    
+
     this.text = this.responseText = xhr.responseText;
     this.xml  = this.responseXML  = xhr.responseXML;
-    
+
     this.fire('complete').fire(this.successful() ? 'success' : 'failure');
   },
-  
+
   // called on success
   tryScripts: function(response) {
     var content_type = this.getHeader('Content-type');
-    
+
     if (this.evalResponse || (this.evalJS && /(ecma|java)script/i.test(content_type))) {
       $eval(this.text);
     } else if (/json/.test(content_type) && this.evalJSON) {
@@ -4249,7 +4310,7 @@ var Xhr = RightJS.Xhr = new Class(Observer, {
       this.text.evalScripts();
     }
   },
-  
+
   // sanitizes the json-response texts
   sanitizedJSON: function() {
     try {
@@ -4257,17 +4318,17 @@ var Xhr = RightJS.Xhr = new Class(Observer, {
     } catch(e) {
       // manual json consistancy check
       if (window.JSON || !(/^[,:{}\[\]0-9.\-+Eaeflnr-u \n\r\t]*$/).test(this.text.replace(/\\./g, '@').replace(/"[^"\\\n\r]*"/g, ''))) {
-        if (this.secureJSON) { 
+        if (this.secureJSON) {
           throw "JSON error: "+this.text;
         }
         return null;
       }
     }
-    
+
     // the fallback JSON extraction
     return eval("("+this.text+")");
   },
-  
+
   // initializes the request callbacks
   initCallbacks: function() {
     // connecting basic callbacks
@@ -4277,13 +4338,13 @@ var Xhr = RightJS.Xhr = new Class(Observer, {
       complete: 'hideSpinner',
       cancel:   'hideSpinner'
     });
-    
+
     // wiring the global xhr callbacks
     Xhr.EVENTS.each(function(name) {
       this.on(name, function() { Xhr.fire(name, this, this.xhr); });
     }, this);
   },
-  
+
   showSpinner: function() { Xhr.showSpinner.call(this, this); },
   hideSpinner: function() { Xhr.hideSpinner.call(this, this); }
 });
@@ -4291,28 +4352,28 @@ var Xhr = RightJS.Xhr = new Class(Observer, {
 // attaching the common spinner handling
 $ext(Observer_create(Xhr), {
   counter: 0,
-  
+
   // shows the spinner
   showSpinner: function(context) {
     Xhr.trySpinner(context, 'show');
   },
-  
+
   // hides the spinner
   hideSpinner: function(context) {
     Xhr.trySpinner(context, 'hide');
   },
-  
+
   trySpinner: function(context, method) {
     var object = context || Xhr.Options, spinner = $(object.spinner);
     if (spinner) { spinner[method](object.spinnerFx, {duration: 100}); }
   },
-  
+
   // counts a request in
   countIn: function() {
     Xhr.counter ++;
     Xhr.showSpinner();
   },
-  
+
   // counts a request out
   countOut: function() {
     Xhr.counter --;
@@ -4419,6 +4480,7 @@ Element.include({
   }
 });
 
+
 /**
  * A dummy XmlHTTPRequest interface to be used in other
  * fake requests
@@ -4441,7 +4503,7 @@ Xhr.Dummy = {
  */
 Xhr.IFramed = new Class({
   include: Xhr.Dummy,
-  
+
   /**
    * constructor
    *
@@ -4451,29 +4513,30 @@ Xhr.IFramed = new Class({
   initialize: function(form) {
     this.form = form;
     this.id   = 'xhr_'+ new Date().getTime();
-    
+
     form.insert('<i><iframe name="'+this.id+'" id="'+this.id+
       '" width="0" height="0" frameborder="0" src="about:blank"></iframe></i>',
       'after');
-      
+
     $(this.id).on('load', this.onLoad.bind(this));
   },
-  
+
   send: function() {
     this.form.set('target', this.id).submit();
   },
-  
+
   onLoad: function() {
     this.status       = 200;
     this.readyState   = 4;
-    
+
     try {
       this.responseText = window[this.id].document.documentElement.innerHTML;
     } catch(e) { }
-    
+
     this.onreadystatechange();
   }
 });
+
 
 /**
  * The JSONP Xhr request tonnel
@@ -4482,9 +4545,9 @@ Xhr.IFramed = new Class({
  */
 Xhr.JSONP = new Class({
   include: Xhr.Dummy,
-  
+
   prefix: 'jsonp',
-  
+
   /**
    * Constructor
    *
@@ -4496,13 +4559,13 @@ Xhr.JSONP = new Class({
     this.name  = this.prefix + new Date().getTime();
     this.param = (isString(xhr.jsonp) ?
       xhr.jsonp : 'callback') + "=" + this.name;
-      
+
     this.script = $E('script', {
       charset: xhr.encoding,
       async:   xhr.async
     });
   },
-  
+
   /**
    * saving the url and method for the further use
    *
@@ -4510,12 +4573,12 @@ Xhr.JSONP = new Class({
    * @param address String request url address
    * @param Boolean async request marker
    * @return void
-   */ 
+   */
   open: function(method, url, async) {
     this.url    = url;
     this.method = method;
   },
-  
+
   /**
    * Sends the actual request by inserting the script into the document body
    *
@@ -4524,11 +4587,11 @@ Xhr.JSONP = new Class({
    */
   send: function(data) {
     window[this.name] = this.finish.bind(this);
-    
+
     this.script.set('src', this.url + (this.url.include('?') ? '&' : '?') + this.param + "&" + data)
       .insertTo($$('script').last(), 'after');
   },
-  
+
   /**
    * Receives the actual JSON data from the server
    *
@@ -4538,12 +4601,13 @@ Xhr.JSONP = new Class({
   finish: function(data) {
     this.status       = 200;
     this.readyState   = 4;
-    
+
     this.xhr.json = this.xhr.responseJSON = data;
-    
+
     this.onreadystatechange();
   }
 });
+
 
 /**
  * Basic visual effects class
@@ -4557,14 +4621,14 @@ Xhr.JSONP = new Class({
 var Fx = RightJS.Fx = new Class(Observer, {
   extend: {
     EVENTS: $w('start finish cancel'),
-    
+
     // named durations
     Durations: {
       'short':  200,
       'normal': 400,
       'long':   800
     },
-    
+
     // default options
     Options: {
       fps:        Browser.IE ? 40 : 60,
@@ -4578,28 +4642,28 @@ var Fx = RightJS.Fx = new Class(Observer, {
       Sin: function(i)  {
         return -(Math.cos(Math.PI * i) - 1) / 2;
       },
-      
+
       Cos: function(i) {
         return Math.asin((i-0.5) * 2)/Math.PI + 0.5;
       },
-      
+
       Exp: function(i) {
         return Math.pow(2, 8 * (i - 1));
       },
-      
+
       Log: function(i) {
         return 1 - Math.pow(2, - 8 * i);
       },
-      
+
       Lin: function(i) {
         return i;
       }
     },
-    
+
     ch: [], // scheduled effects registries
     cr: []  // currently running effects registries
   },
-  
+
   /**
    * Basic constructor
    *
@@ -4607,14 +4671,14 @@ var Fx = RightJS.Fx = new Class(Observer, {
    */
   initialize: function(element, options) {
     this.$super(options);
-    
+
     if ((this.element = element = $(element))) {
       var uid = $uid(element);
       this.ch = (Fx.ch[uid] = Fx.ch[uid] || []);
       this.cr = (Fx.cr[uid] = Fx.cr[uid] || []);
     }
   },
-  
+
   /**
    * starts the transition
    *
@@ -4623,21 +4687,21 @@ var Fx = RightJS.Fx = new Class(Observer, {
   start: function() {
     if (this.queue(arguments)) { return this; }
     this.prepare.apply(this, arguments);
-    
+
     var options = this.options,
         duration  = Fx.Durations[options.duration] || options.duration;
     this.transition = Fx.Transitions[options.transition] || options.transition;
-    
+
     this.steps  = (duration / 1000 * this.options.fps).ceil();
     this.number = 1;
-    
+
     if (this.cr) {
       this.cr.push(this); // adding this effect to the list of currently active
     }
-    
+
     return this.fire('start', this).startTimer();
   },
-  
+
   /**
    * finishes the transition
    *
@@ -4646,7 +4710,7 @@ var Fx = RightJS.Fx = new Class(Observer, {
   finish: function() {
     return this.stopTimer().unreg().fire('finish').next();
   },
-  
+
   /**
    * interrupts the transition
    *
@@ -4660,7 +4724,7 @@ var Fx = RightJS.Fx = new Class(Observer, {
     this.ch.clean();
     return this.stopTimer().unreg().fire('cancel');
   },
-  
+
   /**
    * pauses the transition
    *
@@ -4669,7 +4733,7 @@ var Fx = RightJS.Fx = new Class(Observer, {
   pause: function() {
     return this.stopTimer();
   },
-  
+
   /**
    * resumes a paused transition
    *
@@ -4678,14 +4742,14 @@ var Fx = RightJS.Fx = new Class(Observer, {
   resume: function() {
     return this.startTimer();
   },
-  
+
 // protected
   // dummy method, should be implemented in a subclass
   prepare: function(values) {},
 
   // dummy method, processes the element properties
   render: function(delta) {},
-  
+
   // the periodically called method
   // NOTE: called outside of the instance scope!
   step: function(that) {
@@ -4700,13 +4764,13 @@ var Fx = RightJS.Fx = new Class(Observer, {
       that.number ++;
     }
   },
-  
+
   // starts the effect timer
   startTimer: function() {
     this.timer = this.step.periodical((1000 / this.options.fps).round(), this);
     return this;
   },
-  
+
   // stops the effect timer
   stopTimer: function() {
     if (this.timer) {
@@ -4719,7 +4783,7 @@ var Fx = RightJS.Fx = new Class(Observer, {
   // should return false if there's no queue and true if there is a queue
   queue: function(args) {
     var chain = this.ch, queue = this.options.queue;
-    
+
     if (!chain || this.$ch) {
       return (this.$ch = false);
     }
@@ -4727,10 +4791,10 @@ var Fx = RightJS.Fx = new Class(Observer, {
     if (queue) {
       chain.push([args, this]);
     }
-    
+
     return queue && chain[0][1] !== this;
   },
-  
+
   // calls for the next effect in the queue
   next: function() {
     var chain = this.ch, next = chain.shift();
@@ -4740,7 +4804,7 @@ var Fx = RightJS.Fx = new Class(Observer, {
     }
     return this;
   },
-  
+
   // unregisters this effect out of the currently running list
   unreg: function() {
     var currents = this.cr;
@@ -4749,8 +4813,9 @@ var Fx = RightJS.Fx = new Class(Observer, {
     }
     return this;
   }
-  
+
 });
+
 
 /**
  * There are the String unit extensions for the effects library
@@ -4786,7 +4851,7 @@ String.include({
    */
   toHex: function() {
     var match = /^#(\w)(\w)(\w)$/.exec(this);
-    
+
     if (match) {
       match = "#"+ match[1]+match[1]+match[2]+match[2]+match[3]+match[3];
     } else if ((match = /^rgb\((\d+),\s*(\d+),\s*(\d+)\)$/.exec(this))) {
@@ -4797,10 +4862,10 @@ String.include({
     } else {
       match = String.COLORS[this] || this;
     }
-    
+
     return match;
   },
-  
+
   /**
    * converts a hex string into an rgb array
    *
@@ -4809,21 +4874,22 @@ String.include({
    */
   toRgb: function(array) {
     var match = /#([a-f\d]{2})([a-f\d]{2})([a-f\d]{2})/i.exec(this.toHex()||'');
-    
+
     if (match) {
       match = match.slice(1).map('toInt', 16);
       match = array ? match : 'rgb('+match+')';
     }
-    
+
     return match;
   }
 });
+
 
 /**
  * This block contains additional Element shortcuts for effects easy handling
  *
  * Credits:
- *   Some ideas are inspired by 
+ *   Some ideas are inspired by
  *     - MooTools  (http://mootools.net)      Copyright (C) Valerio Proietti
  *
  * Copyright (C) 2008-2010 Nikolay V. Nemshilov
@@ -4833,7 +4899,7 @@ var methods    = Element.prototype,
     old_show   = methods.show,
     old_remove = methods.remove,
     old_scroll = methods.scrollTo;
-     
+
 Element.include({
   /**
    * Stops all the visual effects on the element
@@ -4855,7 +4921,7 @@ Element.include({
   hide: function(fx, options) {
     return (fx && this.visible()) ? this.fx(fx, ['out', options]) : old_hide.call(this);
   },
-  
+
   /**
    * shows the element with the given visual effect
    *
@@ -4864,9 +4930,9 @@ Element.include({
    * @return Element this
    */
   show: function(fx, options) {
-    return (fx && this.hidden()) ? this.fx(fx, ['in', options]) : old_show.call(this);
+    return (fx && !this.visible()) ? this.fx(fx, ['in', options]) : old_show.call(this);
   },
-  
+
   /**
    * Removes the element out of the DOM structure
    *
@@ -4879,7 +4945,7 @@ Element.include({
       onFinish: old_remove.bind(this)
     })]) : old_remove.call(this);
   },
-  
+
   /**
    * runs the Fx.Morth effect to the given style
    *
@@ -4890,7 +4956,7 @@ Element.include({
   morph: function(style, options) {
     return this.fx('morph', [style, options || {}]); // <- don't replace with arguments
   },
-  
+
   /**
    * highlights the element
    *
@@ -4902,7 +4968,7 @@ Element.include({
   highlight: function() {
     return this.fx('highlight', arguments);
   },
-  
+
   /**
    * runs the Fx.Fade effect on the element
    *
@@ -4912,7 +4978,7 @@ Element.include({
   fade: function() {
     return this.fx('fade', arguments);
   },
-  
+
   /**
    * runs the Fx.Slide effect on the element
    *
@@ -4923,7 +4989,7 @@ Element.include({
   slide: function() {
     return this.fx('slide', arguments);
   },
-  
+
   /**
    * Starts the smooth scrolling effect
    *
@@ -4934,33 +5000,34 @@ Element.include({
   scroll: function(value, options) {
     return this.fx('scroll', [value, options||{}]);
   },
-  
+
   /**
    * wraps the old scroll to be able to run it with fxes
    *
    * If you send two hashes then will start a smooth scrolling
    * otherwise will just jump over with the usual method
-   * 
+   *
    * @return Element this
    */
   scrollTo: function(value, options) {
     return isHash(options) ? this.scroll(value, options) : old_scroll.apply(this, arguments);
   },
-  
-  
+
+
 // protected
 
   // runs an Fx on the element
   fx: function(name, params) {
     var args = $A(params).compact(), options = isHash(args.last()) ? args.pop() : {},
       fx = new Fx[name.capitalize()](this, options);
-    
+
     fx.start.apply(fx, args);
-    
+
     return this;
   }
-  
+
 });
+
 
 /**
  * This class provides the basic effect for styles manipulation
@@ -4994,7 +5061,7 @@ function check_border_styles(element, before, after) {
       bd_style = 'border' + direction + 'Style',
       bd_width = 'border' + direction + 'Width',
       bd_color = 'border' + direction + 'Color';
-    
+
     if (bd_style in before && before[bd_style] != after[bd_style]) {
       var style = element._.style;
 
@@ -5013,7 +5080,7 @@ function check_border_styles(element, before, after) {
 // parses the style hash into a processable format
 function parse_style(values) {
   var result = {}, re = /[\d\.\-]+/g, m, key, value, i;
-  
+
   for (key in values) {
     m = values[key].match(re);
     value = m.map('toFloat');
@@ -5021,35 +5088,35 @@ function parse_style(values) {
     value.r = value.t[0] === 'rgb(';
 
     if (value.t.length == 1) { value.t.unshift(''); }
-    
+
     for (i=0; i < value.length; i++) {
       value.t.splice(i*2 + 1, 0, value[i]);
     }
     result[key] = value;
   }
-  
+
   return result;
 }
 
 // cleans up and optimizies the styles
 function clean_styles(element, before, after) {
   var remove = [], key;
-  
+
   for (key in after) {
     // checking the height/width options
     if ((key == 'width' || key == 'height') && before[key] == 'auto') {
       before[key] = element._['offset'+key.capitalize()] + 'px';
     }
   }
-  
+
   // IE opacity filter fix
   if (after.filter && !before.filter) {
     before.filter = 'alpha(opacity=100)';
   }
-  
+
   // adjusting the border style
   check_border_styles(element, before, after);
-  
+
   // cleaing up the list
   for (key in after) {
     // proprocessing colors
@@ -5064,12 +5131,12 @@ function clean_styles(element, before, after) {
 
       if (!after[key] || !before[key]) {  after[key] = before[key] = ''; }
     }
-    
+
     // filling up the missing size
     if (/\d/.test(after[key]) && !/\d/.test(before[key])) {
       before[key] = after[key].replace(/[\d\.\-]+/g, '0');
     }
-    
+
     // removing unprocessable keys
     if (after[key] === before[key] || remove.includes(key) || !/\d/.test(before[key]) || !/\d/.test(after[key])) {
       delete(after[key]);
@@ -5086,7 +5153,7 @@ function clean_styles(element, before, after) {
  */
 function style_keys(style) {
   var keys = [], border_types = ['Style', 'Color', 'Width'], key, i, j;
-    
+
   for (key in style) {
     if (key.startsWith('border')) {
       for (i=0; i < border_types.length; i++) {
@@ -5104,32 +5171,32 @@ function style_keys(style) {
       keys.push(key);
     }
   }
-  
+
   return keys;
 }
- 
+
 Fx.Morph = new Class(Fx, {
 
-// protected  
+// protected
 
   // parepares the effect
   prepare: function(style) {
     var keys   = style_keys(style),
         before = this._cloneStyle(this.element, keys),
         after  = this._endStyle(style, keys);
-    
+
     clean_styles(this.element, before, after);
-    
+
     this.before = parse_style(before);
     this.after  = parse_style(after);
   },
-  
+
   render: function(delta) {
     var before, after, value, style = this.element._.style, key, i, l;
     for (key in this.after) {
       before = this.before[key];
       after  = this.after[key];
-      
+
       for (i=0, l = after.length; i < l; i++) {
         value = before[i] + (after[i] - before[i]) * delta;
         if (after.r) {
@@ -5137,11 +5204,11 @@ Fx.Morph = new Class(Fx, {
         }
         after.t[i*2 + 1] = value;
       }
-      
+
       style[key] = after.t.join('');
     }
   },
-  
+
   /**
    * Returns a hash of the end style
    *
@@ -5154,18 +5221,18 @@ Fx.Morph = new Class(Fx, {
         .setStyle('position:absolute;z-index:-1;visibility:hidden')
         .setWidth(element.size().x)
         .setStyle(style);
-    
+
     if (element.parent()) {
       element.insert(dummy, 'before');
     }
-    
+
     var after  = this._cloneStyle(dummy, keys);
-    
+
     dummy.remove();
-    
+
     return after;
   },
-  
+
   /**
    * Fast styles cloning
    *
@@ -5179,13 +5246,13 @@ Fx.Morph = new Class(Fx, {
       if (key in style) {
         clean[key] = ''+ style[key];
       }
-      
+
       // libwebkit bug fix for in case of languages pack applied
       if (key === 'opacity') {
         clean[key] = clean[key].replace(',', '.');
       }
     }
-    
+
     return clean;
   }
 });
@@ -5204,9 +5271,9 @@ Fx.Highlight = new Class(Fx.Morph, {
       transition: 'Exp'
     })
   },
-  
+
 // protected
-  
+
   /**
    * starts the transition
    *
@@ -5216,19 +5283,19 @@ Fx.Highlight = new Class(Fx.Morph, {
    */
   prepare: function(start, end) {
     var element = this.element, style = element._.style, end_color = end || element.getStyle('backgroundColor');
-    
+
     if (is_transparent(end_color)) {
       this.onFinish(function() { style.backgroundColor = 'transparent'; });
-      
+
       // trying to find the end color
       end_color = [element].concat(element.parents()).map(function(node) {
         var bg = node.getStyle('backgroundColor');
-        return (bg && !is_transparent(bg)) ? bg : null; 
+        return (bg && !is_transparent(bg)) ? bg : null;
       }).compact().first() || '#FFF';
     }
-    
+
     style.backgroundColor = (start || this.options.color);
-    
+
     return this.$super({backgroundColor: end_color});
   }
 });
@@ -5240,7 +5307,7 @@ Fx.Highlight = new Class(Fx.Morph, {
  * Copyright (C) 2008-2010 Nikolay V. Nemshilov
  */
 Fx.Twin = new Class(Fx.Morph, {
-  
+
   /**
    * hides the element if it meant to be switched off
    *
@@ -5250,12 +5317,12 @@ Fx.Twin = new Class(Fx.Morph, {
     if (this.how == 'out') {
       old_hide.call(this.element);
     }
-      
+
     return this.$super();
   },
 
 // protected
-  
+
   /**
    * assigns the direction of the effect in or out
    *
@@ -5263,13 +5330,14 @@ Fx.Twin = new Class(Fx.Morph, {
    */
   setHow: function(how) {
     this.how = how || 'toggle';
-    
+
     if (this.how == 'toggle') {
       this.how = this.element.visible() ? 'out' : 'in';
     }
   }
 
 });
+
 
 /**
  * the slide effects wrapper
@@ -5282,14 +5350,14 @@ Fx.Slide = new Class(Fx.Twin, {
       direction: 'top'
     })
   },
-  
-// protected  
+
+// protected
   prepare: function(how) {
     this.setHow(how);
-    
+
     var element = old_show.call(this.element);
     this.size = element.size();
-    
+
     this.styles = {};
     $w('overflow height width marginTop marginLeft').each(function(key) {
       this.styles[key] = element._.style[key];
@@ -5322,7 +5390,7 @@ Fx.Slide = new Class(Fx.Twin, {
 
     } else if (this.how == 'in') {
       var element_style = this.element._.style;
-      
+
       if (['top', 'bottom'].includes(direction)) {
         style.height = size.y + 'px';
         element_style.height = '0px';
@@ -5339,11 +5407,12 @@ Fx.Slide = new Class(Fx.Twin, {
         element_style.marginTop = margin_top + size.y + 'px';
       }
     }
-    
+
     return style;
   }
 
 });
+
 
 /**
  * The opacity effects wrapper
@@ -5353,14 +5422,15 @@ Fx.Slide = new Class(Fx.Twin, {
 Fx.Fade = new Class(Fx.Twin, {
   prepare: function(how) {
     this.setHow(how);
-    
+
     if (this.how == 'in') {
       old_show.call(this.element.setStyle({opacity: 0}));
     }
-    
+
     return this.$super({opacity: isNumber(how) ? how : this.how == 'in' ? 1 : 0});
   }
 });
+
 
 /**
  * A smooth scrolling visual effect
@@ -5368,22 +5438,22 @@ Fx.Fade = new Class(Fx.Twin, {
  * Copyright (C) 2009-2010 Nikolay V. Nemshilov
  */
 Fx.Scroll = new Class(Fx, {
-  
+
   initialize: function(element, options) {
     element = $(element);
     // swapping the actual scrollable when it's the window
     this.$super(element instanceof Window ? element._.document[Browser.WebKit ? 'body' : 'documentElement'] : element, options);
   },
-  
+
   prepare: function(value) {
     var before = this.before = {}, element = this.element._;
-    
+
     this.after  = value;
-    
+
     if ('x' in value) { before.x = element.scrollLeft; }
     if ('y' in value) { before.y = element.scrollTop;  }
   },
-  
+
   render: function(delta) {
     var before = this.before, key;
     for (key in before) {
@@ -5391,6 +5461,7 @@ Fx.Scroll = new Class(Fx, {
     }
   }
 });
+
 
 /**
  * this module handles the work with cookies
@@ -5403,7 +5474,7 @@ Fx.Scroll = new Class(Fx, {
  */
 var Cookie = RightJS.Cookie = new Class({
   include: Options,
-  
+
   extend: {
     // sets the cookie
     set: function(name, value, options) {
@@ -5417,20 +5488,20 @@ var Cookie = RightJS.Cookie = new Class({
     remove: function(name) {
       return new this(name).remove();
     },
-    
+
     // checks if the cookies are enabled
     enabled: function() {
       document.cookie = "__t=1";
       return document.cookie.indexOf("__t=1")!=-1;
     },
-    
+
     // some basic options
     Options: {
       secure:   false,
       document: document
     }
   },
-  
+
   /**
    * constructor
    * @param String cookie name
@@ -5441,7 +5512,7 @@ var Cookie = RightJS.Cookie = new Class({
     this.name = name;
     this.setOptions(options);
   },
-  
+
   /**
    * sets the cookie with the name
    *
@@ -5461,7 +5532,7 @@ var Cookie = RightJS.Cookie = new Class({
     options.document.cookie = this.name + '=' + value;
     return this;
   },
-  
+
   /**
    * searches for a cookie with the name
    *
@@ -5471,8 +5542,8 @@ var Cookie = RightJS.Cookie = new Class({
     var value = this.options.document.cookie.match('(?:^|;)\\s*' + RegExp.escape(this.name) + '=([^;]*)');
     return (value) ? decodeURIComponent(value[1]) : null;
   },
-  
-  /** 
+
+  /**
    * removes the cookie
    *
    * @return Cookie this
@@ -5483,6 +5554,12 @@ var Cookie = RightJS.Cookie = new Class({
   }
 });
 
+
+// globalizing the top-level variables
+$ext(window, Object.without(RightJS, 'version', 'modules'));
+
+return RightJS;
+})(window, document, Object, Array, String, Function, Number, Math);
 /**
  * The old browsers support patch loading script
  * will be included in the core file when it's built
@@ -5500,10 +5577,3 @@ if (!document.querySelector) {
       .src.replace(/(^|\/)(right)([^\/]+)$/, '$1$2-olds$3') +
   '"></script>');
 }
-
-
-// globalizing the top-level variables
-$ext(window, Object.without(RightJS, 'version', 'modules'));
-  
-return RightJS;
-})(window, document, Object, Array, String, Function, Number, Math);

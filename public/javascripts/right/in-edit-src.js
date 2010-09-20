@@ -33,19 +33,20 @@ var R = RightJS,
 
 
 
+
 /**
  * The widget units constructor
  *
  * @param String tag-name or Object methods
  * @param Object methods
  * @return Widget wrapper
- */ 
+ */
 function Widget(tag_name, methods) {
   if (!methods) {
     methods = tag_name;
     tag_name = 'DIV';
   }
-  
+
   /**
    * An Abstract Widget Unit
    *
@@ -62,17 +63,17 @@ function Widget(tag_name, methods) {
     initialize: function(key, options) {
       this.key = key;
       var args = [{'class': 'rui-' + key}];
-      
+
       // those two have different constructors
       if (!(this instanceof RightJS.Input || this instanceof RightJS.Form)) {
         args.unshift(tag_name);
       }
       this.$super.apply(this, args);
-      
+
       if (RightJS.isString(options)) {
         options = RightJS.$(options);
       }
-      
+
       // if the options is another element then
       // try to dynamically rewrap it with our widget
       if (options instanceof RightJS.Element) {
@@ -105,16 +106,16 @@ function Widget(tag_name, methods) {
       return this;
     }
   });
-  
+
   /**
    * Creating the actual widget class
    *
    */
   var Klass = new RightJS.Wrapper(AbstractWidget, methods);
-  
+
   // creating the widget related shortcuts
   RightJS.Observer.createShortcuts(Klass.prototype, Klass.EVENTS || []);
-  
+
   return Klass;
 }
 
@@ -132,18 +133,18 @@ var Spinner = new RightJS.Wrapper(RightJS.Element, {
    * @return void
    */
   initialize: function(size) {
-    this.$super('div', {'class': 'rui-spinner'});    
+    this.$super('div', {'class': 'rui-spinner'});
     this.dots = [];
-    
+
     for (var i=0; i < (size || 4); i++) {
       this.dots.push(new RightJS.Element('div'));
     }
-    
+
     this.dots[0].addClass('glowing');
     this.insert(this.dots);
     RightJS(this.shift).bind(this).periodical(300);
   },
-  
+
   /**
    * Shifts the spinner elements
    *
@@ -158,6 +159,7 @@ var Spinner = new RightJS.Wrapper(RightJS.Element, {
   }
 });
 
+
 /**
  * An inline editor feature
  *
@@ -166,31 +168,31 @@ var Spinner = new RightJS.Wrapper(RightJS.Element, {
 var InEdit = new Widget('FORM', {
   extend: {
     version: '2.0.0',
-    
+
     EVENTS: $w('show hide send update'),
-    
+
     Options: {
       url:    null,    // the url address where to send the stuff
       name:   'text',  // the field name
       method: 'put',   // the method
-      
+
       type:   'text',  // the input type, 'text', 'file', 'password' or 'textarea'
-      
+
       toggle:  null,   // a reference to an element that should get hidden when the editor is active
-      
+
       update:  true,   // a marker if the element should be updated with the response-text
-      
+
       Xhr: {}          // additional Xhr options
     },
-    
+
     i18n: {
       Save:   'Save',
       Cancel: 'Cancel'
     },
-    
+
     current: null      // currently opened editor
   },
-  
+
   /**
    * Constructor
    *
@@ -200,7 +202,7 @@ var InEdit = new Widget('FORM', {
    */
   initialize: function(element, options) {
     this.element = $(element);
-    
+
     this
       .$super('in-edit', options)
       .set('action', this.options.url)
@@ -213,7 +215,7 @@ var InEdit = new Widget('FORM', {
       .onClick(this.clicked)
       .onSubmit(this.send);
   },
-  
+
   /**
    * Shows the inline-editor form
    *
@@ -222,31 +224,31 @@ var InEdit = new Widget('FORM', {
   show: function() {
     if (InEdit.current !== this) {
       if (InEdit.current) { InEdit.current.hide(); }
-      
+
       this.oldContent = this.element.html();
-      
+
       if (!R(['file', 'password']).include(this.options.type)) {
         this.field.setValue(this.oldContent);
       }
-        
+
       this.element.update(this);
-      
+
       this.spinner.hide();
       this.submit.show();
-      
+
       if (this.options.toggle) {
         $(this.options.toggle).hide();
       }
     }
-    
+
     if (this.options.type !== 'file') {
       this.field.focus();
     }
-    
+
     InEdit.current = this;
-    return this.fire('show', this);
+    return this.fire('show');
   },
-  
+
   /**
    * Hides the form and brings the content back
    *
@@ -255,14 +257,14 @@ var InEdit = new Widget('FORM', {
    */
   hide: function() {
     this.element._.innerHTML = this.oldContent;
-    
+
     if (this.xhr) {
       this.xhr.cancel();
     }
-    
+
     return this.finish();
   },
-  
+
   /**
    * Triggers the form remote submit
    *
@@ -270,19 +272,19 @@ var InEdit = new Widget('FORM', {
    */
   send: function(event) {
     if (event) { event.stop(); }
-    
+
     this.spinner.show().resize(this.submit.size());
     this.submit.hide();
-    
+
     this.xhr = new Xhr(this.options.url, Object.merge(this.options.Xhr, {
       method:     this.options.method,
       spinner:    this.spinner,
       onComplete: R(this.receive).bind(this)
     })).send(this);
-    
-    return this.fire('send', this);
+
+    return this.fire('send');
   },
-  
+
 // protected
 
   // finishes up with the form
@@ -290,23 +292,23 @@ var InEdit = new Widget('FORM', {
     if (this.options.toggle) {
       $(this.options.toggle).show();
     }
-    
+
     InEdit.current = null;
-    return this.fire('hide', this);
+    return this.fire('hide');
   },
 
   // the xhr callback
   receive: function() {
     if (this.options.update) {
       this.element.update(this.xhr.text);
-      this.fire('update', this);
+      this.fire('update');
     }
-    
+
     this.xhr = null;
-    
+
     this.finish();
   },
-  
+
   // catches clicks on the element
   clicked: function(event) {
     if (event.target === this.cancel) {
@@ -314,8 +316,9 @@ var InEdit = new Widget('FORM', {
       this.hide();
     }
   }
-  
+
 });
+
 
 /**
  * The document hooks for in-edit form
@@ -328,6 +331,7 @@ $(document).onKeydown(function(event) {
     InEdit.current.hide();
   }
 });
+
 
 /**
  * The element level inline editor extension
@@ -345,6 +349,7 @@ Element.include({
     return new InEdit(this, options).show();
   }
 });
+
 
 document.write("<style type=\"text/css\">div.rui-spinner,div.rui-spinner div{margin:0;padding:0;border:none;background:none;list-style:none;font-weight:normal;float:none;display:inline-block; *display:inline; *zoom:1;border-radius:.12em;-moz-border-radius:.12em;-webkit-border-radius:.12em}div.rui-spinner{text-align:center;white-space:nowrap;background:#EEE;border:1px solid #DDD;height:1.2em;padding:0 .2em}div.rui-spinner div{width:.4em;height:70%;background:#BBB;margin-left:1px}div.rui-spinner div:first-child{margin-left:0}div.rui-spinner div.glowing{background:#777}form.rui-in-edit,form.rui-in-edit .cancel{margin:0;padding:0;float:none;position:static}form.rui-in-edit{display:inline-block; *display:inline; *zoom:1;border:none;background:none}form.rui-in-edit div.rui-spinner{margin-right:.2em}form.rui-in-edit div.rui-spinner div{margin-top:.2em}form.rui-in-edit textarea.field{width:100%;margin-bottom:.5em}form.rui-in-edit .field,form.rui-in-edit .submit{margin-right:.2em}form.rui-in-edit,form.rui-in-edit .field,form.rui-in-edit .submit,form.rui-in-edit div.rui-spinner,form.rui-in-edit .cancel{vertical-align:middle}</style>");
 

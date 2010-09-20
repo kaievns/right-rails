@@ -40,19 +40,20 @@ Browser.IE6 = Browser.OLD && navigator.userAgent.indexOf("MSIE 6") > 0;
 
 
 
+
 /**
  * The widget units constructor
  *
  * @param String tag-name or Object methods
  * @param Object methods
  * @return Widget wrapper
- */ 
+ */
 function Widget(tag_name, methods) {
   if (!methods) {
     methods = tag_name;
     tag_name = 'DIV';
   }
-  
+
   /**
    * An Abstract Widget Unit
    *
@@ -69,17 +70,17 @@ function Widget(tag_name, methods) {
     initialize: function(key, options) {
       this.key = key;
       var args = [{'class': 'rui-' + key}];
-      
+
       // those two have different constructors
       if (!(this instanceof RightJS.Input || this instanceof RightJS.Form)) {
         args.unshift(tag_name);
       }
       this.$super.apply(this, args);
-      
+
       if (RightJS.isString(options)) {
         options = RightJS.$(options);
       }
-      
+
       // if the options is another element then
       // try to dynamically rewrap it with our widget
       if (options instanceof RightJS.Element) {
@@ -112,16 +113,16 @@ function Widget(tag_name, methods) {
       return this;
     }
   });
-  
+
   /**
    * Creating the actual widget class
    *
    */
   var Klass = new RightJS.Wrapper(AbstractWidget, methods);
-  
+
   // creating the widget related shortcuts
   RightJS.Observer.createShortcuts(Klass.prototype, Klass.EVENTS || []);
-  
+
   return Klass;
 }
 
@@ -139,18 +140,18 @@ var Spinner = new RightJS.Wrapper(RightJS.Element, {
    * @return void
    */
   initialize: function(size) {
-    this.$super('div', {'class': 'rui-spinner'});    
+    this.$super('div', {'class': 'rui-spinner'});
     this.dots = [];
-    
+
     for (var i=0; i < (size || 4); i++) {
       this.dots.push(new RightJS.Element('div'));
     }
-    
+
     this.dots[0].addClass('glowing');
     this.insert(this.dots);
     RightJS(this.shift).bind(this).periodical(300);
   },
-  
+
   /**
    * Shifts the spinner elements
    *
@@ -165,44 +166,45 @@ var Spinner = new RightJS.Wrapper(RightJS.Element, {
   }
 });
 
+
 /**
  * The lightbox widget
  *
  * Copyright (C) 2009-2010 Nikolay Nemshilov
  */
 var Lightbox = new Widget({
-  
+
   extend: {
     version: '2.0.0',
-    
+
     EVENTS: $w('show hide load'),
-    
+
     Options: {
       fxName:          'fade',
-      fxDuration:      100,
-      
+      fxDuration:      200,
+
       group:           null, // a group marker
-      
+
       hideOnEsc:       true,
       hideOnOutClick:  true,
       showCloseButton: true,
-      
+
       cssRule:         "a[data-lightbox]", // all lightbox links css-rule
-      
+
       // video links default size
       mediaWidth:      425,
       mediaHeight:     350
     },
-    
+
     i18n: {
       Close: 'Close',
       Prev:  'Previous Image',
       Next:  'Next Image'
     },
-    
+
     // the supported image-urls regexp
     Images: /\.(jpg|jpeg|gif|png|bmp)/,
-    
+
     // media content sources
     Medias: [
       [/(http:\/\/.*?youtube\.[a-z]+)\/watch\?v=([^&]+)/,       '$1/v/$2',                      'swf'],
@@ -210,7 +212,7 @@ var Lightbox = new Widget({
       [/(http:\/\/vimeo\.[a-z]+)\/([0-9]+).*?/,                 '$1/moogaloop.swf?clip_id=$2',  'swf']
     ]
   },
-  
+
   /**
    * basic constructor
    *
@@ -232,7 +234,7 @@ var Lightbox = new Widget({
         prev:  this._prev
       });
   },
-  
+
   /**
    * Extracting the rel="lightboux[groupname]" attributes
    *
@@ -242,17 +244,17 @@ var Lightbox = new Widget({
    */
   setOptions: function(options, context) {
     this.$super(options, context);
-    
+
     if (context) {
       var rel = context.get('rel');
       if (rel && (rel = rel.match(/lightbox\[(.+?)\]/))) {
         this.options.group = rel[1];
       }
     }
-    
+
     return this;
   },
-  
+
   /**
    * Sets the popup's title
    *
@@ -261,10 +263,10 @@ var Lightbox = new Widget({
    */
   setTitle: function(text) {
     this.dialog.setTitle(text);
-    
+
     return this;
   },
-  
+
   /**
    * Shows the lightbox
    *
@@ -276,7 +278,7 @@ var Lightbox = new Widget({
       this.dialog.show(content, !content);
     });
   },
-  
+
   /**
    * Hides the lightbox
    *
@@ -284,7 +286,7 @@ var Lightbox = new Widget({
    */
   hide: function() {
     Lightbox.current = null;
-    
+
     return this.$super(this.options.fxName, {
       duration: this.options.fxDuration/3,
       onFinish: R(function() {
@@ -293,7 +295,7 @@ var Lightbox = new Widget({
       }).bind(this)
     });
   },
-  
+
   /**
    * Loads up the data from url or a link
    *
@@ -306,7 +308,7 @@ var Lightbox = new Widget({
       this.dialog.load(link, options);
     });
   },
-  
+
   /**
    * Resizes the content block to the given size
    *
@@ -317,7 +319,7 @@ var Lightbox = new Widget({
     this.dialog.resize(size);
     return this;
   },
-  
+
 // protected
 
   // handles the 'close' event
@@ -325,30 +327,30 @@ var Lightbox = new Widget({
     event.stop();
     this.hide();
   },
-  
+
   // handles the 'prev' event
   _prev: function(event) {
     event.stop();
     Pager.prev();
   },
-  
+
   // handles the 'next' event
   _next: function(event) {
     event.stop();
     Pager.next();
   },
-  
+
   // shows the lightbox element and then calls back
   _showAnd: function(callback) {
     if (Lightbox.current !== this) {
       Lightbox.current = this;
-      
+
       // hidding all the hanging around lightboxes
       $$('div.rui-lightbox').each('remove');
-      
+
       this.insertTo(document.body);
       this.dialog.show('', true);
-      
+
       if (Browser.OLD) { // IE's get screwed by the transparency tricks
         this.reposition();
         Element.prototype.show.call(this);
@@ -366,15 +368,15 @@ var Lightbox = new Widget({
     } else {
       callback.call(this);
     }
-    
+
     return this;
   },
-  
+
   // manually repositioning under IE6 browser
   reposition: function() {
     if (Browser.IE6) {
       var win = $(window);
-      
+
       this.setStyle({
         top:      win.scrolls().y + 'px',
         width:    win.size().x    + 'px',
@@ -397,11 +399,11 @@ Lightbox.extend({
       Lightbox.current.hide();
     }
   },
-  
+
   show: function() {
     return this.inst('show', arguments);
   },
-  
+
   load: function() {
     return this.inst('load', arguments);
   },
@@ -414,6 +416,7 @@ Lightbox.extend({
   }
 });
 
+
 /**
  * Lightbox background locker element
  *
@@ -422,12 +425,13 @@ Lightbox.extend({
 var Locker = new Wrapper(Element, {
   initialize: function(options) {
     this.$super('div', {'class': 'rui-lightbox-locker'});
-    
+
     if (options.hideOnOutClick) {
       this.onClick('fire', 'close');
     }
   }
 });
+
 
 /**
  * The dialog element wrapper
@@ -443,14 +447,14 @@ var Dialog = new Wrapper(Element, {
    */
   initialize: function(options) {
     var i18n = Lightbox.i18n;
-    
+
     this.options = options;
     this.$super('div', {'class': 'rui-lightbox-dialog'});
-    
-    // building up the 
+
+    // building up the
     this.insert([
       this.title = $E('div', {'class': 'rui-lightbox-title'}),
-      
+
       $E('div', {'class': 'rui-lightbox-body'}).insert(
         $E('div', {'class': 'rui-lightbox-body-inner'}).insert([
           this.locker    = $E('div', {'class': 'rui-lightbox-body-locker'}).insert(new Spinner(4)),
@@ -459,23 +463,23 @@ var Dialog = new Wrapper(Element, {
           )
         ])
       ),
-      
+
       $E('div', {'class': 'rui-lightbox-navigation'}).insert([
         this.closeButton = $E('div', {'class': 'close', html: '&times;', title: i18n.Close}).onClick('fire', 'close'),
         this.prevLink    = $E('div', {'class': 'prev',  html: '&larr;',  title: i18n.Prev}).onClick('fire',  'prev'),
         this.nextLink    = $E('div', {'class': 'next',  html: '&rarr;',  title: i18n.Next}).onClick('fire',  'next')
       ])
     ]);
-    
+
     // presetting the navigation state
     this.prevLink.hide();
     this.nextLink.hide();
-    
+
     if (!options.showCloseButton) {
       this.closeButton.hide();
     }
   },
-  
+
   /**
    * Sets the dialogue caption
    *
@@ -485,7 +489,7 @@ var Dialog = new Wrapper(Element, {
   setTitle: function(title) {
     this.title.update(title||'');
   },
-  
+
   /**
    * Nicely resize the dialog box
    *
@@ -498,11 +502,11 @@ var Dialog = new Wrapper(Element, {
         cur_size = this.scroller.size(),
         cur_top  = (win_size.y - this.size().y)/2,
         dlg_diff = this.size().x - cur_size.x; // <- use for IE6 fixes
-    
+
     if (end_size) {
       // getting the actual end-size
       end_size = this.scroller.setStyle(end_size).size();
-      
+
       this.scroller.setStyle({
         width:  cur_size.x + 'px',
         height: cur_size.y + 'px'
@@ -511,46 +515,46 @@ var Dialog = new Wrapper(Element, {
       // using the content block size
       end_size = this.content.size();
     }
-    
+
     // checking the constraints
     var threshold = 100; // px
     if ((end_size.x + threshold) > win_size.x) { end_size.x = win_size.x - threshold; }
     if ((end_size.y + threshold) > win_size.y) { end_size.y = win_size.y - threshold; }
-    
+
     // the actual resize and reposition
     var end_top = (cur_top * 2 + cur_size.y - end_size.y) / 2;
     var dialog  = this._.style, content = this.scroller._.style;
-    
+
     if (RightJS.Fx && with_fx && (end_size.x != cur_size.x || end_size.y != cur_size.y)) {
-      
+
       $ext(new RightJS.Fx(this, {duration: this.options.fxDuration, transition: 'Lin'}), {
         render: function(delta) {
           content.width  = (cur_size.x + (end_size.x - cur_size.x) * delta) + 'px';
           content.height = (cur_size.y + (end_size.y - cur_size.y) * delta) + 'px';
           dialog.top     = (cur_top    + (end_top    - cur_top)    * delta) + 'px';
-          
+
           if (Browser.IE6) {
             dialog.width  = (dlg_diff + cur_size.y + (end_size.y - cur_size.y) * delta) + 'px';
           }
         }
       }).onFinish(R(this.unlock).bind(this)).start();
-      
+
     } else {
       // no-fx direct assignment
       content.width  = end_size.x + 'px';
       content.height = end_size.y + 'px';
       dialog.top     = end_top    + 'px';
-      
+
       if (Browser.IE6) {
         dialog.width = (dlg_diff + end_size.x) + 'px';
       }
-      
+
       if (!this.request) { this.unlock(); }
     }
-    
+
     return this;
   },
-  
+
   /**
    * Shows the content
    *
@@ -561,7 +565,7 @@ var Dialog = new Wrapper(Element, {
     this.content.update(content || '');
     this.resize(null, !no_fx);
   },
-  
+
   /**
    * Loads up the data from the link
    *
@@ -574,19 +578,19 @@ var Dialog = new Wrapper(Element, {
       this.setTitle(url.get('title'));
       url = url.get('href');
     }
-    
+
     Pager.show(this, url);
     this.lock().cancel();
-    
+
     // defined in the loader.js file
     this.request = new Loader(url, options, R(function(content, no_fx) {
       this.request = null;
       this.show(content, no_fx);
     }).bind(this));
-    
+
     return this.resize(); // the look might be changed for a media-type
   },
-  
+
   /**
    * Cancels a currently loading request
    *
@@ -596,10 +600,10 @@ var Dialog = new Wrapper(Element, {
     if (this.request) {
       this.request.cancel();
     }
-    
+
     return this;
   },
-  
+
   /**
    * Shows the loading lock
    *
@@ -609,7 +613,7 @@ var Dialog = new Wrapper(Element, {
     this.locker.setStyle('opacity:1');
     return this;
   },
-  
+
   /**
    * Hides the loading lock
    *
@@ -619,10 +623,11 @@ var Dialog = new Wrapper(Element, {
     this.locker.morph({opacity: 0}, {
       duration: this.options.fxDuration * 2/3
     });
-    
+
     return this;
   }
 });
+
 
 /**
  * Xhr/images/medias loading module
@@ -651,7 +656,7 @@ var Loader = new Class({
       }).send();
     }
   },
-  
+
   /**
    * Cancels the request
    *
@@ -666,7 +671,7 @@ var Loader = new Class({
   },
 
 // protected
-  
+
   // tries to initialize it as an image loading
   isImage: function(url, on_finish) {
     if (url.match(Lightbox.Images)) {
@@ -678,20 +683,20 @@ var Loader = new Class({
       return true;
     }
   },
-  
+
   // tries to initialize it as a flash-element
   isMedia: function(url, on_finish) {
     var media = R(Lightbox.Medias).map(function(desc) {
       return url.match(desc[0]) ? this.buildEmbed(
         url.replace(desc[0], desc[1]), desc[2]) : null;
     }, this).compact()[0];
-    
+
     if (media) {
       on_finish(media, true);
       return true;
     }
   },
-  
+
   // builds an embedded media block
   buildEmbed: function(url, type) {
     var media_types = {
@@ -710,8 +715,9 @@ var Loader = new Class({
       '<embed src="'+ url +'" type="'+ media_types[type][2]+'"'+ sizes + ' />' +
     '</object>';
   }
-  
+
 });
+
 
 /**
  * Processes the link-groups showing things in a single Lightbox
@@ -733,16 +739,16 @@ var Pager = {
       this.link   = this.links.first(function(link) {
         return link.get('href') === url;
       });
-      
+
       var index = this.links.indexOf(this.link), size = this.links.length;
-      
+
       dialog.prevLink[size && index > 0 ? 'show' : 'hide']();
       dialog.nextLink[size && index < size - 1 ? 'show' : 'hide']();
     } else {
       this.dialog = null;
     }
   },
-  
+
   /**
    * Shows the prev link
    *
@@ -752,14 +758,14 @@ var Pager = {
     if (this.dialog && !this.timer) {
       var id   = this.links.indexOf(this.link),
           link = this.links[id - 1];
-          
+
       if (link) {
         this.dialog.load(link);
         this.timeout();
       }
     }
   },
-  
+
   /**
    * Shows the next link
    *
@@ -769,14 +775,14 @@ var Pager = {
     if (this.dialog && !this.timer) {
       var id   = this.links.indexOf(this.link),
           link = this.links[id + 1];
-          
+
       if (link) {
         this.dialog.load(link);
         this.timeout();
       }
     }
   },
-  
+
 // private
 
   // finding the links list
@@ -784,12 +790,12 @@ var Pager = {
     return $$('a').filter(function(link) {
       var data = link.get('data-lightbox');
       var rel  = link.get('rel');
-      
+
       return (data && eval("("+ data + ")").group === group) ||
         (rel && rel.indexOf('lightbox['+ group + ']') > -1);
     });
   },
-  
+
   // having a little nap to prevent ugly quick scrolling
   timeout: function() {
     this.timer = R(function() {
@@ -797,6 +803,7 @@ var Pager = {
     }).delay(300);
   }
 };
+
 
 /**
  * document level hooks
@@ -813,13 +820,13 @@ $(document).on({
    */
   click: function(event) {
     var target = event.find(Lightbox.Options.cssRule) || event.find('a[rel^=lightbox]');
-    
+
     if (target) {
       event.stop();
       new Lightbox({}, target).load(target);
     }
   },
-  
+
   /**
    * Catches the mousewheel event and tries to scroll
    * the list of objects on the lightbox
@@ -833,7 +840,7 @@ $(document).on({
       Lightbox.current.fire((event._.detail || -event._.wheelDelta) < 0 ? 'prev' : 'next');
     }
   },
-  
+
   /**
    * Handles the navigation form a keyboard
    *
@@ -850,7 +857,7 @@ $(document).on({
       40: 'next',  // Down
       34: 'next'   // PageDown
     })[event.keyCode];
-    
+
     if (lightbox && name) {
       if (name !== 'close' || lightbox.options.hideOnEsc) {
         event.stop();
@@ -867,7 +874,7 @@ $(window).on({
       Lightbox.current.dialog.resize();
     }
   },
-  
+
   scroll: function(event) {
     if (Lightbox.current && Browser.IE6) {
       Lightbox.current.reposition();
@@ -875,7 +882,8 @@ $(window).on({
   }
 });
 
-document.write("<style type=\"text/css\">div.rui-spinner,div.rui-spinner div{margin:0;padding:0;border:none;background:none;list-style:none;font-weight:normal;float:none;display:inline-block; *display:inline; *zoom:1;border-radius:.12em;-moz-border-radius:.12em;-webkit-border-radius:.12em}div.rui-spinner{text-align:center;white-space:nowrap;background:#EEE;border:1px solid #DDD;height:1.2em;padding:0 .2em}div.rui-spinner div{width:.4em;height:70%;background:#BBB;margin-left:1px}div.rui-spinner div:first-child{margin-left:0}div.rui-spinner div.glowing{background:#777}div.rui-lightbox{position:fixed;top:0;left:0;z-index:9999;float:none;width:100%;height:100%;margin:0;padding:0;background:none;border:none;text-align:center}div.rui-lightbox-locker{position:absolute;top:0px;left:0px;width:100%;height:100%;background-color:#000;opacity:0.8;filter:alpha(opacity=80);cursor:default}div.rui-lightbox-dialog{display:inline-block; *display:inline; *zoom:1;position:relative;text-align:left}div.rui-lightbox-title{height:1.2em;margin-bottom:.1em;white-space:nowrap;color:#DDD;font-weight:bold;font-size:1.6em;font-family:Helvetica;text-shadow:#000 .05em .1em .2em}div.rui-lightbox-body{background-color:white;padding:1em;border-radius:.5em;-moz-border-radius:.5em;-webkit-border-radius:.5em;box-shadow:#000 .1em .2em 1.5em;-moz-box-shadow:#000 .1em .2em 1.5em;-webkit-box-shadow:#000 .1em .2em 1.5em}div.rui-lightbox-body-inner{position:relative}div.rui-lightbox-scroller{overflow:hidden}div.rui-lightbox-content{display:inline-block; *display:inline; *zoom:1;min-height:10em;min-width:10em;_height:10em;_width:10em}div.rui-lightbox-body-locker{background-color:white;position:absolute;left:0px;top:0px;width:100%;height:100%;z-index:999;opacity:0;filter:alpha(opacity=0)}div.rui-lightbox-body-locker div.rui-spinner{position:absolute;right:0;bottom:0;border:none;background:none;font-size:150%}div.rui-lightbox-navigation{color:#888;font-size:150%;font-family:Arial;height:1em;user-select:none;-moz-user-select:none;-webkit-user-select:none}div.rui-lightbox-navigation div{cursor:pointer;position:absolute}div.rui-lightbox-navigation div:hover{color:white}div.rui-lightbox-navigation div.next{left:2em}div.rui-lightbox-navigation div.close{right:0}div.rui-lightbox-image div.rui-lightbox-body,div.rui-lightbox-media div.rui-lightbox-body{padding:0;border:1px solid #777;border-radius:0px;-moz-border-radius:0px;-webkit-border-radius:0px}div.rui-lightbox-image div.rui-lightbox-content,div.rui-lightbox-media div.rui-lightbox-content{min-height:12em;min-width:12em;_height:12em;_width:12em}div.rui-lightbox-image div.rui-lightbox-content img{vertical-align:middle}div.rui-lightbox-image div.rui-lightbox-body,div.rui-lightbox-image div.rui-lightbox-body-locker,div.rui-lightbox-media div.rui-lightbox-body,div.rui-lightbox-media div.rui-lightbox-body-locker{background-color:#DDD}div.rui-lightbox-image div.rui-lightbox-body-locker div.rui-spinner,div.rui-lightbox-media div.rui-lightbox-body-locker div.rui-spinner{bottom:.5em;right:.5em}</style>");
+
+document.write("<style type=\"text/css\">div.rui-spinner,div.rui-spinner div{margin:0;padding:0;border:none;background:none;list-style:none;font-weight:normal;float:none;display:inline-block; *display:inline; *zoom:1;border-radius:.12em;-moz-border-radius:.12em;-webkit-border-radius:.12em}div.rui-spinner{text-align:center;white-space:nowrap;background:#EEE;border:1px solid #DDD;height:1.2em;padding:0 .2em}div.rui-spinner div{width:.4em;height:70%;background:#BBB;margin-left:1px}div.rui-spinner div:first-child{margin-left:0}div.rui-spinner div.glowing{background:#777}div.rui-lightbox{position:fixed;top:0;left:0;z-index:9999;float:none;width:100%;height:100%;margin:0;padding:0;background:none;border:none;text-align:center}div.rui-lightbox-locker{position:absolute;top:0px;left:0px;width:100%;height:100%;background-color:#000;opacity:0.8;filter:alpha(opacity=80);cursor:default}div.rui-lightbox-dialog{display:inline-block; *display:inline; *zoom:1;position:relative;text-align:left}div.rui-lightbox-title{height:1.2em;margin-bottom:.1em;white-space:nowrap;color:#DDD;font-weight:bold;font-size:1.6em;font-family:Helvetica;text-shadow:#000 .05em .1em .2em}div.rui-lightbox-body{background-color:white;padding:1em;border-radius:.5em;-moz-border-radius:.5em;-webkit-border-radius:.5em}div.rui-lightbox-body-inner{position:relative}div.rui-lightbox-scroller{overflow:hidden}div.rui-lightbox-content{display:inline-block; *display:inline; *zoom:1;min-height:10em;min-width:10em;_height:10em;_width:10em}div.rui-lightbox-body-locker{background-color:white;position:absolute;left:0px;top:0px;width:100%;height:100%;z-index:999;opacity:0;filter:alpha(opacity=0)}div.rui-lightbox-body-locker div.rui-spinner{position:absolute;right:0;bottom:0;border:none;background:none;font-size:150%}div.rui-lightbox-navigation{color:#888;font-size:150%;font-family:Arial;height:1em;user-select:none;-moz-user-select:none;-webkit-user-select:none}div.rui-lightbox-navigation div{cursor:pointer;position:absolute}div.rui-lightbox-navigation div:hover{color:white}div.rui-lightbox-navigation div.next{left:2em}div.rui-lightbox-navigation div.close{right:0}div.rui-lightbox-image div.rui-lightbox-body,div.rui-lightbox-media div.rui-lightbox-body{padding:0;border:1px solid #777;border-radius:0px;-moz-border-radius:0px;-webkit-border-radius:0px}div.rui-lightbox-image div.rui-lightbox-content,div.rui-lightbox-media div.rui-lightbox-content{min-height:12em;min-width:12em;_height:12em;_width:12em}div.rui-lightbox-image div.rui-lightbox-content img{vertical-align:middle}div.rui-lightbox-image div.rui-lightbox-body,div.rui-lightbox-image div.rui-lightbox-body-locker,div.rui-lightbox-media div.rui-lightbox-body,div.rui-lightbox-media div.rui-lightbox-body-locker{background-color:#D8D8D8}div.rui-lightbox-image div.rui-lightbox-body-locker div.rui-spinner,div.rui-lightbox-media div.rui-lightbox-body-locker div.rui-spinner{bottom:.5em;right:.5em}</style>");
 
 return Lightbox;
 })(document, RightJS);

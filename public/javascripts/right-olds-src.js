@@ -18,16 +18,17 @@ if (RightJS.Browser.OLD) {
   $ = RightJS.$ = (function(old_function) {
     return function(id) {
       var element = old_function(id);
-      
+
       // old IE browses match both, ID and NAME
       if (element && element instanceof RightJS.Element && RightJS.isString(id) && element._.id !== id) {
         element = RightJS.$(document).first('#'+ id);
       }
-        
+
       return element;
     };
   })(RightJS.$);
 }
+
 
 /**
  * Konqueror browser fixes
@@ -46,14 +47,14 @@ if (!RightJS.$E('p').getBoundingClientRect) {
           top      = element.offsetTop,
           left     = element.offsetLeft,
           parent   = element.offsetParent;
-      
+
       while (parent) {
         top  += parent.offsetTop;
         left += parent.offsetLeft;
-        
+
         parent = parent.offsetParent;
       }
-      
+
       return {x: left, y: top};
     }
   });
@@ -113,8 +114,8 @@ if (!document.querySelector) {
         return result;
       }
     };
-    
-    
+
+
     /**
      * Collection of pseudo selector matchers
      */
@@ -209,7 +210,7 @@ if (!document.querySelector) {
         return count == number;
       }
     };
-    
+
     // the regexps collection
     var chunker   = /((?:\((?:\([^()]+\)|[^()]+)+\)|\[(?:\[[^\[\]]*\]|['"][^'"]*['"]|[^\[\]'"]+)+\]|\\.|[^ >+~,(\[\\]+)+|[>+~])(\s*,\s*)?/g;
     var id_re     = /#([\w\-_]+)/;
@@ -217,11 +218,11 @@ if (!document.querySelector) {
     var class_re  = /\.([\w\-\._]+)/;
     var pseudo_re = /:([\w\-]+)(\((.+?)\))*$/;
     var attrs_re  = /\[((?:[\w\-]*:)?[\w\-]+)\s*(?:([!\^$*~|]?=)\s*((['"])([^\4]*?)\4|([^'"][^\]]*?)))?\]/;
-  
+
   /////////////////////////////////////////////////////////////////////////////////////////////////////////
   /////////////////////////////////////////////////////////////////////////////////////////////////////////
   /////////////////////////////////////////////////////////////////////////////////////////////////////////
-  
+
     /**
      * Builds an atom matcher
      *
@@ -232,34 +233,34 @@ if (!document.querySelector) {
     function build_atom(in_atom) {
       if (!atoms_cache[in_atom]) {
         var id, tag, classes, attrs, pseudo, values_of_pseudo, match, func, desc = {}, atom = in_atom;
-        
-        // grabbing the attributes 
+
+        // grabbing the attributes
         while((match = atom.match(attrs_re))) {
           attrs = attrs || {};
           attrs[match[1]] = { o: match[2], v: match[5] || match[6] };
           atom = atom.replace(match[0], '');
         }
-        
+
         // extracting the pseudos
         if ((match = atom.match(pseudo_re))) {
           pseudo = match[1];
           values_of_pseudo = match[3] == '' ? null : match[3];
           atom = atom.replace(match[0], '');
         }
-        
+
         // getting all the other options
         id      = (atom.match(id_re)    || [1, null])[1];
         tag     = (atom.match(tag_re)   || '*').toString().toUpperCase();
         classes = (atom.match(class_re) || [1, ''])[1].split('.').without('');
-        
+
         desc.tag = tag;
-        
+
         //
         // HACK HACK HACK
         //
         // building the matcher function
         //
-        // NOTE: we kinda compile a cutom filter function in here 
+        // NOTE: we kinda compile a cutom filter function in here
         //       the point is to create a maximally optimized method
         //       that will make only this atom checks and will filter
         //       a list of elements in a single call
@@ -270,14 +271,14 @@ if (!document.querySelector) {
             'for(;z<x;z++){'+
               'e=y[z];_f_'+
             '}return r}';
-            
+
           var patch_filter = function(code) {
             filter = filter.replace('_f_', code + '_f_');
           };
-          
+
           // adding the ID check conditions
           if (id) { patch_filter('if(e.id!=i)continue;'); }
-          
+
           // adding the classes matching code
           if (classes.length) { patch_filter(
             'if(e.className){'+
@@ -287,11 +288,11 @@ if (!document.querySelector) {
                 'for(var i=0,l=c.length,b=false;i<l;i++)'+
                   'if(n.indexOf(c[i])==-1){'+
                     'b=true;break;}'+
-                    
+
               'if(b)continue;}'+
             '}else continue;'
           ); }
-          
+
           // adding the attributes matching conditions
           if (attrs) { patch_filter(
             'var p,o,v,k,b=false;'+
@@ -307,7 +308,7 @@ if (!document.querySelector) {
               '){b=true;break;}'+
             '}if(b){continue;}'
           ); }
-          
+
           // adding the pseudo matchers check
           if (pseudo in pseudos) {
             patch_filter('if(!S[P].call(e,V,S))continue;');
@@ -328,13 +329,13 @@ if (!document.querySelector) {
             filter.replace('_f_', 'r.push(e)')
           );
         }
-        
+
         atoms_cache[in_atom] = desc;
       }
-      
+
       return atoms_cache[in_atom];
     }
-    
+
     /**
      * Builds a single selector out of a simple rule chunk
      *
@@ -348,7 +349,7 @@ if (!document.querySelector) {
         for (var i=0; i < rule.length; i++) {
           rule[i][1] = build_atom(rule[i][1]);
         }
-        
+
         // creates a list of uniq nodes
         var _uid = $uid;
         var uniq = function(elements) {
@@ -363,17 +364,17 @@ if (!document.querySelector) {
 
           return uniq;
         };
-        
+
         // performs the actual search of subnodes
         var find_subnodes = function(element, atom) {
           var result = search[atom[0]](element, atom[1].tag);
           return atom[1].filter ? atom[1].filter(result) : result;
         };
-        
+
         // building the actual selector function
         tokens_cache[rule_key] = function(element) {
           var founds, sub_founds;
-          
+
           for (var i=0, i_length = rule.length; i < i_length; i++) {
             if (i === 0) {
               founds = find_subnodes(element, rule[i]);
@@ -393,14 +394,14 @@ if (!document.querySelector) {
               }
             }
           }
-          
+
           return rule.length > 1 ? uniq(founds) : founds;
         };
       }
       return tokens_cache[rule_key];
     }
-    
-    
+
+
     /**
      * Builds the list of selectors for the css_rule
      *
@@ -411,11 +412,11 @@ if (!document.querySelector) {
     function split_rule_to_selectors(css_rule) {
       if (!selectors_cache[css_rule]) {
         chunker.lastIndex = 0;
-        
+
         var rules = [], rule = [], rel = ' ', m, token;
         while ((m = chunker.exec(css_rule))) {
           token = m[1];
-          
+
           if (token == '+' || token == '>' || token == '~') {
             rel = token;
           } else {
@@ -429,13 +430,13 @@ if (!document.querySelector) {
           }
         }
         rules.push(build_selector(rule));
-        
+
         selectors_cache[css_rule] = rules;
       }
       return selectors_cache[css_rule];
     }
-    
-    
+
+
     /**
      * The top level method, it just goes throught the css-rule chunks
      * collect and merge the results that's it
@@ -449,28 +450,28 @@ if (!document.querySelector) {
       for (var i=0, length = selectors.length; i < length; i++) {
         result = result.concat(selectors[i](element));
       }
-      
+
       return result;
     }
-    
-    
+
+
   /////////////////////////////////////////////////////////////////////////////////////////////////////////
   /////////////////////////////////////////////////////////////////////////////////////////////////////////
   /////////////////////////////////////////////////////////////////////////////////////////////////////////
-  
+
     // the previous dom-selection methods replacement
     var dom_extension = {
       first: function(css_rule) {
         return this.find(css_rule)[0];
       },
-      
+
       find: function(css_rule) {
         return select_all(this._, css_rule || '*').map(RightJS.$);
       }
     };
-    
+
     dom_extension.select = dom_extension.find;
-    
+
     // hooking up the rightjs wrappers with the new methods
     RightJS.Element.include(dom_extension);
     RightJS.Document.include(dom_extension);
