@@ -1,3 +1,10 @@
+2010-10-11 Nikolay Nemshilov
+  o Version 1.0.8
+    * RightJS 2.1.0 build
+    * Sizzle module
+    * Italian and Finnish i18n modules
+    * Fresh plugins builds
+
 2010-09-20 Nikolay Nemshilov
   o Version 1.0.4
     * RightJS 2.0.0 release updates
