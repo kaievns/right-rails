@@ -175,13 +175,13 @@ var Spinner = new RightJS.Wrapper(RightJS.Element, {
 var Lightbox = new Widget({
 
   extend: {
-    version: '2.0.0',
+    version: '2.0.2',
 
     EVENTS: $w('show hide load'),
 
     Options: {
       fxName:          'fade',
-      fxDuration:      200,
+      fxDuration:      300,
 
       group:           null, // a group marker
 
@@ -527,7 +527,7 @@ var Dialog = new Wrapper(Element, {
 
     if (RightJS.Fx && with_fx && (end_size.x != cur_size.x || end_size.y != cur_size.y)) {
 
-      $ext(new RightJS.Fx(this, {duration: this.options.fxDuration, transition: 'Lin'}), {
+      $ext(new RightJS.Fx(this, {duration: this.options.fxDuration}), {
         render: function(delta) {
           content.width  = (cur_size.x + (end_size.x - cur_size.x) * delta) + 'px';
           content.height = (cur_size.y + (end_size.y - cur_size.y) * delta) + 'px';
@@ -610,7 +610,7 @@ var Dialog = new Wrapper(Element, {
    * @return Dialog this
    */
   lock: function() {
-    this.locker.setStyle('opacity:1');
+    this.locker.setStyle('opacity:1;display:block').insertTo(this.scroller, 'before');
     return this;
   },
 
@@ -620,7 +620,7 @@ var Dialog = new Wrapper(Element, {
    * @return Dialog this
    */
   unlock: function() {
-    this.locker.morph({opacity: 0}, {
+    this.locker.remove(this.content.html().blank() ? null : 'fade', {
       duration: this.options.fxDuration * 2/3
     });
 
@@ -836,7 +836,12 @@ $(document).on({
    */
   mousewheel: function(event) {
     if (Lightbox.current) {
-      event.stop();
+      var target = event.target, box = target.parent('div.rui-lightbox-content');
+
+      if (!box || target.getStyle('overflow') === 'visible') {
+        event.stop();
+      }
+
       Lightbox.current.fire((event._.detail || -event._.wheelDelta) < 0 ? 'prev' : 'next');
     }
   },
@@ -883,7 +888,7 @@ $(window).on({
 });
 
 
-document.write("<style type=\"text/css\">div.rui-spinner,div.rui-spinner div{margin:0;padding:0;border:none;background:none;list-style:none;font-weight:normal;float:none;display:inline-block; *display:inline; *zoom:1;border-radius:.12em;-moz-border-radius:.12em;-webkit-border-radius:.12em}div.rui-spinner{text-align:center;white-space:nowrap;background:#EEE;border:1px solid #DDD;height:1.2em;padding:0 .2em}div.rui-spinner div{width:.4em;height:70%;background:#BBB;margin-left:1px}div.rui-spinner div:first-child{margin-left:0}div.rui-spinner div.glowing{background:#777}div.rui-lightbox{position:fixed;top:0;left:0;z-index:9999;float:none;width:100%;height:100%;margin:0;padding:0;background:none;border:none;text-align:center}div.rui-lightbox-locker{position:absolute;top:0px;left:0px;width:100%;height:100%;background-color:#000;opacity:0.8;filter:alpha(opacity=80);cursor:default}div.rui-lightbox-dialog{display:inline-block; *display:inline; *zoom:1;position:relative;text-align:left}div.rui-lightbox-title{height:1.2em;margin-bottom:.1em;white-space:nowrap;color:#DDD;font-weight:bold;font-size:1.6em;font-family:Helvetica;text-shadow:#000 .05em .1em .2em}div.rui-lightbox-body{background-color:white;padding:1em;border-radius:.5em;-moz-border-radius:.5em;-webkit-border-radius:.5em}div.rui-lightbox-body-inner{position:relative}div.rui-lightbox-scroller{overflow:hidden}div.rui-lightbox-content{display:inline-block; *display:inline; *zoom:1;min-height:10em;min-width:10em;_height:10em;_width:10em}div.rui-lightbox-body-locker{background-color:white;position:absolute;left:0px;top:0px;width:100%;height:100%;z-index:999;opacity:0;filter:alpha(opacity=0)}div.rui-lightbox-body-locker div.rui-spinner{position:absolute;right:0;bottom:0;border:none;background:none;font-size:150%}div.rui-lightbox-navigation{color:#888;font-size:150%;font-family:Arial;height:1em;user-select:none;-moz-user-select:none;-webkit-user-select:none}div.rui-lightbox-navigation div{cursor:pointer;position:absolute}div.rui-lightbox-navigation div:hover{color:white}div.rui-lightbox-navigation div.next{left:2em}div.rui-lightbox-navigation div.close{right:0}div.rui-lightbox-image div.rui-lightbox-body,div.rui-lightbox-media div.rui-lightbox-body{padding:0;border:1px solid #777;border-radius:0px;-moz-border-radius:0px;-webkit-border-radius:0px}div.rui-lightbox-image div.rui-lightbox-content,div.rui-lightbox-media div.rui-lightbox-content{min-height:12em;min-width:12em;_height:12em;_width:12em}div.rui-lightbox-image div.rui-lightbox-content img{vertical-align:middle}div.rui-lightbox-image div.rui-lightbox-body,div.rui-lightbox-image div.rui-lightbox-body-locker,div.rui-lightbox-media div.rui-lightbox-body,div.rui-lightbox-media div.rui-lightbox-body-locker{background-color:#D8D8D8}div.rui-lightbox-image div.rui-lightbox-body-locker div.rui-spinner,div.rui-lightbox-media div.rui-lightbox-body-locker div.rui-spinner{bottom:.5em;right:.5em}</style>");
+document.write("<style type=\"text/css\">div.rui-spinner,div.rui-spinner div{margin:0;padding:0;border:none;background:none;list-style:none;font-weight:normal;float:none;display:inline-block; *display:inline; *zoom:1;border-radius:.12em;-moz-border-radius:.12em;-webkit-border-radius:.12em}div.rui-spinner{text-align:center;white-space:nowrap;background:#EEE;border:1px solid #DDD;height:1.2em;padding:0 .2em}div.rui-spinner div{width:.4em;height:70%;background:#BBB;margin-left:1px}div.rui-spinner div:first-child{margin-left:0}div.rui-spinner div.glowing{background:#777}div.rui-lightbox{position:fixed;top:0;left:0;z-index:9999;float:none;width:100%;height:100%;margin:0;padding:0;background:none;border:none;text-align:center}div.rui-lightbox-locker{position:absolute;top:0px;left:0px;width:100%;height:100%;background-color:#000;opacity:0.8;filter:alpha(opacity=80);cursor:default}div.rui-lightbox-dialog{display:inline-block; *display:inline; *zoom:1;position:relative;text-align:left}div.rui-lightbox-title{height:1.2em;margin-bottom:.1em;white-space:nowrap;color:#DDD;font-weight:bold;font-size:1.6em;font-family:Helvetica}div.rui-lightbox-body{background-color:white;padding:1em;border-radius:.5em;-moz-border-radius:.5em;-webkit-border-radius:.5em}div.rui-lightbox-body-inner{position:relative}div.rui-lightbox-scroller{overflow:hidden}div.rui-lightbox-content{display:inline-block; *display:inline; *zoom:1;min-height:10em;min-width:10em;_height:10em;_width:10em}div.rui-lightbox-body-locker{background-color:white;position:absolute;left:0px;top:0px;width:100%;height:100%;z-index:999;opacity:0;filter:alpha(opacity=0)}div.rui-lightbox-body-locker div.rui-spinner{position:absolute;right:0;bottom:0;border:none;background:none;font-size:150%}div.rui-lightbox-navigation{color:#888;font-size:160%;font-family:Arial;height:1em;user-select:none;-moz-user-select:none;-webkit-user-select:none}div.rui-lightbox-navigation div{cursor:pointer;position:absolute}div.rui-lightbox-navigation div:hover{color:white}div.rui-lightbox-navigation div.next{left:2em}div.rui-lightbox-navigation div.close{right:0}div.rui-lightbox-image div.rui-lightbox-body,div.rui-lightbox-media div.rui-lightbox-body{padding:0;border:1px solid #777;border-radius:0px;-moz-border-radius:0px;-webkit-border-radius:0px}div.rui-lightbox-image div.rui-lightbox-content,div.rui-lightbox-media div.rui-lightbox-content{min-height:12em;min-width:12em;_height:12em;_width:12em}div.rui-lightbox-image div.rui-lightbox-content img{vertical-align:middle}div.rui-lightbox-image div.rui-lightbox-body,div.rui-lightbox-image div.rui-lightbox-body-locker,div.rui-lightbox-media div.rui-lightbox-body,div.rui-lightbox-media div.rui-lightbox-body-locker{background-color:#D8D8D8}div.rui-lightbox-image div.rui-lightbox-body-locker div.rui-spinner,div.rui-lightbox-media div.rui-lightbox-body-locker div.rui-spinner{bottom:.5em;right:.5em}</style>");
 
 return Lightbox;
 })(document, RightJS);

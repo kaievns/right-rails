@@ -161,7 +161,9 @@ RightJS.$alias(RightJS.Array.prototype, {
       var form = event.target;
       if (form.has('data-remote') && !user_cancels(event, form)) {
         event.stop();
-        form.send(add_xhr_events(form));
+        form.send(add_xhr_events(form, {
+          spinner:  form.get('data-spinner') || form.first('.spinner')
+        }));
       }
     }
   });

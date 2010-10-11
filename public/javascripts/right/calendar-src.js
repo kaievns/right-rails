@@ -149,6 +149,7 @@ var Button = new RightJS.Wrapper(RightJS.Element, {
     this.$super('div', options);
     this._.innerHTML = caption;
     this.addClass('rui-button');
+    this.on('selectstart', 'stopEvent');
   },
 
   /**

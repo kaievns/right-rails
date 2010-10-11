@@ -20,7 +20,7 @@ var RightJS = function(value) {
   return value; // <- a dummy method to emulate the safe-mode
 };
 
-RightJS.version = "2.0.0";
+RightJS.version = "2.1.0";
 RightJS.modules =["core", "dom", "form", "events", "xhr", "fx", "cookie"];
 
 
@@ -189,7 +189,7 @@ isArray = RightJS.isArray = function(value) {
  * @return boolean check result
  */
 isElement = RightJS.isElement = function(value) {
-  return value && value.tagName;
+  return !!(value && value.tagName);
 },
 
 /** !#server
@@ -199,7 +199,7 @@ isElement = RightJS.isElement = function(value) {
  * @return boolean check result
  */
 isNode = RightJS.isNode = function(value) {
-  return value && value.nodeType;
+  return !!(value && value.nodeType);
 },
 
 /** !#server
@@ -214,8 +214,9 @@ $ = RightJS.$ = function(object) {
   }
 
   if (object) {
-    if (UID_KEY in object && object[UID_KEY] in Wrappers_Cache) {
-      object = Wrappers_Cache[object[UID_KEY]];
+    var wrapper = UID_KEY in object ? Wrappers_Cache[object[UID_KEY]] : undefined;
+    if (wrapper !== undefined) {
+      object = wrapper;
     } else if (object.nodeType === 1) {
       object = new Element(object);
     } else if (isElement(object.target) || isElement(object.srcElement)) {
@@ -427,7 +428,7 @@ $ext(Object, {
     var filter = $A(arguments), object = filter.shift(), copy = {}, key;
 
     for (key in object) {
-      if (!filter.includes(key)) {
+      if (!filter.include(key)) {
         copy[key] = object[key];
       }
     }
@@ -881,7 +882,7 @@ Array.include({
   without: function() {
     var filter = $A(arguments);
     return this.filter(function(value) {
-      return !filter.includes(value);
+      return !filter.include(value);
     });
   },
 
@@ -1350,11 +1351,15 @@ RegExp.escape = function(string) {
  *     - MooTools  (http://mootools.net)      Copyright (C) Valerio Proietti
  *     - Ruby      (http://www.ruby-lang.org) Copyright (C) Yukihiro Matsumoto
  *
- * Copyright (C) 2008-2010 Nikolay V. Nemshilov
+ * Copyright (C) 2008-2010 Nikolay Nemshilov
  */
 var Class = RightJS.Class = function() {
   var args = $A(arguments), properties = args.pop() || {},
     parent = args.pop();
+
+  if (parent && parent.ancestors && parent.ancestors[0] === Wrapper) {
+    return new Wrapper(parent, properties);
+  }
 
   // basic class object definition
   function klass() {
@@ -1384,7 +1389,7 @@ var Class = RightJS.Class = function() {
 /**
  * Class utility methods
  *
- * Copyright (C) 2008-2010 Nikolay V. Nemshilov
+ * Copyright (C) 2008-2010 Nikolay Nemshilov
  */
 commons = $w('selfExtended self_extended selfIncluded self_included'),
 extend  = commons.concat($w(PROTO+' parent extend include')),
@@ -1817,12 +1822,12 @@ var Wrapper = RightJS.Wrapper = function(parent, methods) {
   var Klass = function(object, options) {
     this.initialize(object, options);
 
-    var instance = this, unit = instance._, uid;
+    var instance = this, unit = instance._, uid, cast;
 
     // dynamically typecasting in case if the user is creating
     // an element of a subtype via the basic Element constructor
-    if (this.constructor === Element && unit.tagName in Element_wrappers) {
-      instance = new Element_wrappers[unit.tagName](unit);
+    if (this.constructor === Element && (cast = Wrapper.Cast(unit)) !== undefined) {
+      instance = new cast(unit);
       if ('$listeners' in this) {
         instance.$listeners = this.$listeners;
       }
@@ -1847,6 +1852,11 @@ var Wrapper = RightJS.Wrapper = function(parent, methods) {
 
   // including the basic tools
   return Klass.include({_: undefined}, methods);
+};
+
+// searches for a suitable class for dynamic typecasting
+Wrapper.Cast = function(unit) {
+  return unit.tagName in Element_wrappers ? Element_wrappers[unit.tagName] : undefined;
 };
 
 // exposing the cache so it could be manupulated externally
@@ -2077,6 +2087,20 @@ var Event = RightJS.Event = new Wrapper({
   },
 
   /**
+   * Returns the event's offset relative to the target element
+   *
+   * @return Object {x: ..., y: ...}
+   */
+  offset: function() {
+    var element_position = this.target.position();
+
+    return {
+      x: this.pageX - element_position.x,
+      y: this.pageY - element_position.y
+    };
+  },
+
+  /**
    * Finds the element between the event target
    * and the boundary element that matches the
    * css-rule
@@ -2085,7 +2109,7 @@ var Event = RightJS.Event = new Wrapper({
    * @return Element element or null
    */
   find: function(css_rule) {
-    if (this.target instanceof Element) {
+    if (this.target instanceof Element && !!this.currentTarget) {
       var target   = this.target,
           targets  = [target].concat(target.parents()),
           search   = this.currentTarget.find(css_rule);
@@ -2284,11 +2308,11 @@ Element.include({
 
     if (typeof(content) !== 'object') {
       scripts = content = (''+content);
-    } else if (content && content instanceof Element) {
+    } else if (content instanceof Element) {
       content = content._;
     }
 
-    Element_insertions[position](element, content.tagName ? content :
+    Element_insertions[position](element, content.nodeType ? content :
       Element_createFragment.call(
         (position === 'bottom' || position === 'top') ?
           element : element.parentNode, content
@@ -2358,6 +2382,19 @@ Element.include({
    */
   html: function(content) {
     return content === undefined ? this._.innerHTML : this.update(content);
+  },
+
+  /**
+   * Works with the Element's innerHTML property as a text
+   * when set something, it will appear as is with everything quoted
+   * when get, will return a string without any tags in it
+   *
+   * @param String text content
+   * @return String text content or Element this
+   */
+  text: function(text) {
+    return text === undefined ? this._.innerHTML.stripTags() :
+      this.update(this.document()._.createTextNode(text));
   },
 
   /**
@@ -2621,6 +2658,15 @@ Element.include({
   setClass: function(class_name) {
     this._.className = class_name;
     return this;
+  },
+
+  /**
+   * Returns the current class-name
+   *
+   * @return String class-name
+   */
+  getClass: function() {
+    return this._.className;
   },
 
   /**
@@ -3071,7 +3117,7 @@ hack_observer('on',
 
   '$2.w=function(){'+
     'var a=$A(arguments),_;'+
-    '$2.r&&$2.r!=="stopEvent"?a.shift():_=a[0]=new RightJS.Event(a[0],this);'+
+    '$2.r?a.shift():_=a[0]=new RightJS.Event(a[0],this);'+
     '$2.f.apply($2.t,a.concat($2.a))===false&&_.stop()'+
   '};$2.t=this;' + (
     looks_like_ie ?
@@ -3083,9 +3129,9 @@ hack_observer('on',
 hack_observer('stopObserving',
   /(function\s*\((\w+)\)\s*\{\s*)(return\s*)([^}]+)/m,
   '$1var r=$4;'+
-  'if(!r)' + (looks_like_ie ?
-    'this._.detachEvent("on"+$2.n,$2.w);' :
-    'this._.removeEventListener($2.n,$2.w,false);'
+  'if(!r)this._.' + (looks_like_ie ?
+    'detachEvent("on"+$2.n,$2.w);' :
+    'removeEventListener($2.n,$2.w,false);'
   )+'$3 r'
 );
 
@@ -3100,11 +3146,11 @@ hack_observer('fire',
 // addjusting the arguments list
 hack_observer('fire',
   /((\w+)\.e\s*===\s*(\w+))([^}]+\2\.f\.apply)[^}]+?\.concat\(\w+\)\)/,
-  '$1.type$4(this,(($2.r&&$1.r!=="stopEvent")?[]:[$3]).concat($2.a))'
+  '$1.type$4(this,($2.r?[]:[$3]).concat($2.a))'
 );
 
 // a simple events terminator method to be hooked like this.onClick('stopEvent');
-Element_observer.stopEvent = function(e) { e.stop(); };
+Element_observer.stopEvent = function() { return false; };
 
 // loading the observer interface into the Element object
 Element.include(Element_observer);
@@ -3222,7 +3268,7 @@ Element.include({
       // IE and Konqueror browsers
       if ('readyState' in document) {
         (function() {
-          if (['loaded','complete'].includes(document.readyState)) {
+          if (['loaded','complete'].include(document.readyState)) {
             ready();
           } else {
             arguments.callee.delay(50);
@@ -3289,7 +3335,7 @@ var Form = RightJS.Form = Element_wrappers.FORM = new Wrapper(Element, {
   initialize: function(in_options) {
     var options = in_options || {}, remote = 'remote' in options, element = options;
 
-    if (isHash(options)) {
+    if (isHash(options) && !isElement(options)) {
       element = 'form';
       options = Object.without(options, 'remote');
     }
@@ -3317,7 +3363,7 @@ var Form = RightJS.Form = Element_wrappers.FORM = new Wrapper(Element, {
    */
   inputs: function() {
     return this.elements().filter(function(input) {
-      return !['submit', 'button', 'reset', 'image', null].includes(input._.type);
+      return !['submit', 'button', 'reset', 'image', null].include(input._.type);
     });
   },
 
@@ -3387,7 +3433,7 @@ var Form = RightJS.Form = Element_wrappers.FORM = new Wrapper(Element, {
     this.inputs().each(function(element) {
       input = element._;
       name  = input.name;
-      if (!input.disabled && name && (!['checkbox', 'radio'].includes(input.type) || input.checked)) {
+      if (!input.disabled && name && (!['checkbox', 'radio'].include(input.type) || input.checked)) {
         value = element.getValue();
         if (name.endsWith('[]')) {
           value = (values[name] || []).concat([value]);
@@ -3474,7 +3520,7 @@ new Wrapper(Element, {
    */
   initialize: function(element, options) {
     // type to tag name conversion
-    if (!element || isHash(element)) {
+    if (!element || (isHash(element) && !isElement(element))) {
       options = element || {};
 
       if (/textarea|select/.test(options.type || '')) {
@@ -3552,7 +3598,7 @@ new Wrapper(Element, {
     if (this._.type == 'select-multiple') {
       value = ensure_array(value).map(String);
       $A(this._.getElementsByTagName('option')).each(function(option) {
-        option.selected = value.includes(option.value);
+        option.selected = value.include(option.value);
       });
     } else {
       this._.value = value;
@@ -3927,13 +3973,12 @@ if (!event_support_for('onchange', 'input')) {
 function build_delegative_listener(css_rule, entry, scope) {
   return function(event) {
     var target = event.target, args = $A(entry), callback = args.shift();
-    if (scope.find(css_rule).includes(target)) {
-      if (isFunction(callback)) {
-        callback.apply(target, [event].concat(args));
-      } else {
+    if (scope.find(css_rule).include(target)) {
+      return isFunction(callback) ?
+        callback.apply(target, [event].concat(args)) :
         target[callback].apply(target, args);
-      }
     }
+    return undefined;
   };
 }
 
@@ -4191,7 +4236,7 @@ var Xhr = RightJS.Xhr = new Class(Observer, {
     }
 
     if (method == 'get') {
-      if (data) { url += (url.includes('?') ? '&' : '?') + data; }
+      if (data) { url += (url.include('?') ? '&' : '?') + data; }
       data = null;
     }
 
@@ -4528,6 +4573,8 @@ Xhr.IFramed = new Class({
   onLoad: function() {
     this.status       = 200;
     this.readyState   = 4;
+    
+    this.form.set('target', '');
 
     try {
       this.responseText = window[this.id].document.documentElement.innerHTML;
@@ -5120,7 +5167,7 @@ function clean_styles(element, before, after) {
   // cleaing up the list
   for (key in after) {
     // proprocessing colors
-    if (after[key] !== before[key] && !remove.includes(key) && /color/i.test(key)) {
+    if (after[key] !== before[key] && !remove.include(key) && /color/i.test(key)) {
       if (Browser.Opera) {
         after[key] = after[key].replace(/"/g, '');
         before[key] = before[key].replace(/"/g, '');
@@ -5138,7 +5185,7 @@ function clean_styles(element, before, after) {
     }
 
     // removing unprocessable keys
-    if (after[key] === before[key] || remove.includes(key) || !/\d/.test(before[key]) || !/\d/.test(after[key])) {
+    if (after[key] === before[key] || remove.include(key) || !/\d/.test(before[key]) || !/\d/.test(after[key])) {
       delete(after[key]);
       delete(before[key]);
     }
@@ -5380,7 +5427,7 @@ Fx.Slide = new Class(Fx.Twin, {
       margin_top  = this.styles.marginTop.toFloat() || 0;
 
     if (this.how == 'out') {
-      style[['top', 'bottom'].includes(direction) ? 'height' : 'width'] = '0px';
+      style[['top', 'bottom'].include(direction) ? 'height' : 'width'] = '0px';
 
       if (direction == 'right') {
         style.marginLeft = margin_left + size.x+'px';
@@ -5391,7 +5438,7 @@ Fx.Slide = new Class(Fx.Twin, {
     } else if (this.how == 'in') {
       var element_style = this.element._.style;
 
-      if (['top', 'bottom'].includes(direction)) {
+      if (['top', 'bottom'].include(direction)) {
         style.height = size.y + 'px';
         element_style.height = '0px';
       } else {
