@@ -1,3 +1,9 @@
+2010-10-17 Nikolay Nemshilov
+  o Version 1.0.9
+    * RightJS 2.1.1 build
+    * Selectable module update
+    * tooltip -> tooltips rename
+
 2010-10-11 Nikolay Nemshilov
   o Version 1.0.8
     * RightJS 2.1.0 build
