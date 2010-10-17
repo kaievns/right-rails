@@ -20,7 +20,7 @@ var RightJS = function(value) {
   return value; // <- a dummy method to emulate the safe-mode
 };
 
-RightJS.version = "2.1.0";
+RightJS.version = "2.1.1";
 RightJS.modules =["core", "dom", "form", "events", "xhr", "fx", "cookie"];
 
 
@@ -412,6 +412,17 @@ $ext(Object, {
   empty: function(object) {
     for (var key in object) { return false; }
     return true;
+  },
+
+  /**
+   * A simple cloning method
+   * NOTE: does not clone the things recoursively!
+   *
+   * @param Object object
+   * @return Object clone
+   */
+  clone: function(object) {
+    return Object.merge(object);
   },
 
   /**
@@ -2160,9 +2171,7 @@ elements_cache = {},
  */
 element_constructor = function(element, options) {
   // building the element
-  this._ = element = (element in elements_cache ? elements_cache[element] :
-    (elements_cache[element] = document.createElement(element))
-  ).cloneNode(false);
+  this._ = element = document.createElement(element);
 
   // applying the options
   if (options !== undefined) {
@@ -2585,7 +2594,7 @@ Element.include({
   setStyle: function(hash, value) {
     var key, c_key, style = {}, element_style = this._.style;
 
-    if (value) { style[hash] = value; hash = style; }
+    if (value !== undefined) { style[hash] = value; hash = style; }
     else if(isString(hash)) {
       hash.split(';').each(function(option) {
         var els = option.split(':').map('trim');
@@ -3490,9 +3499,7 @@ $alias(Form[PROTO], {
  *
  * Copyright (C) 2010 Nikolay Nemshilov
  */
-var old_insert = Element[PROTO].insert,
-
-Input = RightJS.Input =
+var Input = RightJS.Input =
 
 // retgistering the typecasted wrappers
 Element_wrappers.INPUT    =
@@ -3544,26 +3551,6 @@ new Wrapper(Element, {
   },
 
   /**
-   * SELECT element has a bug in FF that screws the selected options
-   *
-   * @param mixed content
-   * @param String optional position
-   * @return Input this
-   */
-  insert: function(content, position) {
-    old_insert.call(this, content, position);
-
-    // FF doesn't marks selected options correctly with a textual content
-    if (this._.tagName === 'SELECT' && isString(content)) {
-      $A(this._.getElementsByTagName('option')).each(function(option) {
-        option.selected = !!option.getAttribute('selected');
-      });
-    }
-
-    return this;
-  },
-
-  /**
    * Overloading the method so it always called the '#insert' method
    *
    * @param mixed content
@@ -3580,8 +3567,8 @@ new Wrapper(Element, {
    */
   getValue: function() {
     if (this._.type == 'select-multiple') {
-      return $A(this._.getElementsByTagName('option')).map(function(option) {
-        return option.selected ? option.value : null;
+      return this.find('option').map(function(option) {
+        return option._.selected ? option._.value : null;
       }).compact();
     } else {
       return this._.value;
@@ -3597,8 +3584,8 @@ new Wrapper(Element, {
   setValue: function(value) {
     if (this._.type == 'select-multiple') {
       value = ensure_array(value).map(String);
-      $A(this._.getElementsByTagName('option')).each(function(option) {
-        option.selected = value.include(option.value);
+      this.find('option').each(function(option) {
+        option._.selected = value.include(option._.value);
       });
     } else {
       this._.value = value;
@@ -3698,6 +3685,19 @@ new Wrapper(Element, {
   }
 });
 
+// SELECT element has a bug in FF that screws the selected options
+if ($E('select').update('<option selected="true">1</option><option>2</option>')._.value === '2') {
+  Input[PROTO].insert = function(content, position) {
+    Element[PROTO].insert.call(this, content, position);
+
+    // manually resetting the selected option in here
+    this.find('option').each(function(option) {
+      option._.selected = !!option.get('selected');
+    });
+
+    return this;
+  };
+}
 
 /**
  * This module provides the artificial events bubbling feature
