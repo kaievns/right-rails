@@ -44,7 +44,7 @@ PROTO = 'prototype', A_proto = Array[PROTO],
 to_s = Object[PROTO].toString, slice = A_proto.slice,
 dummy = function() { return function() {}; },
 HTML = document.documentElement, UID = 1,  // !#server
-Wrappers_Cache = [], UID_KEY = '_rjs_id',  // !#server
+Wrappers_Cache = [], UID_KEY = '_rjs_id',
 
 /**
  * extends the first object with the keys and values of the second one
@@ -1368,9 +1368,11 @@ var Class = RightJS.Class = function() {
   var args = $A(arguments), properties = args.pop() || {},
     parent = args.pop();
 
+// !#server:begin
   if (parent && parent.ancestors && parent.ancestors[0] === Wrapper) {
     return new Wrapper(parent, properties);
   }
+// !#server:end
 
   // basic class object definition
   function klass() {

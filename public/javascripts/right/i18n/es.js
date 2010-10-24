@@ -40,3 +40,19 @@ if (self.Colorpicker) {
     Done: 'Hecho'
   });
 }
+
+if (self.Dialog) {
+  $ext(Dialog.i18n, {
+    Ok:       'Ok',
+    Close:    'Cerrar',
+    Cancel:   'Cancelar',
+    Help:     'Ayuda',
+    Expand:   'Expandir',
+    Collapse: 'Plegar',
+
+    Alert:    'Aviso!',
+    Confirm:  'Confirmar',
+    Prompt:   'Entrar'
+  })
+}
+
