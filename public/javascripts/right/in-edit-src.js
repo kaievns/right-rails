@@ -1,8 +1,8 @@
 /**
- * Inline editor feature for RightJS
- *  http://rightjs.org/ui/in-edit
+ * RightJS-UI InEdit v2.2.0
+ * http://rightjs.org/ui/in-edit
  *
- * Copyright (C) 2009-2010 Nikolay Nemshilov
+ * Copyright (C) 2009-2011 Nikolay Nemshilov
  */
 var InEdit = RightJS.InEdit = (function(document, RightJS) {
 /**
@@ -10,29 +10,8 @@ var InEdit = RightJS.InEdit = (function(document, RightJS) {
  * it creates an abstract proxy with the common functionality
  * which then we reuse and override in the actual widgets
  *
- * Copyright (C) 2010 Nikolay Nemshilov
+ * Copyright (C) 2010-2011 Nikolay Nemshilov
  */
-
-/**
- * In-Edit plugin initalization
- *
- * Copyright (C) 2010 Nikolay Nemshilov
- */
-var R = RightJS,
-    $ = RightJS.$,
-    $w = RightJS.$w,
-    Xhr     = RightJS.Xhr,
-    Object  = RightJS.Object,
-    Element = RightJS.Element,
-    Input   = RightJS.Input;
-
-
-
-
-
-
-
-
 
 /**
  * The widget units constructor
@@ -52,7 +31,7 @@ function Widget(tag_name, methods) {
    *
    * Copyright (C) 2010 Nikolay Nemshilov
    */
-  var AbstractWidget = new RightJS.Wrapper(RightJS.Element.Wrappers[tag_name] || RightJS.Element, {
+  var AbstractWidget = new RightJS.Class(RightJS.Element.Wrappers[tag_name] || RightJS.Element, {
     /**
      * The common constructor
      *
@@ -84,7 +63,8 @@ function Widget(tag_name, methods) {
         options = {};
       }
       this.setOptions(options, this);
-      return this;
+
+      return (RightJS.Wrapper.Cache[RightJS.$uid(this._)] = this);
     },
 
   // protected
@@ -97,12 +77,16 @@ function Widget(tag_name, methods) {
      * @return void
      */
     setOptions: function(options, element) {
-      element = element || this;
-      RightJS.Options.setOptions.call(this,
-        RightJS.Object.merge(options, eval("("+(
+      if (element) {
+        options = RightJS.Object.merge(options, new Function("return "+(
           element.get('data-'+ this.key) || '{}'
-        )+")"))
-      );
+        ))());
+      }
+
+      if (options) {
+        RightJS.Options.setOptions.call(this, RightJS.Object.merge(this.options, options));
+      }
+
       return this;
     }
   });
@@ -111,7 +95,7 @@ function Widget(tag_name, methods) {
    * Creating the actual widget class
    *
    */
-  var Klass = new RightJS.Wrapper(AbstractWidget, methods);
+  var Klass = new RightJS.Class(AbstractWidget, methods);
 
   // creating the widget related shortcuts
   RightJS.Observer.createShortcuts(Klass.prototype, Klass.EVENTS || []);
@@ -123,9 +107,9 @@ function Widget(tag_name, methods) {
 /**
  * A shared module to create textual spinners
  *
- * Copyright (C) 2010 Nikolay Nemshilov
+ * Copyright (C) 2010-2011 Nikolay Nemshilov
  */
-var Spinner = new RightJS.Wrapper(RightJS.Element, {
+var Spinner = new RightJS.Class(RightJS.Element, {
   /**
    * Constructor
    *
@@ -161,13 +145,34 @@ var Spinner = new RightJS.Wrapper(RightJS.Element, {
 
 
 /**
+ * In-Edit plugin initalization
+ *
+ * Copyright (C) 2010 Nikolay Nemshilov
+ */
+var R = RightJS,
+    $ = RightJS.$,
+    $w = RightJS.$w,
+    Xhr     = RightJS.Xhr,
+    Object  = RightJS.Object,
+    Element = RightJS.Element,
+    Input   = RightJS.Input;
+
+
+
+
+
+
+
+
+
+/**
  * An inline editor feature
  *
- * Copyright (C) 2009-2010 Nikolay Nemshilov
+ * Copyright (C) 2009-2011 Nikolay Nemshilov
  */
 var InEdit = new Widget('FORM', {
   extend: {
-    version: '2.0.0',
+    version: '2.2.0',
 
     EVENTS: $w('show hide send update'),
 
@@ -351,7 +356,18 @@ Element.include({
 });
 
 
-document.write("<style type=\"text/css\">div.rui-spinner,div.rui-spinner div{margin:0;padding:0;border:none;background:none;list-style:none;font-weight:normal;float:none;display:inline-block; *display:inline; *zoom:1;border-radius:.12em;-moz-border-radius:.12em;-webkit-border-radius:.12em}div.rui-spinner{text-align:center;white-space:nowrap;background:#EEE;border:1px solid #DDD;height:1.2em;padding:0 .2em}div.rui-spinner div{width:.4em;height:70%;background:#BBB;margin-left:1px}div.rui-spinner div:first-child{margin-left:0}div.rui-spinner div.glowing{background:#777}form.rui-in-edit,form.rui-in-edit .cancel{margin:0;padding:0;float:none;position:static}form.rui-in-edit{display:inline-block; *display:inline; *zoom:1;border:none;background:none}form.rui-in-edit div.rui-spinner{margin-right:.2em}form.rui-in-edit div.rui-spinner div{margin-top:.2em}form.rui-in-edit textarea.field{width:100%;margin-bottom:.5em}form.rui-in-edit .field,form.rui-in-edit .submit{margin-right:.2em}form.rui-in-edit,form.rui-in-edit .field,form.rui-in-edit .submit,form.rui-in-edit div.rui-spinner,form.rui-in-edit .cancel{vertical-align:middle}</style>");
+var embed_style = document.createElement('style'),                 
+    embed_rules = document.createTextNode("div.rui-spinner,div.rui-spinner div{margin:0;padding:0;border:none;background:none;list-style:none;font-weight:normal;float:none;display:inline-block; *display:inline; *zoom:1;border-radius:.12em;-moz-border-radius:.12em;-webkit-border-radius:.12em}div.rui-spinner{text-align:center;white-space:nowrap;background:#EEE;border:1px solid #DDD;height:1.2em;padding:0 .2em}div.rui-spinner div{width:.4em;height:70%;background:#BBB;margin-left:1px}div.rui-spinner div:first-child{margin-left:0}div.rui-spinner div.glowing{background:#777}form.rui-in-edit,form.rui-in-edit .cancel{margin:0;padding:0;float:none;position:static}form.rui-in-edit{display:inline-block; *display:inline; *zoom:1;border:none;background:none}form.rui-in-edit div.rui-spinner{margin-right:.2em}form.rui-in-edit div.rui-spinner div{margin-top:.2em}form.rui-in-edit textarea.field{width:100%;margin-bottom:.5em}form.rui-in-edit .field,form.rui-in-edit .submit{margin-right:.2em}form.rui-in-edit,form.rui-in-edit .field,form.rui-in-edit .submit,form.rui-in-edit div.rui-spinner,form.rui-in-edit .cancel{vertical-align:middle}");      
+                                                                   
+embed_style.type = 'text/css';                                     
+document.getElementsByTagName('head')[0].appendChild(embed_style); 
+                                                                   
+if(embed_style.styleSheet) {                                       
+  embed_style.styleSheet.cssText = embed_rules.nodeValue;          
+} else {                                                           
+  embed_style.appendChild(embed_rules);                            
+}                                                                  
+
 
 return InEdit;
 })(document, RightJS);

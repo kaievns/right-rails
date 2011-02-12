@@ -1,9 +1,8 @@
 /**
- * RightJS UI Colorpicker widget
+ * RightJS-UI Colorpicker v2.2.0
+ * http://rightjs.org/ui/colorpicker
  *
- * See http://rightjs.org/ui/colorpicker
- *
- * Copyright (C) 2010 Nikolay Nemshilov
+ * Copyright (C) 2010-2011 Nikolay Nemshilov
  */
 var Colorpicker = RightJS.Colorpicker = (function(document, Math, parseInt, RightJS) {
 /**
@@ -11,32 +10,8 @@ var Colorpicker = RightJS.Colorpicker = (function(document, Math, parseInt, Righ
  * it creates an abstract proxy with the common functionality
  * which then we reuse and override in the actual widgets
  *
- * Copyright (C) 2010 Nikolay Nemshilov
+ * Copyright (C) 2010-2011 Nikolay Nemshilov
  */
-
-/**
- * The initialization files list
- *
- * Copyright (C) 2010 Nikolay Nemshilov
- */
-
-var R = RightJS,
-    $ = RightJS.$,
-    $w = RightJS.$w,
-    $$ = RightJS.$$,
-    $E = RightJS.$E,
-    $A = RightJS.$A,
-    isArray = RightJS.isArray,
-    Wrapper = RightJS.Wrapper,
-    Element = RightJS.Element,
-    Input   = RightJS.Input;
-
-
-
-
-
-
-
 
 /**
  * The widget units constructor
@@ -56,7 +31,7 @@ function Widget(tag_name, methods) {
    *
    * Copyright (C) 2010 Nikolay Nemshilov
    */
-  var AbstractWidget = new RightJS.Wrapper(RightJS.Element.Wrappers[tag_name] || RightJS.Element, {
+  var AbstractWidget = new RightJS.Class(RightJS.Element.Wrappers[tag_name] || RightJS.Element, {
     /**
      * The common constructor
      *
@@ -88,7 +63,8 @@ function Widget(tag_name, methods) {
         options = {};
       }
       this.setOptions(options, this);
-      return this;
+
+      return (RightJS.Wrapper.Cache[RightJS.$uid(this._)] = this);
     },
 
   // protected
@@ -101,12 +77,16 @@ function Widget(tag_name, methods) {
      * @return void
      */
     setOptions: function(options, element) {
-      element = element || this;
-      RightJS.Options.setOptions.call(this,
-        RightJS.Object.merge(options, eval("("+(
+      if (element) {
+        options = RightJS.Object.merge(options, new Function("return "+(
           element.get('data-'+ this.key) || '{}'
-        )+")"))
-      );
+        ))());
+      }
+
+      if (options) {
+        RightJS.Options.setOptions.call(this, RightJS.Object.merge(this.options, options));
+      }
+
       return this;
     }
   });
@@ -115,7 +95,7 @@ function Widget(tag_name, methods) {
    * Creating the actual widget class
    *
    */
-  var Klass = new RightJS.Wrapper(AbstractWidget, methods);
+  var Klass = new RightJS.Class(AbstractWidget, methods);
 
   // creating the widget related shortcuts
   RightJS.Observer.createShortcuts(Klass.prototype, Klass.EVENTS || []);
@@ -130,9 +110,9 @@ function Widget(tag_name, methods) {
  *       so those buttons didn't interfere with
  *       the user's tab-index on his page
  *
- * Copyright (C) 2010 Nikolay Nemshilov
+ * Copyright (C) 2010-2011 Nikolay Nemshilov
  */
-var Button = new RightJS.Wrapper(RightJS.Element, {
+var Button = new RightJS.Class(RightJS.Element, {
   /**
    * Constructor
    *
@@ -202,30 +182,81 @@ var Button = new RightJS.Wrapper(RightJS.Element, {
  * A shared module that toggles a widget visibility status
  * in a uniformed way according to the options settings
  *
- * Copyright (C) 2010 Nikolay Nemshilov
+ * Copyright (C) 2010-2011 Nikolay Nemshilov
  */
+var Toggler = {
+  /**
+   * Shows the element
+   *
+   * @param String fx-name
+   * @param Object fx-options
+   * @return Element this
+   */
+  show: function(fx_name, fx_options) {
+    this.constructor.current = this;
+    return Toggler_toggle(this, 'show', fx_name, fx_options);
+  },
+
+  /**
+   * Hides the element
+   *
+   * @param String fx-name
+   * @param Object fx-options
+   * @return Element this
+   */
+  hide: function(fx_name, fx_options) {
+    this.constructor.current = null;
+    return Toggler_toggle(this, 'show', fx_name, fx_options);
+  },
+
+  /**
+   * Toggles the widget at the given element
+   *
+   * @param Element the related element
+   * @param String position right/bottom (bottom is the default)
+   * @param Boolean marker if the element should be resized to the element size
+   * @return Widget this
+   */
+  showAt: function(element, where, resize) {
+    this.hide(null).shownAt = element = RightJS.$(element);
+
+    // moves this element at the given one
+    Toggler_re_position.call(this, element, where, resize);
+
+    return this.show();
+  },
+
+  /**
+   * Toggles the widget at the given element
+   *
+   * @param Element the related element
+   * @param String position top/left/right/bottom (bottom is the default)
+   * @param Boolean marker if the element should be resized to the element size
+   * @return Widget this
+   */
+  toggleAt: function(element, where, resize) {
+    return this.hidden() ? this.showAt(element, where, resize) : this.hide();
+  }
+};
+
 
 /**
- * The toggler's common functionality
+ * toggles the element's state according to the current settings
  *
- * NOTE: this function getting called in the context
- *       of a widget
- *
- * @param Element the element to toggle
  * @param event String 'show' or 'hide' the event name
  * @param String an optional fx-name
  * @param Object an optional fx-options hash
  * @return void
  */
-function toggler(element, event, fx_name, fx_options) {
+function Toggler_toggle(element, event, fx_name, fx_options) {
   if (RightJS.Fx) {
     if (fx_name === undefined) {
-      fx_name = this.options.fxName;
+      fx_name = element.options.fxName;
 
       if (fx_options === undefined) {
         fx_options = {
-          duration: this.options.fxDuration,
-          onFinish: RightJS(this.fire).bind(this, event)
+          duration: element.options.fxDuration,
+          onFinish: RightJS(element.fire).bind(element, event)
         };
 
         // hide on double time
@@ -237,12 +268,10 @@ function toggler(element, event, fx_name, fx_options) {
     }
   }
 
-  RightJS.Element.prototype[event].call(element, fx_name, fx_options);
-
   // manually trigger the event if no fx were specified
-  if (!RightJS.Fx || !fx_name) { this.fire(event); }
+  if (!RightJS.Fx || !fx_name) { element.fire(event); }
 
-  return this;
+  return element.$super(fx_name, fx_options);
 }
 
 /**
@@ -257,7 +286,7 @@ function toggler(element, event, fx_name, fx_options) {
  * @param Boolean if `true` then the element size will be adjusted
  * @return void
  */
-function re_position(element, where, resize) {
+function Toggler_re_position(element, where, resize) {
   var anchor = this.reAnchor || (this.reAnchor =
         new RightJS.Element('div', {'class': 'rui-re-anchor'}))
         .insert(this),
@@ -287,7 +316,7 @@ function re_position(element, where, resize) {
   target.moveTo(left, top);
 
   if (resize) {
-    if (['left', 'right'].include(where)) {
+    if (where === 'left' || where === 'right') {
       target.setHeight(height);
     } else {
       target.setWidth(width);
@@ -297,67 +326,6 @@ function re_position(element, where, resize) {
   // rolling the invisibility back
   target.setStyle('visibility:visible').hide(null);
 }
-
-/**
- * The actual shared module to be inserted in the widgets
- *
- * Copyright (C) 2010 Nikolay Nemshilov
- */
-var Toggler = {
-  /**
-   * Shows the element
-   *
-   * @param String fx-name
-   * @param Object fx-options
-   * @return Element this
-   */
-  show: function(fx_name, fx_options) {
-    this.constructor.current = this;
-    return toggler.call(this, this, 'show', fx_name, fx_options);
-  },
-
-  /**
-   * Hides the element
-   *
-   * @param String fx-name
-   * @param Object fx-options
-   * @return Element this
-   */
-  hide: function(fx_name, fx_options) {
-    this.constructor.current = null;
-    return toggler.call(this, this, 'hide', fx_name, fx_options);
-  },
-
-  /**
-   * Toggles the widget at the given element
-   *
-   * @param Element the related element
-   * @param String position right/bottom (bottom is the default)
-   * @param Boolean marker if the element should be resized to the element size
-   * @return Widget this
-   */
-  showAt: function(element, where, resize) {
-    this.hide(null).shownAt = element = RightJS.$(element);
-
-    // moves this element at the given one
-    re_position.call(this, element, where, resize);
-
-    return this.show();
-  },
-
-  /**
-   * Toggles the widget at the given element
-   *
-   * @param Element the related element
-   * @param String position top/left/right/bottom (bottom is the default)
-   * @param Boolean marker if the element should be resized to the element size
-   * @return Widget this
-   */
-  toggleAt: function(element, where, resize) {
-    return this.hidden() ? this.showAt(element, where, resize) : this.hide();
-  }
-};
-
 
 /**
  * A shared module that provides for the widgets an ability
@@ -414,15 +382,39 @@ var Assignable = {
 
 
 /**
- * The basic file for Colorpicker
+ * The initialization files list
  *
  * Copyright (C) 2010 Nikolay Nemshilov
+ */
+
+var R = RightJS,
+    $ = RightJS.$,
+    $w = RightJS.$w,
+    $$ = RightJS.$$,
+    $E = RightJS.$E,
+    $A = RightJS.$A,
+    isArray = RightJS.isArray,
+    Class   = RightJS.Class,
+    Element = RightJS.Element,
+    Input   = RightJS.Input;
+
+
+
+
+
+
+
+
+/**
+ * The basic file for Colorpicker
+ *
+ * Copyright (C) 2010-2011 Nikolay Nemshilov
  */
 var Colorpicker = new Widget({
   include: [Toggler, Assignable],
 
   extend: {
-    version: '2.0.0',
+    version: '2.2.0',
 
     EVENTS: $w('change show hide done'),
 
@@ -748,9 +740,9 @@ var Colorpicker = new Widget({
 /**
  * The colors field element
  *
- * Copyright (C) 2010
+ * Copyright (C) 2010-2011
  */
-var Field = new Wrapper(Element, {
+var Field = new Class(Element, {
   initialize: function(options) {
     this.$super('div', {'class': 'field'});
     this.insert(this.pointer = $E('div', {'class': 'pointer'}));
@@ -761,9 +753,9 @@ var Field = new Wrapper(Element, {
 /**
  * The tint picker block
  *
- * Copyright (C) 2010 Nikolay Nemshilov
+ * Copyright (C) 2010-2011 Nikolay Nemshilov
  */
-var Colors = new Wrapper(Element, {
+var Colors = new Class(Element, {
   initialize: function() {
     this.$super('div', {'class': 'colors'});
     this.insert(this.pointer = $E('div', {'class': 'pointer'}));
@@ -774,9 +766,9 @@ var Colors = new Wrapper(Element, {
 /**
  * The controls block unit
  *
- * Copyright (C) 2010 Nikolay Nemshilov
+ * Copyright (C) 2010-2011 Nikolay Nemshilov
  */
-var Controls = new Wrapper(Element, {
+var Controls = new Class(Element, {
   initialize: function() {
     this.$super('div', {'class': 'controls'});
     this.insert([
@@ -972,7 +964,18 @@ $(document).on({
 });
 
 
-document.write("<style type=\"text/css\"> *.rui-button{display:inline-block; *display:inline; *zoom:1;height:1em;line-height:1em;margin:0;padding:.2em .5em;text-align:center;border:1px solid #CCC;border-radius:.2em;-moz-border-radius:.2em;-webkit-border-radius:.2em;cursor:pointer;color:#333;background-color:#FFF;user-select:none;-moz-user-select:none;-webkit-user-select:none} *.rui-button:hover{color:#111;border-color:#999;background-color:#DDD;box-shadow:#888 0 0 .1em;-moz-box-shadow:#888 0 0 .1em;-webkit-box-shadow:#888 0 0 .1em} *.rui-button:active{color:#000;border-color:#777;text-indent:1px;box-shadow:none;-moz-box-shadow:none;-webkit-box-shadow:none} *.rui-button-disabled, *.rui-button-disabled:hover, *.rui-button-disabled:active{color:#888;background:#DDD;border-color:#CCC;cursor:default;text-indent:0;box-shadow:none;-moz-box-shadow:none;-webkit-box-shadow:none}div.rui-re-anchor{margin:0;padding:0;background:none;border:none;float:none;display:inline;position:absolute;z-index:9999}.rui-panel{margin:0;padding:.5em;position:relative;background-color:#EEE;border:1px solid #BBB;border-radius:.3em;-moz-border-radius:.3em;-webkit-border-radius:.3em;box-shadow:.15em .3em .5em #BBB;-moz-box-shadow:.15em .3em .5em #BBB;-webkit-box-shadow:.15em .3em .5em #BBB;cursor:default}div.rui-colorpicker .field,div.rui-colorpicker .field *,div.rui-colorpicker .colors,div.rui-colorpicker .colors *{border:none;background:none;width:auto;height:auto;position:static;float:none;top:none;left:none;right:none;bottom:none;margin:0;padding:0;display:block;font-weight:normal;vertical-align:center}div.rui-colorpicker div.field,div.rui-colorpicker div.field div.pointer,div.rui-colorpicker div.colors,div.rui-colorpicker div.colors div.pointer{background:url(/images/rightjs-ui/colorpicker.png) no-repeat 0 0}div.rui-colorpicker div.field,div.rui-colorpicker div.colors,div.rui-colorpicker div.controls{display:inline-block; *display:inline; *zoom:1;position:relative;vertical-align:top;height:150px}div.rui-colorpicker div.field div.pointer,div.rui-colorpicker div.colors div.pointer{position:absolute;top:0px;left:0;width:9px;height:9px}div.rui-colorpicker input.display,div.rui-colorpicker div.preview,div.rui-colorpicker div.rgb-display,div.rui-colorpicker input.rui-ui-button{font-size:100%;display:block;width:auto;padding:0 .2em}div.rui-colorpicker input.display,div.rui-colorpicker div.preview,div.rui-colorpicker div.rgb-display input,div.rui-colorpicker input.rui-ui-button{border:1px solid #AAA;-moz-border-radius:.2em;-webkit-border-radius:.2em}div.rui-colorpicker div.field{width:150px;background-color:red;cursor:crosshair;margin-right:1.2em}div.rui-colorpicker div.field div.pointer{background-position:-170px 0;margin-left:-2px;margin-top:-2px}div.rui-colorpicker div.colors{width:16px;background-position:-150px 0;border-color:#EEE;cursor:pointer;margin-right:.6em}div.rui-colorpicker div.colors div.pointer{cursor:default;background-position:-170px -20px;margin-left:-8px;margin-top:-3px}div.rui-colorpicker div.controls{width:5em}div.rui-colorpicker div.preview{height:2em;background:white;border-color:#BBB}div.rui-colorpicker input.display{margin-top:.5em;background:#FFF;width:4.5em}div.rui-colorpicker div.rgb-display{padding:0;text-align:right;margin-top:.5em}div.rui-colorpicker div.rgb-display label{display:inline}div.rui-colorpicker div.rgb-display label:after{content:none}div.rui-colorpicker div.rgb-display input{vertical-align:top;font-size:100%;width:2em;text-align:right;margin-left:.2em;padding:0 .2em;background:#FFF;margin-bottom:1px;display:inline}div.rui-colorpicker div.rui-button{cursor:pointer;position:absolute;bottom:0;right:0;width:4em}div.rui-colorpicker-inline{display:inline-block; *display:inline; *zoom:1;position:relative;box-shadow:none;-moz-box-shadow:none;-webkit-box-shadow:none;z-index:auto}</style>");
+var embed_style = document.createElement('style'),                 
+    embed_rules = document.createTextNode("*.rui-button{display:inline-block; *display:inline; *zoom:1;height:1em;line-height:1em;margin:0;padding:.2em .5em;text-align:center;border:1px solid #CCC;border-radius:.2em;-moz-border-radius:.2em;-webkit-border-radius:.2em;cursor:pointer;color:#333;background-color:#FFF;user-select:none;-moz-user-select:none;-webkit-user-select:none} *.rui-button:hover{color:#111;border-color:#999;background-color:#DDD;box-shadow:#888 0 0 .1em;-moz-box-shadow:#888 0 0 .1em;-webkit-box-shadow:#888 0 0 .1em} *.rui-button:active{color:#000;border-color:#777;text-indent:1px;box-shadow:none;-moz-box-shadow:none;-webkit-box-shadow:none} *.rui-button-disabled, *.rui-button-disabled:hover, *.rui-button-disabled:active{color:#888;background:#DDD;border-color:#CCC;cursor:default;text-indent:0;box-shadow:none;-moz-box-shadow:none;-webkit-box-shadow:none}div.rui-re-anchor{margin:0;padding:0;background:none;border:none;float:none;display:inline;position:absolute;z-index:9999}.rui-panel{margin:0;padding:.5em;position:relative;background-color:#EEE;border:1px solid #BBB;border-radius:.3em;-moz-border-radius:.3em;-webkit-border-radius:.3em;box-shadow:.15em .3em .5em #BBB;-moz-box-shadow:.15em .3em .5em #BBB;-webkit-box-shadow:.15em .3em .5em #BBB;cursor:default}div.rui-colorpicker .field,div.rui-colorpicker .field *,div.rui-colorpicker .colors,div.rui-colorpicker .colors *{border:none;background:none;width:auto;height:auto;position:static;float:none;top:none;left:none;right:none;bottom:none;margin:0;padding:0;display:block;font-weight:normal;vertical-align:center}div.rui-colorpicker div.field,div.rui-colorpicker div.field div.pointer,div.rui-colorpicker div.colors,div.rui-colorpicker div.colors div.pointer{background:url(/images/rightjs-ui/colorpicker.png) no-repeat 0 0}div.rui-colorpicker div.field,div.rui-colorpicker div.colors,div.rui-colorpicker div.controls{display:inline-block; *display:inline; *zoom:1;position:relative;vertical-align:top;height:150px}div.rui-colorpicker div.field div.pointer,div.rui-colorpicker div.colors div.pointer{position:absolute;top:0px;left:0;width:9px;height:9px}div.rui-colorpicker input.display,div.rui-colorpicker div.preview,div.rui-colorpicker div.rgb-display,div.rui-colorpicker input.rui-ui-button{font-size:100%;display:block;width:auto;padding:0 .2em}div.rui-colorpicker input.display,div.rui-colorpicker div.preview,div.rui-colorpicker div.rgb-display input,div.rui-colorpicker input.rui-ui-button{border:1px solid #AAA;-moz-border-radius:.2em;-webkit-border-radius:.2em}div.rui-colorpicker div.field{width:150px;background-color:red;cursor:crosshair;margin-right:1.2em}div.rui-colorpicker div.field div.pointer{background-position:-170px 0;margin-left:-2px;margin-top:-2px}div.rui-colorpicker div.colors{width:16px;background-position:-150px 0;border-color:#EEE;cursor:pointer;margin-right:.6em}div.rui-colorpicker div.colors div.pointer{cursor:default;background-position:-170px -20px;margin-left:-8px;margin-top:-3px}div.rui-colorpicker div.controls{width:5em}div.rui-colorpicker div.preview{height:2em;background:white;border-color:#BBB}div.rui-colorpicker input.display{margin-top:.5em;background:#FFF;width:4.5em}div.rui-colorpicker div.rgb-display{padding:0;text-align:right;margin-top:.5em}div.rui-colorpicker div.rgb-display label{display:inline}div.rui-colorpicker div.rgb-display label:after{content:none}div.rui-colorpicker div.rgb-display input{vertical-align:top;font-size:100%;width:2em;text-align:right;margin-left:.2em;padding:0 .2em;background:#FFF;margin-bottom:1px;display:inline}div.rui-colorpicker div.rui-button{cursor:pointer;position:absolute;bottom:0;right:0;width:4em}div.rui-colorpicker-inline{display:inline-block; *display:inline; *zoom:1;position:relative;box-shadow:none;-moz-box-shadow:none;-webkit-box-shadow:none;z-index:auto}");      
+                                                                   
+embed_style.type = 'text/css';                                     
+document.getElementsByTagName('head')[0].appendChild(embed_style); 
+                                                                   
+if(embed_style.styleSheet) {                                       
+  embed_style.styleSheet.cssText = embed_rules.nodeValue;          
+} else {                                                           
+  embed_style.appendChild(embed_rules);                            
+}                                                                  
+
 
 return Colorpicker;
 })(document, Math, parseInt, RightJS);

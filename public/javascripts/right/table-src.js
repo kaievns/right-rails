@@ -1,15 +1,9 @@
 /**
- * Tables specific dom-wrapper
+ * Tables specific dom-wrapper v2.2.0
  *
- * Copyright (C) 2010 Nikolay Nemshilov
+ * Copyright (C) 2010-2011 Nikolay Nemshilov
  */
 var Table = RightJS.Table = (function(RightJS) {
-/**
- * Tables specific dom-wrapper
- *
- * Copyright (C) 2010 Nikolay Nemshilov
- */
-
 /**
  * Table plugin initialization script
  *
@@ -26,14 +20,23 @@ var R = RightJS,
 
 
 
+
+/**
+ * Tables specific dom-wrapper
+ *
+ * Copyright (C) 2010-2011 Nikolay Nemshilov
+ */
 var Table = Element.Wrappers.TABLE = new Class(Element, {
 
   extend: {
+    version: '2.2.0',
+
     Options: {
       ascMarker:  '&#x25BC;',  // asc marker content
       descMarker: '&#x25B2;',  // desc marker content
       algorithm:  'text',      // default sorting algorithm 'text' or 'numeric'
-      order:      'asc'        // default order
+      order:      'asc',        // default order
+      sortedClass: 'sorted'
     }
   },
 
@@ -53,7 +56,7 @@ var Table = Element.Wrappers.TABLE = new Class(Element, {
     this.$super(element, options);
 
     this.options = Object.merge(
-      Table.Options, eval('('+ this.get('data-table') + ')')
+      Table.Options, new Function('return '+ this.get('data-table'))
     );
   },
 
@@ -77,6 +80,7 @@ var Table = Element.Wrappers.TABLE = new Class(Element, {
     // handling the fallback from the options
     direction = direction || this.options.order;
     algorithm = algorithm || this.options.algorithm;
+    sortedClass =  this.options.sortedClass;
 
     // collecting the list of sortable rows
     var rows  = this.rows().map(function(row) {
@@ -117,6 +121,10 @@ var Table = Element.Wrappers.TABLE = new Class(Element, {
       this.options[direction === 'asc' ? 'ascMarker' : 'descMarker']
     ).insertTo(th, 'bottom');
     this.marker.asc = direction === 'asc';
+    this.find('th').each(function(th) {
+      th.removeClass(sortedClass);
+    });
+    this.marker.parent().toggleClass(sortedClass);
 
     return this;
   },

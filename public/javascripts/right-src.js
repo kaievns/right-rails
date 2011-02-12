@@ -1,26 +1,26 @@
 /**
- * RightJS, http://rightjs.org
- * Released under the MIT license
+ * RightJS v2.2.2 - http://rightjs.org
+ * Released under the terms of MIT license
  *
- * Copyright (C) 2008-2010 Nikolay Nemshilov
+ * Copyright (C) 2008-2011 Nikolay Nemshilov
  */
 /**
  * The basic layout for RightJS builds
  *
- * Copyright (C) 2010 Nikolay Nemshilov
+ * Copyright (C) 2008-2011 Nikolay Nemshilov
  */
 var RightJS = (function(window, document, Object, Array, String, Function, Number, Math) {
 
 /**
  * The framework description object
  *
- * Copyright (C) 2008-2010 Nikolay Nemshilov
+ * Copyright (C) 2008-2011 Nikolay Nemshilov
  */
 var RightJS = function(value) {
   return value; // <- a dummy method to emulate the safe-mode
 };
 
-RightJS.version = "2.1.1";
+RightJS.version = "2.2.2";
 RightJS.modules =["core", "dom", "form", "events", "xhr", "fx", "cookie"];
 
 
@@ -33,18 +33,16 @@ RightJS.modules =["core", "dom", "form", "events", "xhr", "fx", "cookie"];
  *     - Prototype (http://prototypejs.org)   Copyright (C) Sam Stephenson
  *     - MooTools  (http://mootools.net)      Copyright (C) Valerio Proietti
  *
- * Copyright (C) 2008-2010 Nikolay V. Nemshilov
+ * Copyright (C) 2008-2011 Nikolay V. Nemshilov
  */
 
 /**
  * Some top-level variables to shortify the things
  */
-var
-PROTO = 'prototype', A_proto = Array[PROTO],
-to_s = Object[PROTO].toString, slice = A_proto.slice,
-dummy = function() { return function() {}; },
-HTML = document.documentElement, UID = 1,  // !#server
-Wrappers_Cache = [], UID_KEY = '_rjs_id',
+var A_proto = Array.prototype,
+to_s = Object.prototype.toString, slice = A_proto.slice,
+HTML = document.documentElement, UID = 1,       // !#server
+Wrappers_Cache = [], UID_KEY = 'uniqueNumber',  // DON'T change the UID_KEY!
 
 /**
  * extends the first object with the keys and values of the second one
@@ -78,7 +76,7 @@ $ext = RightJS.$ext = function(dest, source, dont_overwrite) {
 $eval = RightJS.$eval = function(text) {
   if (text) {
     if ('execScript' in window) {
-      $(document).window()._.execScript(text);
+      current_Document.win()._.execScript(text);
     } else {
       $E('script', {text: text}).insertTo(HTML);
     }
@@ -92,7 +90,7 @@ $eval = RightJS.$eval = function(text) {
  * @throws Break
  */
 $break = RightJS.$break = function() {
-  throw new RightJS.Break();
+  throw new Break();
 },
 
 /**
@@ -189,7 +187,7 @@ isArray = RightJS.isArray = function(value) {
  * @return boolean check result
  */
 isElement = RightJS.isElement = function(value) {
-  return !!(value && value.tagName);
+  return value != null && value.nodeType === 1;
 },
 
 /** !#server
@@ -199,7 +197,7 @@ isElement = RightJS.isElement = function(value) {
  * @return boolean check result
  */
 isNode = RightJS.isNode = function(value) {
-  return !!(value && value.nodeType);
+  return value != null && value.nodeType != null;
 },
 
 /** !#server
@@ -209,37 +207,24 @@ isNode = RightJS.isNode = function(value) {
  * @return Element or null
  */
 $ = RightJS.$ = function(object) {
-  if (typeof object === 'string') {
+  if (object instanceof Wrapper) {
+    return object;
+  } else if (typeof object === 'string') {
     object = document.getElementById(object);
   }
 
-  if (object) {
-    var wrapper = UID_KEY in object ? Wrappers_Cache[object[UID_KEY]] : undefined;
-    if (wrapper !== undefined) {
-      object = wrapper;
-    } else if (object.nodeType === 1) {
-      object = new Element(object);
-    } else if (isElement(object.target) || isElement(object.srcElement)) {
-      object = new Event(object);
-    } else if (object.nodeType === 9) {
-      object = new Document(object);
-    } else if (object.window == object) {
-      object = new Window(object);
-    }
-  }
-
-  return object;
+  return wrap(object);
 },
 
 /** !#server
  * Finds all the elements in the document by the given css_rule
  *
  * @param String element
- * @param Object optional context
+ * @param Boolean raw search marker
  * @return Array search result
  */
-$$ = RightJS.$$ = function(css_rule, context) {
-  return $(context || document).find(css_rule);
+$$ = RightJS.$$ = function(css_rule, raw) {
+  return current_Document.find(css_rule, raw);
 },
 
 /** !#server
@@ -264,23 +249,6 @@ $w = RightJS.$w = function(string) {
 },
 
 /**
- * converts any iterables into an array
- *
- * @param Object iterable
- * @return Array list
- */
-$A = RightJS.$A = function(it) {
-  try {
-    return slice.call(it);
-  } catch(e) {
-    for (var a=[], i=0, length = it.length; i < length; i++) {
-      a[i] = it[i];
-    }
-    return a;
-  }
-},
-
-/**
  * generates an unique id for an object
  *
  * @param Object object
@@ -288,7 +256,34 @@ $A = RightJS.$A = function(it) {
  */
 $uid = RightJS.$uid = function(item) {
   return UID_KEY in item ? item[UID_KEY] : (item[UID_KEY] = UID++);
+},
+
+/**
+ * converts any iterables into an array
+ *
+ * @param Object iterable
+ * @return Array list
+ */
+$A = RightJS.$A = function(it) {
+  return slice.call(it, 0);
 };
+
+/** !#server
+ * IE needs a patch for the $A function
+ * because it doesn't handle all the cases
+ */
+if (!A_proto.map) {
+  $A = RightJS.$A = function(it) {
+    try {
+      return slice.call(it, 0);
+    } catch(e) {
+      for (var a=[], i=0, length = it.length; i < length; i++) {
+        a[i] = it[i];
+      }
+      return a;
+    }
+  };
+}
 
 /** !#server
  * Internet Explorer needs some additional mumbo-jumbo in here
@@ -296,8 +291,7 @@ $uid = RightJS.$uid = function(item) {
 if (isHash(HTML)) {
   isHash = RightJS.isHash = function(value) {
     return to_s.call(value) === '[object Object]' &&
-      value !== null && typeof(value) !== 'undefined' &&
-      typeof(value.hasOwnProperty) !== 'undefined';
+      value != null && value.hasOwnProperty != null;
   };
 }
 /**
@@ -307,7 +301,7 @@ var i=0, natives = 'Array Function Number String Date RegExp'.split(' '),
 include_native = function() {
   for (var i=0; i < arguments.length; i++) {
     if (isHash(arguments[i])) {
-      $ext(this[PROTO],  arguments[i]);
+      $ext(this.prototype,  arguments[i]);
       $ext(this.Methods, arguments[i]);
     }
   }
@@ -323,19 +317,6 @@ for (; i < natives.length; i++) {
 // referring those two as well
 RightJS.Object = Object;
 RightJS.Math   = Math;
-
-
-/** #!server
- * A functions brutal hackery helper
- *
- * @param Function original function
- * @param RegExp expression
- * @param String replacement
- * @return freshly hacked function
- */
-function patch_function(func, re, replacement) {
-  return eval('['+ func.toString().replace(re, replacement) + ']')[0];
-}
 
 /**
  * Checks if the data is an array and if not,
@@ -356,7 +337,7 @@ function ensure_array(data) {
  *   Some functionality is inspired by
  *     - Prototype (http://prototypejs.org)   Copyright (C) Sam Stephenson
  *
- * Copyright (C) 2008-2010 Nikolay V. Nemshilov
+ * Copyright (C) 2008-2011 Nikolay V. Nemshilov
  */
 $ext(Object, {
   /**
@@ -485,10 +466,13 @@ $ext(Object, {
    * @return Object merged object
    */
   merge: function() {
-    var object = {}, i=0, length = arguments.length;
-    for (; i < length; i++) {
-      if (isHash(arguments[i])) {
-        $ext(object, arguments[i]);
+    var object = {}, i=0, args=arguments, key;
+    for (; i < args.length; i++) {
+      if (isHash(args[i])) {
+        for (key in args[i]) {
+          object[key] = isHash(args[i][key]) && !(args[i][key] instanceof Class) ?
+            Object.merge(key in object ? object[key] : {}, args[i][key]) : args[i][key];
+        }
       }
     }
     return object;
@@ -557,34 +541,76 @@ Math.random = function(min, max) {
  *     - Prototype (http://prototypejs.org)   Copyright (C) Sam Stephenson
  *     - Ruby      (http://www.ruby-lang.org) Copyright (C) Yukihiro Matsumoto
  *
- * Copyright (C) 2008-2010 Nikolay V. Nemshilov
+ * Copyright (C) 2008-2010 Nikolay Nemshilov
  */
 var original_sort = A_proto.sort,
 
-build_loop = function(pre, body, ret) {
-  return eval('[function(c,s){'+
-    'for(var '+pre+'i=0,l=this.length;i<l;i++){'+
-      body.replace('_', 'c.call(s,this[i],i,this)') +
-    '}' +
-    ret +
-  '}]')[0];
+// JavaScript 1.6 methods recatching up or faking
+for_each = A_proto.forEach || function(callback, scope) {
+  for (var i=0; i < this.length; i++) {
+    callback.call(scope, this[i], i, this);
+  }
 },
 
-// JavaScript 1.6 methods recatching up or faking
-for_each = A_proto.forEach || build_loop('', '_', ''),
-filter   = A_proto.filter  || build_loop('r=[],j=0,', 'if(_)r[j++]=this[i]', 'return r'),
-reject   =                    build_loop('r=[],j=0,', 'if(!_)r[j++]=this[i]', 'return r'),
-map      = A_proto.map     || build_loop('r=[],', 'r[i]=_', 'return r'),
-some     = A_proto.some    || build_loop('', 'if(_)return true', 'return false'),
-every    = A_proto.every   || build_loop('', 'if(!_)return false', 'return true'),
-first    = build_loop('', 'if(_)return this[i]', 'return [][0]'),
+filter   = A_proto.filter || function(callback, scope) {
+  for (var result=[], j=0, i=0; i < this.length; i++) {
+    if (callback.call(scope, this[i], i, this)) {
+      result[j++] = this[i];
+    }
+  }
+  return result;
+},
+
+reject   = function(callback, scope) {
+  for (var result=[], j=0, i=0; i < this.length; i++) {
+    if (!callback.call(scope, this[i], i, this)) {
+      result[j++] = this[i];
+    }
+  }
+  return result;
+},
+
+map      = A_proto.map || function(callback, scope) {
+  for (var result=[], i=0; i < this.length; i++) {
+    result[i] = callback.call(scope, this[i], i, this);
+  }
+  return result;
+},
+
+some     = A_proto.some || function(callback, scope) {
+  for (var i=0; i < this.length; i++) {
+    if (callback.call(scope, this[i], i, this)) {
+      return true;
+    }
+  }
+  return false;
+},
+
+every    = A_proto.every || function(callback, scope) {
+  for (var i=0; i < this.length; i++) {
+    if (!callback.call(scope, this[i], i, this)) {
+      return false;
+    }
+  }
+  return true;
+},
+
+first    = function(callback, scope) {
+  for (var i=0; i < this.length; i++) {
+    if (callback.call(scope, this[i], i, this)) {
+      return this[i];
+    }
+  }
+  return undefined;
+},
+
 last     = function(callback, scope) {
   for (var i=this.length-1; i > -1; i--) {
     if (callback.call(scope, this[i], i, this)) {
       return this[i];
     }
   }
-  return null;
+  return undefined;
 };
 
 
@@ -596,9 +622,9 @@ last     = function(callback, scope) {
 function guess_callback(argsi, array) {
   var callback = argsi[0], args = slice.call(argsi, 1), scope = array, attr;
 
-  if (isString(callback)) {
+  if (typeof(callback) === 'string') {
     attr = callback;
-    if (array.length && isFunction(array[0][attr])) {
+    if (array.length !== 0 && typeof(array[0][attr]) === 'function') {
       callback = function(object) { return object[attr].apply(object, args); };
     } else {
       callback = function(object) { return object[attr]; };
@@ -610,15 +636,16 @@ function guess_callback(argsi, array) {
   return [callback, scope];
 }
 
+// defining the manual break errors class
+function Break() {}
+
 // calls the given method with preprocessing the arguments
 function call_method(func, scope, args) {
-  var result;
-
   try {
-    result = func.apply(scope, guess_callback(args, scope));
-  } catch(e) { if (!(e instanceof RightJS.Break)) { throw(e); } }
+    return func.apply(scope, guess_callback(args, scope));
+  } catch(e) { if (!(e instanceof Break)) { throw(e); } }
 
-  return result;
+  return undefined;
 }
 
 // checks the value as a boolean
@@ -641,7 +668,7 @@ Array.include({
    * @return Integer index or -1 if not found
    */
   indexOf: A_proto.indexOf || function(value, from) {
-    for (var i=(from<0) ? Math.max(0, this.length+from) : from || 0, l = this.length; i < l; i++) {
+    for (var i=(from<0) ? Math.max(0, this.length+from) : from || 0; i < this.length; i++) {
       if (this[i] === value) {
         return i;
       }
@@ -689,7 +716,7 @@ Array.include({
    * @return mixed a random item
    */
   random: function() {
-    return this.length ? this[Math.random(this.length-1)] : null;
+    return this.length === 0 ? undefined : this[Math.random(this.length-1)];
   },
 
   /**
@@ -716,7 +743,7 @@ Array.include({
    * @return boolean check result
    */
   empty: function() {
-    return !this.length;
+    return this.length === 0;
   },
 
   /**
@@ -818,11 +845,10 @@ Array.include({
    * @return Array new merged
    */
   merge: function() {
-    for (var copy = this.clone(), arg, i=0, j, length = arguments.length; i < length; i++) {
-      arg = arguments[i];
-      arg = ensure_array(arg);
+    for (var copy = this.clone(), arg, i=0; i < arguments.length; i++) {
+      arg = ensure_array(arguments[i]);
 
-      for (j=0; j < arg.length; j++) {
+      for (var j=0; j < arg.length; j++) {
         if (copy.indexOf(arg[j]) == -1) {
           copy.push(arg[j]);
         }
@@ -875,8 +901,8 @@ Array.include({
    * @return boolean check result
    */
   includes: function() {
-    for (var i=0, length = arguments.length; i < length; i++) {
-      if (this.indexOf(arguments[i]) == -1) {
+    for (var i=0; i < arguments.length; i++) {
+      if (this.indexOf(arguments[i]) === -1) {
         return false;
       }
     }
@@ -891,9 +917,9 @@ Array.include({
    * @return Array filtered copy
    */
   without: function() {
-    var filter = $A(arguments);
+    var filter = slice.call(arguments);
     return this.filter(function(value) {
-      return !filter.include(value);
+      return filter.indexOf(value) === -1;
     });
   },
 
@@ -962,14 +988,12 @@ Array.include({
    * @return Number a summ of values on the list
    */
   sum: function() {
-    for(var i=0,l=this.length,sum=0; i < l; sum += this[i++]) {}
+    for(var sum=0, i=0; i<this.length; sum += this[i++]) {}
     return sum;
   }
 });
 
-$alias(A_proto, {
-  include: 'includes'
-});
+A_proto.include = A_proto.includes;
 
 
 /**
@@ -981,7 +1005,7 @@ $alias(A_proto, {
  *   The trim function taken from work of Steven Levithan
  *     - http://blog.stevenlevithan.com/archives/faster-trim-javascript
  *
- * Copyright (C) 2008-2010 Nikolay V. Nemshilov
+ * Copyright (C) 2008-2011 Nikolay V. Nemshilov
  */
 String.include({
   /**
@@ -999,7 +1023,7 @@ String.include({
    * @return boolean check result
    */
   blank: function() {
-    return (/^\s*$/).test(this);
+    return this == false;
   },
 
   /**
@@ -1007,7 +1031,7 @@ String.include({
    *
    * @return String trimmed version
    */
-  trim: String[PROTO].trim || function() {
+  trim: String.prototype.trim || function() {
     var str = this.replace(/^\s\s*/, ''), i = str.length;
     while ((/\s/).test(str.charAt(--i))) {}
     return str.slice(0, i + 1);
@@ -1028,10 +1052,13 @@ String.include({
    * @return String without scripts
    */
   stripScripts: function(option) {
-    var scripts = '', text = this.replace(/<script[^>]*>([\s\S]*?)<\/script>/img, function(match, source) {
-      scripts += source + "\n";
-      return '';
-    });
+    var scripts = '', text = this.replace(
+      /<script[^>]*>([\s\S]*?)<\/script>/img,
+      function(match, source) {
+        scripts += source + "\n";
+        return '';
+      }
+    );
 
     if (option === true) {
       $eval(scripts);
@@ -1108,9 +1135,9 @@ String.include({
    * @return boolean check result
    */
   startsWith: function(string, ignorecase) {
-    var start_str = this.substr(0, string.length);
-    return ignorecase ? start_str.toLowerCase() === string.toLowerCase() :
-      start_str === string;
+    return (ignorecase !== true ? this.indexOf(string) :
+      this.toLowerCase().indexOf(string.toLowerCase())
+    ) === 0;
   },
 
   /**
@@ -1121,9 +1148,10 @@ String.include({
    * @return boolean check result
    */
   endsWith: function(string, ignorecase) {
-    var end_str = this.substring(this.length - string.length);
-    return ignorecase ? end_str.toLowerCase() === string.toLowerCase() :
-      end_str === string;
+    return this.length - (
+      ignorecase !== true ? this.lastIndexOf(string) :
+        this.toLowerCase().lastIndexOf(string.toLowerCase())
+    ) === string.length;
   },
 
   /**
@@ -1132,7 +1160,7 @@ String.include({
    * @return Integer or NaN
    */
   toInt: function(base) {
-    return parseInt(this, base || 10);
+    return parseInt(this, base === undefined ? 10 : base);
   },
 
   /**
@@ -1141,12 +1169,13 @@ String.include({
    * @return Float or NaN
    */
   toFloat: function(strict) {
-    return parseFloat(strict ? this : this.replace(',', '.').replace(/(\d)-(\d)/g, '$1.$2'));
+    return parseFloat(strict === true ? this :
+      this.replace(',', '.').replace(/(\d)-(\d)/, '$1.$2'));
   }
 
 });
 
-$alias(String[PROTO], {include: 'includes'});
+String.prototype.include = String.prototype.includes;
 
 
 /**
@@ -1156,7 +1185,7 @@ $alias(String[PROTO], {include: 'includes'});
  *   Some of the functionality inspired by
  *     - Prototype (http://prototypejs.org)   Copyright (C) Sam Stephenson
  *
- * Copyright (C) 2008-2010 Nikolay V. Nemshilov
+ * Copyright (C) 2008-2011 Nikolay V. Nemshilov
  */
 Function.include({
   /**
@@ -1170,7 +1199,10 @@ Function.include({
   bind: function() {
     var args = $A(arguments), scope = args.shift(), func = this;
     return function() {
-      return func.apply(scope, (args.length || arguments.length) ? args.concat($A(arguments)) : args);
+      return func.apply(scope,
+        (args.length !== 0 || arguments.length !== 0) ?
+          args.concat($A(arguments)) : args
+      );
     };
   },
 
@@ -1362,81 +1394,65 @@ RegExp.escape = function(string) {
  *     - MooTools  (http://mootools.net)      Copyright (C) Valerio Proietti
  *     - Ruby      (http://www.ruby-lang.org) Copyright (C) Yukihiro Matsumoto
  *
- * Copyright (C) 2008-2010 Nikolay Nemshilov
+ * Copyright (C) 2008-2011 Nikolay Nemshilov
  */
 var Class = RightJS.Class = function() {
-  var args = $A(arguments), properties = args.pop() || {},
-    parent = args.pop();
+  var args   = $A(arguments).slice(0,2),
+      props  = args.pop() || {},
+      parent = args.pop(),
+      klass  = arguments[2], // you can send your own klass as the third argument
+      SKlass = function() {};
+
+  // if the parent class only was specified
+  if (!args.length && !isHash(props)) {
+    parent = props; props = {};
+  }
 
 // !#server:begin
-  if (parent && parent.ancestors && parent.ancestors[0] === Wrapper) {
-    return new Wrapper(parent, properties);
+  if (!klass && parent && (parent === Wrapper || parent.ancestors.include(Wrapper))) {
+    klass = Wrapper_makeKlass();
   }
 // !#server:end
 
-  // basic class object definition
-  function klass() {
-    if ('prebind' in this && isArray(this.prebind)) {
-      this.prebind.each(function(method) {
-        this[method] = this[method].bind(this);
-      }, this);
+  // defining the basic klass function
+  klass = $ext(klass || function() {
+    Class_checkPrebind(this);
+    return 'initialize' in this ?
+      this.initialize.apply(this, arguments) :
+      this;
+  }, Class_Methods);
+
+  // handling the inheritance
+  parent = parent || Class;
+
+  SKlass.prototype = parent.prototype;
+  klass.prototype  = new SKlass();
+  klass.parent     = parent;
+  klass.prototype.constructor = klass;
+
+  // collecting the list of ancestors
+  klass.ancestors = [];
+  while (parent) {
+    klass.ancestors.push(parent);
+    parent = parent.parent;
+  }
+
+  // handling the module injections
+  ['extend', 'include'].each(function(name) {
+    if (name in props) {
+      klass[name].apply(klass, ensure_array(props[name]));
     }
+  });
 
-    return this.initialize ? this.initialize.apply(this, arguments) : this;
-  }
-
-  // if only the parent class has been specified
-  if (!args.length && !isHash(properties)) {
-    parent = properties; properties = {};
-  }
-
-  // attaching main class-level methods
-  $ext(klass, Class_Methods).inherit(parent);
-
-  // catching the injections
-  Class_attachInjections(klass, properties);
-
-  return klass.include(properties);
+  return klass.include(props);
 },
 
 /**
  * Class utility methods
  *
- * Copyright (C) 2008-2010 Nikolay Nemshilov
+ * Copyright (C) 2008-2011 Nikolay Nemshilov
  */
-commons = $w('selfExtended self_extended selfIncluded self_included'),
-extend  = commons.concat($w(PROTO+' parent extend include')),
-include = commons.concat(['constructor']),
-clean_module = function (module, ext) {
-  return Object.without.apply(Object, [module].concat(ext ? extend : include));
-},
-
 Class_Methods = {
-  /**
-   * Makes the class get inherited from another one
-   *
-   * @param Object another class
-   * @return Class this
-   */
-  inherit: function(parent) {
-    // handling the parent class assign
-    if (parent && parent[PROTO]) {
-      var s_klass = dummy();
-      s_klass[PROTO] = parent[PROTO];
-      this[PROTO] = new s_klass();
-      this.parent = parent;
-    }
-
-    // collecting the list of ancestors
-    this.ancestors = [];
-    while (parent) {
-      this.ancestors.push(parent);
-      parent = parent.parent;
-    }
-
-    return (this[PROTO].constructor = this);
-  },
-
   /**
    * this method will extend the class-level with the given objects
    *
@@ -1453,13 +1469,8 @@ Class_Methods = {
    */
   extend: function() {
     $A(arguments).filter(isHash).each(function(module) {
-      var callback = module.selfExtended || module.self_extended;
-
-      $ext(this, clean_module(module, true));
-
-      if (callback) {
-        callback.call(module, this);
-      }
+      $ext(this, Class_clean_module(module, true));
+      Class_handle_module_callbacks(this, module, true);
     }, this);
 
     return this;
@@ -1475,44 +1486,53 @@ Class_Methods = {
    * @return Class the klass
    */
   include: function() {
-    var ancestors = (this.ancestors || []).map(PROTO);
+    var klasses = [this].concat(this.ancestors);
 
     $A(arguments).filter(isHash).each(function(module) {
-      var callback = module.selfIncluded || module.self_included;
+      Object.each(Class_clean_module(module, false), function(name, method) {
+        // searching for the super-method
+        for (var super_method, i=0; i < klasses.length; i++) {
+          if (name in klasses[i].prototype) {
+            super_method = klasses[i].prototype[name];
+            break;
+          }
+        }
 
-      Object.each(clean_module(module, false), function(key, method) {
-        var ancestor = ancestors.first(function(proto) { return key in proto && isFunction(proto[key]); });
-
-        this[PROTO][key] = !ancestor ? method : function() {
-          this.$super = ancestor[key];
-          return method.apply(this, arguments);
-        };
+        this.prototype[name] = isFunction(method) && isFunction(super_method) ?
+          function() {
+            this.$super = super_method;
+            return method.apply(this, arguments);
+          } : method;
       }, this);
 
-      if (callback) {
-        callback.call(module, this);
-      }
+      Class_handle_module_callbacks(this, module, false);
     }, this);
 
     return this;
   }
-};
+},
 
-/**
- * Processess the functionality injection properties
- *
- * @param Function klass
- * @param Object properties
- * @return void
- */
-function Class_attachInjections(klass, properties) {
-  ['extend', 'include'].each(function(name) {
-    var modules = properties[name];
-    if (isHash(modules) || isArray(modules)) {
-      klass[name].apply(klass, ensure_array(modules));
-      delete(properties[name]);
-    }
-  });
+Class_module_callback_names = $w(
+  'selfExtended self_extended selfIncluded self_included extend include'
+);
+
+// hooking up the class-methods to the root class
+$ext(Class, Class_Methods);
+Class.prototype.$super = undefined;
+
+function Class_clean_module(module, extend) {
+  return Object.without.apply(Object, [module].concat(
+    Class_module_callback_names.concat( extend ?
+      $w('prototype parent ancestors') : ['constructor']
+    )
+  ));
+}
+
+function Class_handle_module_callbacks(klass, module, extend) {
+  (module[Class_module_callback_names[extend ? 0 : 2]] ||
+   module[Class_module_callback_names[extend ? 1 : 3]] ||
+   function() {}
+  ).call(module, klass);
 }
 
 /**
@@ -1528,14 +1548,35 @@ function Class_attachInjections(klass, properties) {
  * @return Object hash or null if nothing found
  */
 function Class_findSet(object, property) {
-  var upcased = property.toUpperCase(), capcased = property.capitalize(),
+  var upcased   = property.toUpperCase(),
     constructor = object.constructor,
-    candidates = [object, constructor].concat('ancestors' in constructor ? constructor.ancestors : []),
-    holder = candidates.first(function(o) { return o && (upcased in o || capcased in o); });
+    candidates  = [object, constructor].concat(constructor.ancestors || []),
+    i = 0;
 
-  return holder ? holder[upcased] || holder[capcased] : null;
+  for (; i < candidates.length; i++) {
+    if (upcased in candidates[i]) {
+      return candidates[i][upcased];
+    } else if (property in candidates[i]) {
+      return candidates[i][property];
+    }
+  }
+
+  return null;
 }
 
+/**
+ * Handles the 'prebind' feature for Class instances
+ *
+ * @param Class instance
+ * @return void
+ */
+function Class_checkPrebind(object) {
+  if ('prebind' in object && isArray(object.prebind)) {
+    object.prebind.each(function(method) {
+      object[method] = object[method].bind(object);
+    });
+  }
+}
 
 /**
  * This is a simple mix-in module to be included in other classes
@@ -1547,7 +1588,7 @@ function Class_findSet(object, property) {
  *   The idea of the module is inspired by
  *     - MooTools  (http://mootools.net)      Copyright (C) Valerio Proietti
  *
- * Copyright (C) 2008-2010 Nikolay V. Nemshilov
+ * Copyright (C) 2008-2011 Nikolay V. Nemshilov
  */
 var Options = RightJS.Options = {
   /**
@@ -1557,7 +1598,9 @@ var Options = RightJS.Options = {
    * @return Object current instance
    */
   setOptions: function(opts) {
-    var options = this.options = Object.merge(Class_findSet(this, 'options'), opts), match, key;
+    var options = this.options = $ext($ext({},
+      Object.clone(Class_findSet(this, 'Options'))), opts
+    ), match, key;
 
     // hooking up the observer options
     if (isFunction(this.on)) {
@@ -1597,7 +1640,7 @@ var Options = RightJS.Options = {
  *   The naming principle is inspired by
  *     - Prototype (http://prototypejs.org)   Copyright (C) Sam Stephenson
  *
- * Copyright (C) 2008-2010 Nikolay V. Nemshilov
+ * Copyright (C) 2008-2011 Nikolay Nemshilov
  */
 var Observer = RightJS.Observer = new Class({
   include: Options,
@@ -1609,7 +1652,7 @@ var Observer = RightJS.Observer = new Class({
    */
   initialize: function(options) {
     this.setOptions(options);
-    Observer_createShortcuts(this, Class_findSet(this, 'events'));
+    Observer_createShortcuts(this, Class_findSet(this, 'Events'));
     return this;
   },
 
@@ -1624,51 +1667,7 @@ var Observer = RightJS.Observer = new Class({
    * @return Observer self
    */
   on: function() {
-    var args = $A(arguments), event = args.shift(), name;
-
-    if (isString(event)) {
-      if (!('$listeners' in this)) { this.$listeners = []; }
-
-      var callback = args.shift();
-      switch (typeof callback) {
-        case "string":
-          name     = callback;
-          callback = this[callback];
-
-        case "function":
-          var hash = {};
-
-          // DON'T move it in the one-line hash variable definition,
-          // it causes problems with the Konqueror 3 later on
-          hash.e = event;
-          hash.f = callback;
-          hash.a = args;
-          hash.r = name;
-
-          this.$listeners.push(hash);
-          break;
-
-        default:
-          if (isArray(callback)) {
-            for (var i=0; i < callback.length; i++) {
-              this.on.apply(this, [event].concat(
-                ensure_array(callback[i])
-              ).concat(args));
-            }
-          }
-      }
-
-    } else {
-      // assuming it's a hash of key-value pairs
-      for (name in event) {
-        this.on.apply(this, [name].concat(
-          ensure_array(event[name])
-        ).concat(args));
-      }
-    }
-
-
-
+    Observer_on(this, arguments, function(h) { return h; });
     return this;
   },
 
@@ -1684,7 +1683,7 @@ var Observer = RightJS.Observer = new Class({
    */
   observes: function(event, callback) {
     if (!isString(event)) { callback = event; event = null; }
-    if (isString(callback)) { callback = this[callback]; }
+    if (isString(callback)) { callback = callback in this ? this[callback] : null; }
 
     return (this.$listeners || []).some(function(i) {
       return (event && callback) ? i.e === event && i.f === callback :
@@ -1703,20 +1702,7 @@ var Observer = RightJS.Observer = new Class({
    * @return Observer self
    */
   stopObserving: function(event, callback) {
-    if (isHash(event)) {
-      for (var key in event) {
-        this.stopObserving(key, event[key]);
-      }
-    } else {
-      if (!isString(event)) {  callback = event; event = null; }
-      if (isString(callback)){ callback = this[callback]; }
-
-      this.$listeners = (this.$listeners || []).filter(function(i) {
-        return (event && callback) ? (i.e !== event || i.f !== callback) :
-          (event ? i.e !== event : i.f !== callback);
-      }, this);
-    }
-
+    Observer_stopObserving(this, event, callback, function() {});
     return this;
   },
 
@@ -1764,8 +1750,8 @@ var Observer = RightJS.Observer = new Class({
  * @return Object extended object
  */
 Observer_create = Observer.create =  function(object, events) {
-  $ext(object, Object.without(Observer[PROTO], 'initialize', 'setOptions'), true);
-  return Observer_createShortcuts(object, events || Class_findSet(object, 'events'));
+  $ext(object, Object.without(Observer.prototype, 'initialize', 'setOptions'), true);
+  return Observer_createShortcuts(object, events || Class_findSet(object, 'Events'));
 },
 
 /**
@@ -1777,7 +1763,10 @@ Observer_create = Observer.create =  function(object, events) {
  */
 Observer_createShortcuts = Observer.createShortcuts = function(object, names) {
   (names || []).each(function(name) {
-    var method_name = 'on'+name.replace(/(^|_|:)([a-z])/g, function(match, pre, chr) { return chr.toUpperCase(); });
+    var method_name = 'on'+name.replace(/(^|_|:)([a-z])/g,
+      function(match, pre, chr) { return chr.toUpperCase(); }
+    );
+
     if (!(method_name in object)) {
       object[method_name] = function() {
         return this.on.apply(this, [name].concat($A(arguments)));
@@ -1788,35 +1777,100 @@ Observer_createShortcuts = Observer.createShortcuts = function(object, names) {
   return object;
 };
 
+function Observer_on(object, o_args, preprocess) {
+  var args     = slice.call(o_args, 2),
+      event    = o_args[0],
+      callback = o_args[1],
+      name     = false;
 
-/**
- * iterators in-callbacks break exception
- *
- * Copyright (C) 2009-2010 Nikolay V. Nemshilov
- */
-var Break = RightJS.Break = new Class(Error, {
-  message: "Manual break"
-});
+  if (isString(event)) {
+    switch (typeof callback) {
+      case "string":
+        name     = callback;
+        callback = callback in object ? object[callback] : function() {};
+
+      case "function":
+        ('$listeners' in object ? object.$listeners : (
+          object.$listeners = []
+        )).push(preprocess({
+          e: event, f: callback, a: args, r: name || false, t: object
+        }));
+        break;
+
+      default:
+        if (isArray(callback)) {
+          for (var i=0; i < callback.length; i++) {
+            object.on.apply(object, [event].concat(
+              ensure_array(callback[i])
+            ).concat(args));
+          }
+        }
+    }
+
+  } else {
+    // assuming it's a hash of key-value pairs
+    args = slice.call(o_args, 1);
+
+    for (name in event) {
+      object.on.apply(object, [name].concat(
+        ensure_array(event[name])
+      ).concat(args));
+    }
+  }
+}
+
+function Observer_stopObserving(object, event, callback, preprocess) {
+  if (isHash(event)) {
+    for (var key in event) {
+      object.stopObserving(key, event[key]);
+    }
+  } else {
+    if (!isString(event)) {  callback = event; event = null; }
+    if (isString(callback)){ callback = object[callback]; }
+
+    object.$listeners = (object.$listeners || []).filter(function(i) {
+      var result = (event && callback) ?
+        (i.e !== event || i.f !== callback) :
+        (event ? i.e !== event : i.f !== callback);
+
+      if (!result) { preprocess(i); }
+
+      return result;
+    });
+  }
+}
 
 
 /**
  * this object will contain info about the current browser
  *
- * Copyright (C) 2008-2010 Nikolay V. Nemshilov
+ * Copyright (C) 2008-2011 Nikolay V. Nemshilov
  */
-var agent = navigator.userAgent, looks_like_ie = 'attachEvent' in window, looks_like_opera = 'opera' in window,
+var agent = navigator.userAgent,
+    Browser_Opera = 'opera' in window,
+    Browser_IE    = 'attachEvent' in window && !Browser_Opera,
 
 Browser = RightJS.Browser = {
-  IE:           looks_like_ie && !looks_like_opera,
-  Opera:        looks_like_opera,
+  IE:           Browser_IE,
+  Opera:        Browser_Opera,
   WebKit:       agent.include('AppleWebKit/'),
   Gecko:        agent.include('Gecko') && !agent.include('KHTML'),
   MobileSafari: /Apple.*Mobile.*Safari/.test(agent),
   Konqueror:    agent.include('Konqueror'),
 
-  // marker for the browsers which don't give access to the HTMLElement unit
-  OLD:          looks_like_ie && !looks_like_opera && !document.querySelector
-};
+  // internal marker for the browsers which require the olds module
+  OLD:          !document.querySelector,
+  // internal marker for IE browsers version <= 8
+  IE8L:         false
+},
+
+IE8_OR_LESS = false;
+
+try {
+  // checking if that an IE version <= 8
+  document.createElement('<input/>');
+  Browser.OLD = Browser.IE8L = IE8_OR_LESS = true;
+} catch(e) {}
 
 
 /**
@@ -1826,96 +1880,190 @@ Browser = RightJS.Browser = {
  * so that we could control the common functionality
  * among all the wrappers
  *
- * Copyright (C) 2010 Nikolay Nemshilov
+ * Copyright (C) 2010-2011 Nikolay Nemshilov
  */
 
-var Wrapper = RightJS.Wrapper = function(parent, methods) {
+var Wrapper = RightJS.Wrapper = new Class({
+  // predefining the property in the prototype
+  _: undefined,
 
-  // creating the actual wrapper class
-  var Klass = function(object, options) {
-    this.initialize(object, options);
+  /**
+   * Default constructor
+   *
+   * @param mixed raw dom unit
+   * @return void
+   */
+  initialize: function(raw_object) {
+    this._ = raw_object;
+  }
+});
 
-    var instance = this, unit = instance._, uid, cast;
+// exposing the cache so it could be manupulated externally
+Wrapper.Cache = Wrappers_Cache;
 
-    // dynamically typecasting in case if the user is creating
-    // an element of a subtype via the basic Element constructor
-    if (this.constructor === Element && (cast = Wrapper.Cast(unit)) !== undefined) {
-      instance = new cast(unit);
-      if ('$listeners' in this) {
-        instance.$listeners = this.$listeners;
-      }
-    }
+// instantiating the actual class object for a wrapper
+function Wrapper_makeKlass() {
+  /**
+   * Default wrappers Klass function
+   *
+   * @param mixed the raw object
+   * @param Object options
+   * @return void
+   */
+  return function(object, options) {
+    Class_checkPrebind(this);
 
-    uid  = UID_KEY in unit ? unit[UID_KEY] : (unit[UID_KEY] = UID++);
+    this.initialize.apply(this, arguments); // <- there might be a different number of args in a subclass
 
-    return (Wrappers_Cache[uid] = instance);
+    var item = this._, uid = UID_KEY in item ? item[UID_KEY] :
+      // NOTE we use positive indexes for dom-elements and negative for everything else
+      (item[UID_KEY] = (item.nodeType === 1 ? 1 : -1) * UID++);
+
+    Wrappers_Cache[uid] = this;
   };
+}
 
-  // finding the parent
-  if (!methods) {
-    methods = parent;
-    parent  = null;
+/**
+ * Element's own Klass function
+ * we need that because it does some dynamic typecasting mumbo jumbo
+ * plus we would like to optimize some stuff here and there
+ *
+ * @param raw dom element or the tag name
+ * @param Object options
+ * @return Element instance
+ */
+function Element_Klass(element, options) {
+  Element_initialize(this, element, options);
+
+  var inst = this, raw = inst._, cast = Wrapper.Cast(raw),
+      uid = UID_KEY in raw ? raw[UID_KEY] : (raw[UID_KEY] = UID++);
+
+  if (cast !== undefined) {
+    inst = new cast(raw, options);
+    if ('$listeners' in this) {
+      inst.$listeners = this.$listeners;
+    }
   }
 
-  // hooking up the extedning tools and methods
-  $ext(Klass, Class_Methods).inherit(parent || Wrapper);
+  Wrappers_Cache[uid] = inst;
 
-  // checking for the injections
-  Class_attachInjections(Klass, methods);
-
-  // including the basic tools
-  return Klass.include({_: undefined}, methods);
-};
+  return inst;
+}
 
 // searches for a suitable class for dynamic typecasting
 Wrapper.Cast = function(unit) {
   return unit.tagName in Element_wrappers ? Element_wrappers[unit.tagName] : undefined;
 };
 
-// exposing the cache so it could be manupulated externally
-Wrapper.Cache = Wrappers_Cache;
+/**
+ * Event's own Klass function, we don't need to check
+ * nothing in here, don't need to hit the wrappers cache and so one
+ *
+ * @param raw dom-event or a string event-name
+ * @param bounding element or an object with options
+ * @return void
+ */
+function Event_Klass(event, bound_element) {
+  if (typeof(event) === 'string') {
+    event = $ext({type: event}, bound_element);
+    this.stopped = event.bubbles === false;
 
+    if (isHash(bound_element)) {
+      $ext(this, bound_element);
+    }
+  }
+
+  this._             = event;
+  this.type          = event.type;
+
+  this.which         = event.which;
+  this.keyCode       = event.keyCode;
+
+  this.target        = wrap(
+    // Webkit throws events on textual nodes as well, gotta fix that
+    event.target != null && 'nodeType' in event.target && event.target.nodeType === 3 ?
+      event.target.parentNode : event.target
+  );
+
+  this.currentTarget = wrap(event.currentTarget);
+  this.relatedTarget = wrap(event.relatedTarget);
+
+  this.pageX         = event.pageX;
+  this.pageY         = event.pageY;
+
+  // making old IE attrs looks like w3c standards
+  if (IE8_OR_LESS && 'srcElement' in event) {
+    this.which         = event.button === 2 ? 3 : event.button === 4 ? 2 : 1;
+
+    this.target        = wrap(event.srcElement) || bound_element;
+    this.relatedTarget = this.target._ === event.fromElement ? wrap(event.toElement) : this.target;
+    this.currentTarget = bound_element;
+
+    var scrolls = this.target.win().scrolls();
+
+    this.pageX = event.clientX + scrolls.x;
+    this.pageY = event.clientY + scrolls.y;
+  }
+}
+
+
+/**
+ * Private quick wrapping function, unlike `$`
+ * it doesn't search by ID and handle double-wrapps
+ * just pure dom-wrapping functionality
+ *
+ * @param raw dom unit
+ * @return Wrapper dom-wrapper
+ */
+function wrap(object) {
+  if (object != null) {
+    var wrapper = UID_KEY in object ? Wrappers_Cache[object[UID_KEY]] : undefined;
+
+    if (wrapper !== undefined) {
+      return wrapper;
+    } else if (object.nodeType === 1) {
+      return new Element(object);
+    } else if (object.nodeType === 9) {
+      return new Document(object);
+    } else if (object.window == object) {
+      return new Window(object);
+    } else if (isElement(object.target) || isElement(object.srcElement)) {
+      return new Event(object);
+    }
+  }
+
+  return object;
+}
 
 /**
  * A simple document wrapper
  *
- * Copyright (C) 2010 Nikolay Nemshilov
+ * Copyright (C) 2010-2011 Nikolay Nemshilov
  */
-var Document = RightJS.Document = new Wrapper({
-  initialize: function(document) {
-    this._ = document;
-  },
-
+var Document = RightJS.Document = new Class(Wrapper, {
   // returns the window reference
-  window: function() {
-    return $(this._.defaultView || this._.parentWindow);
+  win: function() {
+    return wrap(this._.defaultView || this._.parentWindow);
   }
-});
+}),
+
+// a common local wrapped document reference
+current_Document = wrap(document);
 
 
 /**
  * the window object extensions
  *
- * Copyright (C) 2008-2010 Nikolay Nemshilov
+ * Copyright (C) 2008-2011 Nikolay Nemshilov
  */
-var Window = RightJS.Window = new Wrapper({
+var Window = RightJS.Window = new Class(Wrapper, {
   /**
-   * Basic constructor
+   * Selfreference to have a common interface with the rest of the wrappers
+   * in case of events handling
    *
-   * @param Window dom-window reference
-   * @return void
+   * @return Window
    */
-  initialize: function(window) {
-    this._ = window;
-    this.d = window.document;
-  },
-
-  /**
-   * Generic API reference
-   *
-   * @return Window this
-   */
-  window: function() {
+  win: function() {
     return this;
   },
 
@@ -1925,7 +2073,7 @@ var Window = RightJS.Window = new Wrapper({
    * @return Object x: d+, y: d+
    */
   size: function() {
-    var win = this._, html = this.d.documentElement;
+    var win = this._, html = win.document.documentElement;
     return win.innerWidth ? {x: win.innerWidth, y: win.innerHeight} :
       {x: html.clientWidth, y: html.clientHeight};
   },
@@ -1936,7 +2084,7 @@ var Window = RightJS.Window = new Wrapper({
    * @return Object x: d+, y: d+
    */
   scrolls: function() {
-    var win = this._, doc = this.d, body = doc.body, html = doc.documentElement;
+    var win = this._, doc = win.document, body = doc.body, html = doc.documentElement;
 
     return (win.pageXOffset || win.pageYOffset) ? {x: win.pageXOffset, y: win.pageYOffset} :
       (body && (body.scrollLeft || body.scrollTop)) ? {x: body.scrollLeft, y: body.scrollTop} :
@@ -1952,9 +2100,10 @@ var Window = RightJS.Window = new Wrapper({
    * @return window self
    */
   scrollTo: function(left, top, fx_options) {
-    var left_pos = left, top_pos = top, element = $(left); // moving the values into new vars so they didn't get screwed later on
+    var left_pos = left, top_pos = top,
+        element = isNumber(left) ? null : $(left);
 
-    if(element && element instanceof Element) {
+    if(element instanceof Element) {
       left = element.position();
     }
 
@@ -1984,9 +2133,9 @@ var Window = RightJS.Window = new Wrapper({
  *   The additional method names are inspired by
  *     - Prototype (http://prototypejs.org)   Copyright (C) Sam Stephenson
  *
- * Copyright (C) 2008-2010 Nikolay Nemshilov
+ * Copyright (C) 2008-2011 Nikolay Nemshilov
  */
-var Event = RightJS.Event = new Wrapper({
+var Event = RightJS.Event = new Class(Wrapper, {
   // predefining the keys to spped up the assignments
   type:          null,
 
@@ -2007,50 +2156,7 @@ var Event = RightJS.Event = new Wrapper({
    * @param HTMLElement the bound element
    * @return void
    */
-  initialize: function(event, bound_element) {
-    if (typeof event === 'string') {
-      event = Object.merge({type: event}, bound_element);
-      this.stopped = event.bubbles === false;
-
-      if (isHash(bound_element)) {
-        $ext(this, bound_element);
-      }
-    }
-
-    this._             = event;
-    this.type          = event.type;
-
-    this.which         = event.which;
-    this.keyCode       = event.keyCode;
-
-    this.target        = $(event.target);
-    this.currentTarget = $(event.currentTarget);
-    this.relatedTarget = $(event.relatedTarget);
-
-    this.pageX         = event.pageX;
-    this.pageY         = event.pageY;
-
-    if (!('target' in event) && 'srcElement' in event) {
-      // grabbin the IE properties
-      this.which = event.button == 2 ? 3 : event.button == 4 ? 2 : 1;
-
-      // faking the target property
-      this.target = $(event.srcElement) || bound_element;
-
-      // faking the relatedTarget, currentTarget and other targets
-      this.relatedTarget = this.target._ === event.fromElement ? $(event.toElement) : this.target;
-      this.currentTarget = bound_element;
-
-      // faking the mouse position
-      var scrolls = this.target.window().scrolls();
-
-      this.pageX = event.clientX + scrolls.x;
-      this.pageY = event.clientY + scrolls.y;
-    } else if (event.target && 'nodeType' in event.target && event.target.nodeType === 3) {
-      // Safari fix
-      this.target = $(event.target.parentNode);
-    }
-  },
+  initialize: Event_Klass, // the actual initialization happens in the Klass function
 
   /**
    * Stops the event bubbling process
@@ -2058,11 +2164,12 @@ var Event = RightJS.Event = new Wrapper({
    * @return RightJS.Event this
    */
   stopPropagation: function() {
-    if ('stopPropagation' in this._) {
+    if (this._.stopPropagation) {
       this._.stopPropagation();
     } else {
       this._.cancelBubble = true;
     }
+
     this.stopped = true;
     return this;
   },
@@ -2073,11 +2180,12 @@ var Event = RightJS.Event = new Wrapper({
    * @return RightJS.Event this
    */
   preventDefault: function() {
-    if ('preventDefault' in this._) {
+    if (this._.preventDefault) {
       this._.preventDefault();
     } else {
       this._.returnValue = false;
     }
+
     return this;
   },
 
@@ -2102,15 +2210,20 @@ var Event = RightJS.Event = new Wrapper({
   /**
    * Returns the event's offset relative to the target element
    *
-   * @return Object {x: ..., y: ...}
+   * @return Object {x: ..., y: ...} or null
    */
   offset: function() {
-    var element_position = this.target.position();
+    if(this.target instanceof Element) {
+      var element_position = this.target.position();
 
-    return {
-      x: this.pageX - element_position.x,
-      y: this.pageY - element_position.y
-    };
+      return {
+        x: this.pageX - element_position.x,
+        y: this.pageY - element_position.y
+      };
+    }
+
+    // triggered outside browser window (at toolbar etc.)
+    return null;
   },
 
   /**
@@ -2122,19 +2235,21 @@ var Event = RightJS.Event = new Wrapper({
    * @return Element element or null
    */
   find: function(css_rule) {
-    if (this.target instanceof Element && !!this.currentTarget) {
-      var target   = this.target,
-          targets  = [target].concat(target.parents()),
-          search   = this.currentTarget.find(css_rule);
+    if (this.target instanceof Wrapper && this.currentTarget instanceof Wrapper) {
+      var target = this.target._,
+          search = this.currentTarget.find(css_rule, true);
 
-      return targets.first(function(element) {
-        return search.include(element);
-      });
-    } else {
-      return undefined;
+      while (target) {
+        if (search.indexOf(target) !== -1) {
+          return wrap(target);
+        }
+        target = target.parentNode;
+      }
     }
+
+    return undefined;
   }
-}),
+}, Event_Klass),
 
 Event_delegation_shortcuts = [];
 
@@ -2142,70 +2257,10 @@ Event_delegation_shortcuts = [];
 /**
  * The DOM Element unit handling
  *
- * Copyright (C) 2008-2010 Nikolay V. Nemshilov
+ * Copyright (C) 2008-2011 Nikolay Nemshilov
  */
 
-// Element constructor options mapper
-var element_arguments_map = {
-  id:      'id',
-  html:    'innerHTML',
-  'class': 'className'
-},
-
-element_methods_map = {
-  style:   'setStyle',
-  on:      'on'
-},
-
-Element_wrappers = {},
-
-// caching the element instances to boos the things up
-elements_cache = {},
-
-/**
- * The elements constructor
- *
- * NOTE: this function is called in a context of a dom-wrapper
- *
- * @param String element tag name
- * @param Object options
- * @return HTMLElement
- */
-element_constructor = function(element, options) {
-  // building the element
-  this._ = element = document.createElement(element);
-
-  // applying the options
-  if (options !== undefined) {
-    for (var key in options) {
-      if (key in element_arguments_map) {
-        element[element_arguments_map[key]] = options[key];
-      } else if (key in element_methods_map) {
-        this[element_methods_map[key]](options[key]);
-      } else {
-        this.set(key, options[key]);
-      }
-    }
-  }
-};
-
-//
-// IE 6,7,8 (not 9!) browsers have a bug with checkbox and radio input elements
-// it doesn't place the 'checked' property correctly, so we kinda hacking
-// the Element constructor a bit for them
-//
-try {
-  document.createElement('<input/>'); // <- works for IE < 9 only
-  element_constructor = patch_function(element_constructor, /(\((\w+),\s*(\w+)\)\s*\{)/,
-    '$1if($2==="input"&&$3)$2="<input name="+$3.name+" type="+$3.type+($3.checked?" checked":"")+"/>";'
-  );
-} catch (e) {}
-
-/**
- * The actual elements wrapper
- *
- */
-var Element = RightJS.Element = new Wrapper({
+var Element = RightJS.Element = new Class(Wrapper, {
   /**
    * constructor
    *
@@ -2217,20 +2272,72 @@ var Element = RightJS.Element = new Wrapper({
    * @return Element element
    */
   initialize: function(element, options) {
-    if (typeof element === 'string') {
-      this.construct(element, options);
-    } else {
-      this._ = element;
+    Element_initialize(this, element, options);
+  }
+
+}, Element_Klass),
+
+Element_wrappers = Element.Wrappers = {},
+elements_cache = {},
+
+/**
+ * bulds dom-elements
+ *
+ * @param String element tag name
+ * @param Object options
+ * @return HTMLElement
+ */
+make_element = function (tag, options) {
+  return (tag in elements_cache ? elements_cache[tag] : (
+    elements_cache[tag] = document.createElement(tag)
+  )).cloneNode(false);
+};
+
+//
+// IE 6,7,8 (not 9!) browsers have a bug with checkbox and radio input elements
+// it doesn't place the 'checked' property correctly, plus there are some issues
+// with clonned SELECT objects, so we are replaceing the elements maker in here
+//
+if (IE8_OR_LESS) {
+  make_element = function(tag, options) {
+    if (tag === 'input' && options !== undefined) {
+      tag = '<input name="'+ options.name +
+        '" type='+ options.type +
+        (options.checked ? ' checked' : '') +
+      '/>';
     }
-  },
 
-// protected
+    return document.createElement(tag);
+  };
+}
 
-  // constructs the event
-  construct: element_constructor
-});
+/**
+ * Basic element's constructor
+ *
+ * @param Element wrapper instance
+ * @param mixed raw dom element of a string tag name
+ * @param Object options
+ * @return void
+ */
+function Element_initialize(inst, element, options) {
+  if (typeof element === 'string') {
+    inst._ = make_element(element, options);
 
-Element.Wrappers = Element_wrappers;
+    if (options !== undefined) {
+      for (var key in options) {
+        switch (key) {
+          case 'id':    inst._.id        = options[key]; break;
+          case 'html':  inst._.innerHTML = options[key]; break;
+          case 'class': inst._.className = options[key]; break;
+          case 'on':    inst.on(options[key]);           break;
+          default:      inst.set(key, options[key]);
+        }
+      }
+    }
+  } else {
+    inst._ = element;
+  }
+}
 
 
 /**
@@ -2248,12 +2355,16 @@ Element.Wrappers = Element_wrappers;
  *   The insertions system implementation is inspired by
  *     - MooTools  (http://mootools.net)      Copyright (C) Valerio Proietti
  *
- * Copyright (C) 2008-2010 Nikolay Nemshilov
+ * Copyright (C) 2008-2011 Nikolay Nemshilov
  */
 
 Element.include({
   parent: function(css_rule) {
-    return css_rule ? this.parents(css_rule)[0] : $(this._.parentNode || null); // <- IE6 need that || null
+    var parent = this._.parentNode, parent_type = parent && parent.nodeType;
+
+    return css_rule ? this.parents(css_rule)[0] :
+      (parent_type === 1 || parent_type === 9) ? // <- IE6 sometimes has a fragment node in there
+      wrap(parent) : null;
   },
 
   parents: function(css_rule) {
@@ -2305,7 +2416,7 @@ Element.include({
    * The content might be one of the following data
    *
    *  o) an element instance
-   *  o) a String, which will be converted into content to insert (all the scripts will be parsed out and executed)
+   *  o) a String (all the scripts will be parsed out and executed)
    *  o) a list of Elements
    *  o) a hash like {position: content}
    *
@@ -2315,7 +2426,7 @@ Element.include({
    */
   insert: function(content, position) {
     var scripts = null, element = this._;
-    position = (position||'bottom').toLowerCase();
+    position = position === undefined ? 'bottom' : position;
 
     if (typeof(content) !== 'object') {
       scripts = content = (''+content);
@@ -2323,11 +2434,12 @@ Element.include({
       content = content._;
     }
 
-    Element_insertions[position](element, content.nodeType ? content :
-      Element_createFragment.call(
-        (position === 'bottom' || position === 'top') ?
-          element : element.parentNode, content
-      )
+    Element_insertions[position](element,
+      content.nodeType === undefined ?
+        Element_createFragment(
+          (position === 'bottom' || position === 'top') ?
+            element : element.parentNode, content
+        ) : content
     );
 
     if (scripts !== null) { scripts.evalScripts(); }
@@ -2404,8 +2516,8 @@ Element.include({
    * @return String text content or Element this
    */
   text: function(text) {
-    return text === undefined ? this._.innerHTML.stripTags() :
-      this.update(this.document()._.createTextNode(text));
+    return text === undefined ? (this._.textContent || this._.innerText) :
+      this.update(this.doc()._.createTextNode(text));
   },
 
   /**
@@ -2462,10 +2574,29 @@ Element.include({
    * @return Element new clone
    */
   clone: function() {
-    var clone = this._.cloneNode(true);
-    // we need manually reassing the UID_KEY because IE will clone it too
-    clone[UID_KEY] = UID++;
-    return new Element(clone);
+    return new Element(this._.cloneNode(true));
+  },
+
+  /**
+   * Returns an index of the element among the other child elements
+   *
+   * NOTE: doesn't count the textual nodes!
+   *
+   * @return Integer index
+   */
+  index: function() {
+    var node    = this._,
+        sibling = node.parentNode.firstChild,
+        index   = 0;
+
+    while (sibling !== node) {
+      if (sibling.nodeType === 1) { // counting elements only
+        index ++;
+      }
+      sibling = sibling.nextSibling;
+    }
+
+    return index;
   }
 });
 
@@ -2478,11 +2609,11 @@ Element.include({
  * @return Array found elements
  */
 function recursively_collect(where, attr, css_rule) {
-  var node = where._, result = [];
+  var node = where._, result = [], i=0, no_rule = !css_rule;
 
   while ((node = node[attr])) {
-    if (node.tagName && (!css_rule || $(node).match(css_rule))) {
-      result.push($(node));
+    if (node.nodeType === 1 && (no_rule || wrap(node).match(css_rule))) {
+      result[i++] = wrap(node);
     }
   }
 
@@ -2544,28 +2675,30 @@ $alias(Element_wraps, {
 var fragment = document.createDocumentFragment(),
     tmp_cont = document.createElement('DIV');
 
-function Element_createFragment(content) {
+function Element_createFragment(context, content) {
   if (typeof(content) === 'string') {
-    var tag   = this.tagName,
+    var tag   = context.tagName,
         tmp   = tmp_cont,
-        wrap  = Element_wraps[tag] || ['', '', 1],
+        wrap  = tag in Element_wraps ? Element_wraps[tag] : ['', '', 1],
         depth = wrap[2];
 
     tmp.innerHTML = wrap[0] + '<'+ tag + '>' + content + '</'+ tag + '>' + wrap[1];
 
-    while (depth-- > 0) {
+    while (depth-- !== 0) {
       tmp = tmp.firstChild;
     }
 
     content = tmp.childNodes;
-  }
 
-  for (var i=0, length = content.length, node; i < length; i++) {
-    // in case of NodeList unit, the elements will be removed out of the list during the appends
-    // therefore if that's an array we use the 'i' variable, and if it's a collection of nodes
-    // then we always hit the first element of the stack
-    node = content[content.length === length ? i : 0];
-    fragment.appendChild(node instanceof Element ? node._ : node);
+    while (content.length !== 0) {
+      fragment.appendChild(content[0]);
+    }
+
+  } else {
+    for (var i=0, length = content.length, node; i < length; i++) {
+      node = content[content.length === length ? i : 0];
+      fragment.appendChild(node instanceof Element ? node._ : node);
+    }
   }
 
   return fragment;
@@ -2581,7 +2714,7 @@ function Element_createFragment(content) {
  *     - MooTools  (http://mootools.net)      Copyright (C) Valerio Proietti
  *     - Dojo      (www.dojotoolkit.org)      Copyright (C) The Dojo Foundation
  *
- * Copyright (C) 2008-2010 Nikolay V. Nemshilov
+ * Copyright (C) 2008-2011 Nikolay V. Nemshilov
  */
 Element.include({
   /**
@@ -2612,13 +2745,13 @@ Element.include({
       c_key = key.indexOf('-') < 0 ? key : key.camelize();
 
       if (key === 'opacity') {
-        if (Browser.IE) {
+        if (Browser_IE) {
           element_style.filter = 'alpha(opacity='+ hash[key] * 100 +')';
         } else {
           element_style.opacity = hash[key];
         }
       } else if (key === 'float') {
-        c_key = Browser.IE ? 'styleFloat' : 'cssFloat';
+        c_key = Browser_IE ? 'styleFloat' : 'cssFloat';
       }
 
       element_style[c_key] = hash[key];
@@ -2644,10 +2777,12 @@ Element.include({
    *
    * @return Object/CSSDefinition computed styles
    */
-  computedStyles: function() {
-    var element = this._;
-    //     old IE,                 IE8,                    W3C
-    return element.currentStyle || element.runtimeStyle || element.ownerDocument.defaultView.getComputedStyle(element, null) || {};
+  computedStyles: HTML.currentStyle ? function() {
+    return this._.currentStyle || {};
+  } : HTML.runtimeStyle ? function() {
+    return this._.runtimeStyle || {};
+  } : function() {
+    return this._.ownerDocument.defaultView.getComputedStyle(this._, null);
   },
 
   /**
@@ -2735,28 +2870,28 @@ Element.include({
  * @param String style-key
  * @return String clean style
  */
-function clean_style(style, in_key) {
-  var value, key = in_key.camelize();
+function clean_style(style, key) {
+  key = key.camelize();
 
-  switch (key) {
-    case 'opacity':
-      value = !Browser.IE ? style[key].replace(',', '.') :
-        ((/opacity=(\d+)/i.exec(style.filter || '') || ['', '100'])[1].toInt() / 100)+'';
-      break;
-
-    case 'float':
-      key = Browser.IE ? 'styleFloat' : 'cssFloat';
-
-    default:
-      value = style[key];
-
-      // Opera returns named colors with quotes
-      if (Browser.Opera && /color/i.test(key) && value) {
-        value = value.replace(/"/g, '');
-      }
+  if (key === 'opacity') {
+    return Browser_IE ? (
+      (/opacity=(\d+)/i.exec(style.filter || '') ||
+      ['', '100'])[1].toInt() / 100
+    )+'' :style[key].replace(',', '.');
   }
 
-  return value || null;
+  if (key === 'float') {
+    key = Browser_IE ? 'styleFloat' : 'cssFloat';
+  }
+
+  var value = style[key];
+
+  // Opera returns named colors with quotes
+  if (Browser_Opera && /color/i.test(key) && value) {
+    value = value.replace(/"/g, '');
+  }
+
+  return value;
 }
 
 
@@ -2767,7 +2902,7 @@ function clean_style(style, in_key) {
  *   Most of the naming system in the module inspired by
  *     - Prototype (http://prototypejs.org)   Copyright (C) Sam Stephenson
  *
- * Copyright (C) 2008-2010 Nikolay V. Nemshilov
+ * Copyright (C) 2008-2011 Nikolay V. Nemshilov
  */
 Element.include({
   /**
@@ -2783,11 +2918,15 @@ Element.include({
     var key, element = this._;
 
     for (key in hash) {
-      // some attributes are not available as properties
-      if (!(key in element)) {
-        element.setAttribute(key, ''+hash[key]);
+      if (key === 'style') {
+        this.setStyle(hash[key]);
+      } else {
+        // some attributes are not available as properties
+        if (!(key in element)) {
+          element.setAttribute(key, ''+hash[key]);
+        }
+        element[key] = hash[key];
       }
-      element[key] = hash[key];
     }
 
     return this;
@@ -2864,16 +3003,25 @@ Element.include({
   /**
    * shows the element
    *
-   * @param String optional effect name
-   * @param Object the optional effect options
    * @return Element self
    */
-  show: function(effect, options) {
+  show: function() {
     if (this.hidden()) {
-      // setting 'block' for the divs and 'inline' for the other elements hidden on the css-level
-      var element = this._, value = element.tagName == 'DIV' ? 'block' : 'inline';
+      var element   = this._, value = this._d, dummy;
 
-      element.style.display = this._d == 'none' ? value : this._d || value;
+      // trying to guess the default 'style.display' for this kind of elements
+      if (!value || value === 'none') {
+        dummy = $E(element.tagName).insertTo(HTML);
+        value = dummy.getStyle('display');
+        dummy.remove();
+      }
+
+      // failsafe in case the user been naughty
+      if (value === 'none') {
+        value = 'block';
+      }
+
+      element.style.display = value;
     }
 
     return this;
@@ -2882,12 +3030,10 @@ Element.include({
   /**
    * toggles the visibility state of the element
    *
-   * @param String optional effect name
-   * @param Object the optional effect options
    * @return Element self
    */
-  toggle: function(effect, options) {
-    return this[this.visible() ? 'hide' : 'show'](effect, options);
+  toggle: function() {
+    return this[this.visible() ? 'hide' : 'show']();
   },
 
   /**
@@ -2908,7 +3054,7 @@ Element.include({
  * this module contains the Element's part of functionality
  * responsible for the dimensions and positions getting/setting
  *
- * Copyright (C) 2008-2010 Nikolay Nemshilov
+ * Copyright (C) 2008-2011 Nikolay Nemshilov
  */
 Element.include({
   /**
@@ -2916,8 +3062,8 @@ Element.include({
    *
    * @return RightJS.Document
    */
-  document: function() {
-    return $(this._.ownerDocument);
+  doc: function() {
+    return wrap(this._.ownerDocument);
   },
 
   /**
@@ -2925,8 +3071,8 @@ Element.include({
    *
    * @return RightJS.Window
    */
-  window: function() {
-    return this.document().window();
+  win: function() {
+    return this.doc().win();
   },
 
   /**
@@ -2947,8 +3093,8 @@ Element.include({
    */
   position: function() {
     var rect    = this._.getBoundingClientRect(),
-        html    = this.document()._.documentElement,
-        scrolls = this.window().scrolls();
+        html    = this.doc()._.documentElement,
+        scrolls = this.win().scrolls();
 
     return {
       x: rect.left + scrolls.x - html.clientLeft,
@@ -3093,7 +3239,7 @@ Element.include({
    * @return Element self
    */
   scrollThere: function(options) {
-    this.window().scrollTo(this, options);
+    this.win().scrollTo(this, options);
     return this;
   }
 });
@@ -3102,74 +3248,115 @@ Element.include({
 /**
  * DOM Element events handling methods
  *
- * Copyright (C) 2008-2010 Nikolay Nemshilov
+ * Copyright (C) 2008-2011 Nikolay Nemshilov
  */
-var Element_observer = Observer_create({});
+[Element, Document, Window].each('include', $ext(Observer_create({}), {
+  /**
+   * The basic events handling attachment method
+   * SEE Observer#on for more details about supported arguments
+   *
+   * @returnt this
+   */
+  on: function() {
+    Observer_on(this, arguments, function(hash) {
 
-//
-// HACK HACK HACK
-//
-// I'm kinda patching the observer methods manually in here
-// the reason is in building flat and fast functions
-//
-function hack_observer(name, re, text) {
-  Element_observer[name] = patch_function(Element_observer[name], re, text);
-}
+      if (hash.e === 'mouseenter' || hash.e === 'mouseleave') {
+        mouse_io_activate();
+        hash.n = hash.e;
+        hash.w = function() {};
+        // NOTE: we don't attach this listener to the actual element!
+        //       so it didn't screw with IE's native enter/leave handlers
+      } else {
+        if (hash.e === 'contextmenu' && Browser.Konqueror) {
+          hash.n = 'rightclick';
+        } else if (hash.e === 'mousewheel' && Browser.Gecko) {
+          hash.n = 'DOMMouseScroll';
+        } else {
+          hash.n = hash.e;
+        }
 
-hack_observer('on',
-  /(\$listeners\.push\((\w+?)\);)/,
+        hash.w = function(event) {
+          event = new Event(event, hash.t);
+          if (hash.f.apply(hash.t, (hash.r?[]:[event]).concat(hash.a)) === false) {
+            event.stop();
+          }
+        };
 
-  // aliasing the 'rightclick' to the 'contextmenu' event
-  '$1$2.e=$2.n=$2.e==="rightclick"?"contextmenu":$2.e;'+
+        if (IE8_OR_LESS) {
+          hash.t._.attachEvent('on'+hash.n, hash.w);
+        } else {
+          hash.t._.addEventListener(hash.n, hash.w, false);
+        }
+      }
 
-  // swapping a browser related event names
-  (Browser.Gecko      ? 'if($2.n==="mousewheel")$2.n="DOMMouseScroll";' : '') +
-  (Browser.Konqueror  ? 'if($2.n==="contextmenu")$2.n="rightclick";'    : '') +
+      return hash;
+    });
 
-  '$2.w=function(){'+
-    'var a=$A(arguments),_;'+
-    '$2.r?a.shift():_=a[0]=new RightJS.Event(a[0],this);'+
-    '$2.f.apply($2.t,a.concat($2.a))===false&&_.stop()'+
-  '};$2.t=this;' + (
-    looks_like_ie ?
-      '$2.w=$2.w.bind(this);this._.attachEvent("on"+$2.n,$2.w);' :
-      'this._.addEventListener($2.n,$2.w,false);'
-  )
-);
+    return this;
+  },
 
-hack_observer('stopObserving',
-  /(function\s*\((\w+)\)\s*\{\s*)(return\s*)([^}]+)/m,
-  '$1var r=$4;'+
-  'if(!r)this._.' + (looks_like_ie ?
-    'detachEvent("on"+$2.n,$2.w);' :
-    'removeEventListener($2.n,$2.w,false);'
-  )+'$3 r'
-);
+  /**
+   * Stops an event handling
+   *
+   * @param String event name or a function callback
+   * @param function callback or nothing
+   * @return this
+   */
+  stopObserving: function(event, callback) {
+    Observer_stopObserving(this, event, callback, function(hash) {
+      if (IE8_OR_LESS) {
+        hash.t._.detachEvent('on'+ hash.n, hash.w);
+      } else {
+        hash.t._.removeEventListener(hash.n, hash.w, false);
+      }
+    });
 
-// adding the event generator
-hack_observer('fire',
-  /(\w+)(\s*=\s*(\w+).shift\(\))/,
-  '$1$2;$1=$1 instanceof RightJS.Event?$1:'+
-  'new RightJS.Event($1,Object.merge({target:this._},$3[0]))'+
-  ';$1.currentTarget=this'
-);
+    return this;
+  },
 
-// addjusting the arguments list
-hack_observer('fire',
-  /((\w+)\.e\s*===\s*(\w+))([^}]+\2\.f\.apply)[^}]+?\.concat\(\w+\)\)/,
-  '$1.type$4(this,($2.r?[]:[$3]).concat($2.a))'
-);
+  /**
+   * Artificially trigers the event on the element
+   *
+   * @param string event name or an Event instance
+   * @param Object options
+   * @return this
+   */
+  fire: function(event, options) {
+    var parent = this.parent && this.parent();
 
-// a simple events terminator method to be hooked like this.onClick('stopEvent');
-Element_observer.stopEvent = function() { return false; };
+    if (!(event instanceof Event)) {
+      event = new Event(event, $ext({target: this._}, options));
+    }
 
-// loading the observer interface into the Element object
-Element.include(Element_observer);
-Document.include(Element_observer);
-Window.include(Element_observer);
+    // setting up the currentTarget reference
+    event.currentTarget = this;
+
+    (this.$listeners || []).each(function(hash) {
+      if (hash.e === event.type &&
+        hash.f.apply(this, (hash.r?[]:[event]).concat(hash.a)) === false
+      ) {
+        event.stop();
+      }
+    }, this);
+
+    // manually bypassing the event to the parent one if it should bubble
+    if (parent && parent.fire && !event.stopped) {
+      parent.fire(event);
+    }
+
+    return this;
+  },
+
+  /**
+   * a simple events terminator method to be hooked like this.onClick('stopEvent');
+   *
+   * @return false
+   */
+  stopEvent: function() { return false; }
+}));
 
 // couple more shortcuts for the window
-Observer_createShortcuts(Window[PROTO], $w('blur focus scroll resize load'));
+Observer_createShortcuts(Window.prototype, $w('blur focus scroll resize load'));
 
 /**
  * Registers a list of event-binding shortcuts like
@@ -3183,12 +3370,13 @@ function Element_add_event_shortcuts(tokens) {
   tokens = $w(tokens);
   Event_delegation_shortcuts = Event_delegation_shortcuts.concat(tokens);
 
-  Observer_createShortcuts(Element[PROTO], tokens);
-  Observer_createShortcuts(Document[PROTO], tokens);
+  Observer_createShortcuts(Element.prototype, tokens);
+  Observer_createShortcuts(Document.prototype, tokens);
 }
 
 Element_add_event_shortcuts(
-  'click rightclick contextmenu mousedown mouseup mouseover mouseout mousemove keypress keydown keyup'
+  'click rightclick contextmenu mousedown mouseup '+
+  'mouseover mouseout mousemove keypress keydown keyup'
 );
 
 
@@ -3198,20 +3386,8 @@ Element_add_event_shortcuts(
  * NOTE: this module is just a wrap over the native CSS-selectors feature
  *       see the olds/css.js file for the manual selector code
  *
- * Copyright (C) 2008-2010 Nikolay Nemshilov
+ * Copyright (C) 2008-2011 Nikolay Nemshilov
  */
-
-/**
- * Native css-selectors include the current element into the search context
- * and as we actually search only inside of the element we add it's tag
- * as a scope for the search
- */
-function stub_rule(css_rule, tag) {
-  var rule = css_rule || '*', element = tag._,
-    tag_name = 'tagName' in element ? element.tagName : null;
-
-  return tag_name === null ? rule : rule.replace(/(^|,)/g, '$1'+ tag_name + ' ');
-}
 
 [Element, Document].each('include', {
   /**
@@ -3222,21 +3398,30 @@ function stub_rule(css_rule, tag) {
    * @return Element matching node or null
    */
   first: function(css_rule) {
-    return $(this._.querySelector(stub_rule(css_rule, this)));
+    return wrap(this._.querySelector(css_rule || '*'));
   },
 
   /**
    * Finds a list of matching nodes, or all the descendant nodes if no css-rule provided
    *
    * @param String css-rule
+   * @param boolean raw-search
    * @return Array of elements
    */
-  find: function(css_rule) {
-    return $A(this._.querySelectorAll(stub_rule(css_rule, this))).map($);
-  }
-});
+  find: function(css_rule, raw) {
+    var query = this._.querySelectorAll(css_rule || '*'), result, i=0, l = query.length;
 
-Element.include({
+    if (raw === true) {
+      result = $A(query);
+    } else {
+      for (result = []; i < l; i++) {
+        result[i] = wrap(query[i]);
+      }
+    }
+
+    return result;
+  },
+
   /**
    * checks if the element matches this css-rule
    *
@@ -3246,12 +3431,25 @@ Element.include({
    * @return Boolean check result
    */
   match: function(css_rule) {
-    var result, parent = this._.tagName === 'HTML' ? this._.ownerDocument : this.parents().last();
+    // finding the top parent element (the element might not be on the document)
+    var element = this._, parent = element, result, faking = false;
 
-    // if it's a single node putting it into the context
-    result = $(parent || $E('p').insert(this)).find(css_rule).include(this);
+    while (parent.parentNode !== null && parent.parentNode.nodeType !== 11) {
+      parent = parent.parentNode;
+    }
 
-    if (!parent) { this.remove(); }
+    // creating a fake context when needed
+    if (element === parent) {
+      parent = document.createElement('div');
+      parent.appendChild(element);
+      faking = true;
+    }
+
+    result = wrap(parent).find(css_rule, true).indexOf(element) !== -1;
+
+    if (faking) {
+      parent.removeChild(element);
+    }
 
     return result;
   }
@@ -3265,16 +3463,12 @@ Element.include({
  *   The basic principles of the module are originated from
  *     - MooTools  (http://mootools.net)      Copyright (C) Valerio Proietti
  *
- * Copyright (C) 2009-2010 Nikolay Nemshilov
+ * Copyright (C) 2009-2011 Nikolay Nemshilov
  */
-[Window, Document].each(function(object) {
-  var proto = object[PROTO], old_on = proto.on;
-
-  // redefining the observer method to catch up
-  proto.on = function(name) {
-    if (name == 'ready' && !this._wR) {
+Document.include({
+  on: function(name) {
+    if (name === 'ready' && !this._iR) {
       var document = this._, ready = this.fire.bind(this, 'ready');
-      document = document.nodeType == 9 ? document : document.document;
 
       // IE and Konqueror browsers
       if ('readyState' in document) {
@@ -3289,36 +3483,14 @@ Element.include({
         document.addEventListener('DOMContentLoaded', ready, false);
       }
 
-      this._wR = true;
+      this._iR = true;
     }
-    return old_on.apply(this, arguments);
-  };
 
-  Observer_createShortcuts(proto, ['ready']);
+    return this.$super.apply(this, arguments);
+  }
 });
 
-/**
- * Deprecated method names aliases
- *
- * In RightJS 2 some methods were renamed so those are the aliases
- * to support the old API
- *
- * NOTE: Will be nuked in couple of releases!
- */
-$alias(Element[PROTO], {
-  subNodes: 'children',
-  sizes:    'size',
-  select:   'find'
-});
-
-$alias(Document[PROTO], {
-  select:   'find'
-});
-
-$alias(Window[PROTO], {
-  sizes: 'size'
-});
-
+Observer_createShortcuts(Document.prototype, ['ready']);
 
 /**
  * The form unit class and extensions
@@ -3327,10 +3499,10 @@ $alias(Window[PROTO], {
  *   The basic principles of the module are inspired by
  *     - Prototype (http://prototypejs.org)   Copyright (C) Sam Stephenson
  *
- * Copyright (C) 2009-2010 Nikolay Nemshilov
+ * Copyright (C) 2009-2011 Nikolay Nemshilov
  */
 
-var Form = RightJS.Form = Element_wrappers.FORM = new Wrapper(Element, {
+var Form = RightJS.Form = Element_wrappers.FORM = new Class(Element, {
   /**
    * constructor
    *
@@ -3385,7 +3557,7 @@ var Form = RightJS.Form = Element_wrappers.FORM = new Wrapper(Element, {
    * @return Input field
    */
   input: function(name) {
-    return $(this._[name]);
+    return wrap(this._[name]);
   },
 
   /**
@@ -3444,7 +3616,9 @@ var Form = RightJS.Form = Element_wrappers.FORM = new Wrapper(Element, {
     this.inputs().each(function(element) {
       input = element._;
       name  = input.name;
-      if (!input.disabled && name && (!['checkbox', 'radio'].include(input.type) || input.checked)) {
+      if (!input.disabled && name && (
+        !['checkbox', 'radio'].include(input.type) || input.checked
+      )) {
         value = element.getValue();
         if (name.endsWith('[]')) {
           value = (values[name] || []).concat([value]);
@@ -3490,16 +3664,11 @@ var Form = RightJS.Form = Element_wrappers.FORM = new Wrapper(Element, {
 // creating the event shortcuts
 Element_add_event_shortcuts('submit reset focus blur disable enable change');
 
-// deprecated alias
-$alias(Form[PROTO], {
-  getElements: 'elements'
-});
-
 
 /**
  * The form input element class
  *
- * Copyright (C) 2010 Nikolay Nemshilov
+ * Copyright (C) 2010-2011 Nikolay Nemshilov
  */
 var Input = RightJS.Input =
 
@@ -3510,7 +3679,7 @@ Element_wrappers.SELECT   =
 Element_wrappers.TEXTAREA =
 Element_wrappers.OPTGROUP =
 
-new Wrapper(Element, {
+new Class(Element, {
   /**
    * Constructor
    *
@@ -3549,7 +3718,25 @@ new Wrapper(Element, {
    * @return Form wrapped form
    */
   form: function() {
-    return $(this._.form);
+    return wrap(this._.form);
+  },
+
+  /**
+   * Overloading the method to fix some issues with IE and FF
+   *
+   * @param mixed content
+   * @param string optional position
+   * @return Input this
+   */
+  insert: function(content, position) {
+    this.$super(content, position);
+
+    // manually resetting the selected option in here
+    this.find('option').each(function(option) {
+      option._.selected = !!option.get('selected');
+    });
+
+    return this;
   },
 
   /**
@@ -3613,7 +3800,7 @@ new Wrapper(Element, {
   focus: function() {
     this._.focus();
     this.focused = true;
-    if (Browser.IE) { this.fire('focus', {bubbles: false}); }
+    if (Browser_IE) { this.fire('focus', {bubbles: false}); }
     return this;
   },
 
@@ -3625,7 +3812,7 @@ new Wrapper(Element, {
   blur: function() {
     this._.blur();
     this.focused = false;
-    if (Browser.IE) { this.fire('blur', {bubbles: false}); }
+    if (Browser_IE) { this.fire('blur', {bubbles: false}); }
     return this;
   },
 
@@ -3687,33 +3874,12 @@ new Wrapper(Element, {
   }
 });
 
-// SELECT element has a bug in FF that screws the selected options
-if ($E('select').update('<option selected="true">1</option><option>2</option>')._.value === '2') {
-  Input[PROTO].insert = function(content, position) {
-    Element[PROTO].insert.call(this, content, position);
-
-    // manually resetting the selected option in here
-    this.find('option').each(function(option) {
-      option._.selected = !!option.get('selected');
-    });
-
-    return this;
-  };
-}
 
 /**
- * This module provides the artificial events bubbling feature
+ * This module provides correct focus/blur events bubbling
  *
- * Copyright (C) 2010 Nikolay Nemshilov
+ * Copyright (C) 2010-2011 Nikolay Nemshilov
  */
-
-// patching the Element's 'fire' method again
-// to make it to bypass the event to its parent
-Element[PROTO].fire = patch_function(
-  Element_observer.fire,
-  /(\w+)(\s*=\s*\w+\.shift[\s\S]+)(return this)/m,
-  '$1$2var p=!$1.stopped&&this.parent&&this.parent();p&&p.fire&&p.fire($1);$3'
-);
 
 /**
  * Triggers a manual focus/blur events bubbling
@@ -3726,7 +3892,7 @@ function focus_boobler(raw_event) {
       target = event.target,
       parent = target.parent && target.parent();
 
-  event.type = (raw_event.type === 'focusin' || raw_event.type === 'focus') ? 'focus' : 'blur';
+  event.type = raw_event.type === 'focusin' || raw_event.type === 'focus' ? 'focus' : 'blur';
 
   if (parent) { parent.fire(event); }
 }
@@ -3737,7 +3903,7 @@ function focus_boobler(raw_event) {
  * manually like they were normal events
  *
  */
-if (Browser.IE) {
+if (IE8_OR_LESS) {
   document.attachEvent('onfocusin',  focus_boobler);
   document.attachEvent('onfocusout', focus_boobler);
 } else {
@@ -3745,132 +3911,127 @@ if (Browser.IE) {
   document.addEventListener('blur',  focus_boobler, true);
 }
 
+
 /**
- * Tests if there is the event support
+ * Provides the mouse enter/leave events handling emulation
  *
- * @param String event name
- * @retrun Boolean check result
+ * Copyright (C) 2010-2011 Nikolay Nemshilov
  */
-function event_support_for(name, tag) {
-  var e = document.createElement(tag);
-  e.setAttribute(name, ';');
-  return isFunction(e[name]);
-}
+var mouse_io_index = [], mouse_io_inactive = true;
 
-if (!event_support_for('onsubmit', 'form')) {
-  /**
-   * Emulates the 'submit' event bubbling for IE browsers
-   *
-   * @param raw dom-event
-   * @return void
-   */
-  var submit_boobler = function(raw_event) {
-    var event = $(raw_event), element = event.target._,
-        type = element.type, form = element.form, parent;
+/**
+ * Fires the actual mouseenter/mouseleave event
+ *
+ * @param original event
+ * @param raw dom element
+ * @param integer uid
+ * @param boolean mouseenter or mouseleave
+ * @return void
+ */
+function mouse_io_fire(raw, element, uid, enter) {
+  var event = new Event(raw);
+  event.type    = enter === true ? 'mouseenter' : 'mouseleave';
+  event.bubbles = false;
+  event.stopped = true;
+  event.target  = wrap(element);
 
-    if (form && (parent = $(form).parent()) && (
-      (raw_event.keyCode === 13   && (type === 'text'   || type === 'password')) ||
-      (raw_event.type === 'click' && (type === 'submit' || type === 'image'))
-    )) {
-      event.type   = 'submit';
-      event.target = $(form);
-      parent.fire(event);
-    }
+  // replacing the #find method so that UJS didn't
+  // get broke with trying to find nested elements
+  event.find = function(css_rule) {
+    return $$(css_rule, true)
+      .indexOf(this.target._) === -1 ?
+        undefined : this.target;
   };
 
-  document.attachEvent('onclick',    submit_boobler);
-  document.attachEvent('onkeypress', submit_boobler);
+  event.target.fire(event);
+  current_Document.fire(event);
 }
 
-if (!event_support_for('onchange', 'input')) {
+/**
+ * Figures out the enter/leave events by listening the
+ * mouseovers in the document
+ *
+ * @param raw dom event
+ * @return void
+ */
+function mouse_io_handler(e) {
+  var target  = e.target        || e.srcElement,
+      from    = e.relatedTarget || e.fromElement,
+      element = target,
+      passed  = false,
+      parents = [],
+      uid, event;
 
-  var get_input_value = function(target) {
-    var element = target._,
-        type    = element.type;
+  while (element.nodeType === 1) {
+    uid = $uid(element);
 
-    return type === 'radio' || type === 'checkbox' ?
-      element.checked : target.getValue();
-  },
-
-  /**
-   * Emulates the 'change' event bubbling
-   *
-   * @param Event wrapped dom-event
-   * @param Input wrapped input element
-   * @return void
-   */
-  change_boobler = function(event, target) {
-    var parent  = target.parent(),
-        value   = get_input_value(target);
-
-    if (parent && ''+target._prev_value !== ''+value) {
-      target._prev_value = value; // saving the value so it didn't fire up again
-      event.type = 'change';
-      parent.fire(event);
+    if (mouse_io_index[uid] === undefined) {
+      mouse_io_fire(e, element, uid,
+        mouse_io_index[uid] = true
+      );
     }
-  },
 
-  /**
-   * Catches the input field changes
-   *
-   * @param raw dom-event
-   * @return void
-   */
-  catch_inputs_access = function(raw_event) {
-    var event  = $(raw_event),
-        target = event.target,
-        type   = target._.type,
-        tag    = target._.tagName,
-        input_is_radio = (type === 'radio' || type === 'checkbox');
-
-    if (
-      (event.type === 'click' && (input_is_radio || tag === 'SELECT')) ||
-      (event.type === 'keydown' && (
-        (event.keyCode == 13 && (tag !== 'TEXTAREA')) ||
-        type === 'select-multiple'
-      ))
-    ) {
-      change_boobler(event, target);
+    if (element === from) {
+      passed = true;
     }
-  },
 
-  /**
-   * Catch inputs blur
-   *
-   * @param raw dom-event
-   * @return void
-   */
-  catch_input_left = function(raw_event) {
-    var event  = $(raw_event),
-        target = event.target;
+    parents.push(element);
 
-    if (target instanceof Input) {
-      change_boobler(event, target);
+    element = element.parentNode;
+  }
+
+  if (from && !passed) {
+    while (from !== null && from.nodeType === 1 && parents.indexOf(from) === -1) {
+      uid = $uid(from);
+      if (mouse_io_index[uid] !== undefined) {
+        mouse_io_fire(e, from, uid,
+          mouse_io_index[uid] = undefined
+        );
+      }
+
+      from = from.parentNode;
     }
-  };
+  }
+}
 
-  document.attachEvent('onclick',    catch_inputs_access);
-  document.attachEvent('onkeydown',  catch_inputs_access);
-  document.attachEvent('onfocusout', catch_input_left);
-
-  /**
-   * storing the input element previous value, so we could figure out
-   * if it was changed later on
-   */
-  document.attachEvent('onbeforeactivate', function(event) {
-    var element = $(event).target;
-
-    if (element instanceof Input) {
-      element._prev_value = get_input_value(element);
+/**
+ * Calling 'mouseleave' for all currently active elements on the page
+ *
+ * @return void
+ */
+function mouse_io_reset(e) {
+  mouse_io_index.each(function(value, uid) {
+    if (value && Wrappers_Cache[uid]) {
+      mouse_io_fire(e, Wrappers_Cache[uid]._, uid, false);
     }
   });
 }
 
+/**
+ * Activating the mouse-io events emulation
+ *
+ * @return void
+ */
+function mouse_io_activate() {
+  if (mouse_io_inactive) {
+    mouse_io_inactive = false;
+
+    if (Browser_IE) {
+      document.attachEvent('onmouseover', mouse_io_handler);
+      window.attachEvent('blur', mouse_io_reset);
+    } else {
+      document.addEventListener('mouseover', mouse_io_handler, false);
+      window.addEventListener('blur', mouse_io_reset, false);
+    }
+  }
+}
+
+Element_add_event_shortcuts('mouseenter mouseleave');
 
 /**
  * This module the standard events delegation interface
  *
- * Copyright (C) 2010 Nikolay Nemshilov
+ * Copyright (C) 2010-2011 Nikolay Nemshilov
  */
 [Element, Document].each('include', {
   /**
@@ -3972,15 +4133,24 @@ if (!event_support_for('onchange', 'input')) {
   }
 });
 
+/**
+ * Builds the actual event listener that will delegate stuff
+ * to other elements as they reach the element where the listener
+ * attached
+ *
+ * @param String css rule
+ * @param Arguments the original arguments list
+ * @param Object scope
+ * @return Function the actual event listener
+ */
 function build_delegative_listener(css_rule, entry, scope) {
+  var args = $A(entry), callback = args.shift();
   return function(event) {
-    var target = event.target, args = $A(entry), callback = args.shift();
-    if (scope.find(css_rule).include(target)) {
-      return isFunction(callback) ?
-        callback.apply(target, [event].concat(args)) :
-        target[callback].apply(target, args);
-    }
-    return undefined;
+    var target = event.find(css_rule);
+    return target === undefined ? target :
+      typeof(callback) === 'string' ?
+        target[callback].apply(target, args) :
+        callback.apply(target, [event].concat(args));
   };
 }
 
@@ -4045,6 +4215,12 @@ function delegation_listeners(args, object) {
 
 
 /**
+ * Some String level shortcuts to handle collections of elements
+ *
+ * Copyright (C) 2011 Nikolay Nemshilov
+ */
+
+/**
  * Some nice shortcuts for the document-level events delegation handling
  *
  * USAGE:
@@ -4077,17 +4253,17 @@ Object.each({
   stopObserving: 'undelegate',
   observes:      'delegates'
 }, function(name, method) {
-  String[PROTO][name] = function() {
-    var doc = $(document), args = $A(arguments), result;
+  String.prototype[name] = function() {
+    var args = $A(arguments), result;
 
     args.splice(1,0,''+this);
-    result = doc[method].apply(doc, args);
+    result = current_Document[method].apply(current_Document, args);
 
-    return result === doc ? this : result;
+    return result === current_Document ? this : result;
   };
 });
-var old_on = String[PROTO].on;
-String[PROTO].on = function(hash) {
+var old_on = String.prototype.on;
+String.prototype.on = function(hash) {
   if (isHash(hash)) {
     for (var key in hash) {
       old_on.apply(this, [key].concat([hash[key]]));
@@ -4107,11 +4283,44 @@ String[PROTO].on = function(hash) {
  *    "#css.rule".onMouseover('method_name');
  */
 Event_delegation_shortcuts.each(function(name) {
-  String[PROTO]['on'+name.capitalize()] = function() {
+  String.prototype['on'+name.capitalize()] = function() {
     return this.on.apply(this, [name].concat($A(arguments)));
   };
 });
 
+/**
+ * The rest of the DOM methods access
+ *
+ * USAGE:
+ *   "#css.rule".addClass('boo-hoo');
+ *   "#css.rule".setStyle({color: 'red'});
+ *
+ */
+$w('Element Input Form').each(function(klass) {
+  Object.each(klass in RightJS ? RightJS[klass].prototype : {}, function(name, method) {
+    if (isFunction(method) && !(name in String.prototype)) {
+      String.prototype[name] = function() {
+        var nodes = $$(this, true), i=0, l = nodes.length, first=true, element, result;
+        for (; i < l; i++) {
+          element = wrap(nodes[i]);
+          result  = element[name].apply(element, arguments);
+
+          // checking if that's a data-retrieving call
+          if (first) {
+            if (result !== element) {
+              return result;
+            }
+            first = false;
+          }
+        }
+
+        // don't return the string itself in here,
+        // it will screw with data-retrieving calls on empty collections
+        return null;
+      };
+    }
+  });
+});
 
 /**
  * XMLHttpRequest wrapper
@@ -4122,7 +4331,7 @@ Event_delegation_shortcuts.each(function(name) {
  *     - MooTools  (http://mootools.net)      Copyright (C) Valerio Proietti
  *     - jQuery    (http://jquery.com)        Copyright (C) John Resig
  *
- * Copyright (C) 2008-2010 Nikolay V. Nemshilov
+ * Copyright (C) 2008-2011 Nikolay V. Nemshilov
  */
 var Xhr = RightJS.Xhr = new Class(Observer, {
   extend: {
@@ -4159,7 +4368,7 @@ var Xhr = RightJS.Xhr = new Class(Observer, {
      * @return Xhr request
      */
     load: function(url, options) {
-      return new this(url, Object.merge({method: 'get'}, options)).send();
+      return new this(url, $ext({method: 'get'}, options)).send();
     }
   },
 
@@ -4224,7 +4433,11 @@ var Xhr = RightJS.Xhr = new Class(Observer, {
    * @return Xhr self
    */
   send: function(params) {
-    var add_params = {}, url = this.url, method = this.method.toLowerCase(), headers = this.headers, key, xhr;
+    var add_params = {},
+        url = this.url,
+        method  = this.method.toLowerCase(),
+        headers = this.headers,
+        key, xhr;
 
     if (method == 'put' || method == 'delete') {
       add_params._method = method;
@@ -4284,7 +4497,7 @@ var Xhr = RightJS.Xhr = new Class(Observer, {
     if (!xhr || xhr.canceled) { return this; }
 
     xhr.abort();
-    xhr.onreadystatechange = dummy();
+    xhr.onreadystatechange = function() {};
     xhr.canceled = true;
 
     return this.fire('cancel');
@@ -4302,12 +4515,10 @@ var Xhr = RightJS.Xhr = new Class(Observer, {
       return new Xhr.JSONP(this);
     } else if (this.form && this.form.first('input[type=file]')) {
       return new Xhr.IFramed(this.form);
+    } else if ('ActiveXObject' in window){
+      return new ActiveXObject('MSXML2.XMLHTTP');
     } else {
-      try {
-        return new XMLHttpRequest();
-      } catch(e) {
-        return new ActiveXObject('MSXML2.XMLHTTP');
-      }
+      return new XMLHttpRequest();
     }
   },
 
@@ -4360,20 +4571,17 @@ var Xhr = RightJS.Xhr = new Class(Observer, {
 
   // sanitizes the json-response texts
   sanitizedJSON: function() {
-    try {
-      return JSON.parse(this.text);
-    } catch(e) {
-      // manual json consistancy check
-      if (window.JSON || !(/^[,:{}\[\]0-9.\-+Eaeflnr-u \n\r\t]*$/).test(this.text.replace(/\\./g, '@').replace(/"[^"\\\n\r]*"/g, ''))) {
-        if (this.secureJSON) {
-          throw "JSON error: "+this.text;
-        }
-        return null;
+    if (!(/^[,:{}\[\]0-9.\-+Eaeflnr-u \n\r\t]*$/).test(
+      this.text.replace(/\\./g, '@').replace(/"[^"\\\n\r]*"/g, '')
+    )) {
+      if (this.secureJSON) {
+        throw "JSON error: "+this.text;
       }
+      return null;
     }
 
-    // the fallback JSON extraction
-    return eval("("+this.text+")");
+    return 'JSON' in window ? JSON.parse(this.text) :
+      (new Function("return "+this.text))();
   },
 
   // initializes the request callbacks
@@ -4443,21 +4651,8 @@ $ext(Observer_create(Xhr), {
  *     - Prototype (http://prototypejs.org)   Copyright (C) Sam Stephenson
  *     - jQuery    (http://jquery.com)        Copyright (C) John Resig
  *
- * Copyright (C) 2009-2010 Nikolay V. Nemshilov
+ * Copyright (C) 2009-2011 Nikolay V. Nemshilov
  */
-
-/**
- * Catches the form submit events and sends the form remotely
- *
- * @param Event submit
- * @param Object xhr options
- * @return void
- */
-function remote_send(event, options) {
-  event.stop();
-  this.send(Object.merge({spinner: this.first('.spinner')}, options));
-}
-
 Form.include({
   /**
    * sends the form via xhr request
@@ -4469,10 +4664,28 @@ Form.include({
     options = options || {};
     options.method = options.method || this._.method || 'post';
 
-    new Xhr(this._.action || document.location.href, options)
-      .onComplete(this.enable.bind(this)).send(this);
+    this.xhr = new Xhr(
+      this._.action || document.location.href,
+      $ext({spinner: this.first('.spinner')}, options)
+    )
+    .onComplete(this.enable.bind(this))
+    .onCancel(this.enable.bind(this))
+    .send(this);
 
     this.disable.bind(this).delay(1); // webkit needs this async call with iframed calls
+    return this;
+  },
+
+  /**
+   * Cancels current Xhr request (if there are any)
+   *
+   * @return Form this
+   */
+  cancelXhr: function() {
+    if (this.xhr instanceof Xhr) {
+      this.xhr.cancel();
+    }
+
     return this;
   },
 
@@ -4483,10 +4696,11 @@ Form.include({
    * @return Form this
    */
   remotize: function(options) {
-    if (!this.observes('submit', remote_send)) {
-      this.on('submit', remote_send, options);
+    if (!this.remote) {
+      this.on('submit', Form_remote_send, options);
       this.remote = true;
     }
+
     return this;
   },
 
@@ -4496,12 +4710,23 @@ Form.include({
    * @return Form this
    */
   unremotize: function() {
-    this.stopObserving('submit', remote_send);
+    this.stopObserving('submit', Form_remote_send);
     this.remote = false;
-
     return this;
   }
 });
+
+/**
+ * Catches the form submit events and sends the form remotely
+ *
+ * @param Event submit
+ * @param Object xhr options
+ * @return void
+ */
+function Form_remote_send(event, options) {
+  event.stop();
+  this.send(options);
+}
 
 
 /**
@@ -4510,7 +4735,7 @@ Form.include({
  * Credits:
  *   - jQuery    (http://jquery.com)        Copyright (C) John Resig
  *
- * Copyright (C) 2008-2010 Nikolay V. Nemshilov
+ * Copyright (C) 2008-2011 Nikolay V. Nemshilov
  */
 Element.include({
   /**
@@ -4522,7 +4747,7 @@ Element.include({
    * @return Element this
    */
   load: function(url, options) {
-    new Xhr(url, Object.merge({method: 'get'}, options)).update(this);
+    new Xhr(url, $ext({method: 'get'}, options)).update(this);
     return this;
   }
 });
@@ -4532,13 +4757,12 @@ Element.include({
  * A dummy XmlHTTPRequest interface to be used in other
  * fake requests
  *
- * Copyright (C) 2010 Nikolay Nemshilov
+ * Copyright (C) 2010-2011 Nikolay Nemshilov
  */
 Xhr.Dummy = {
-  open:               dummy(),
-  abort:              dummy(),
-  setRequestHeader:   dummy(),
-  onreadystatechange: dummy()
+  open:               function() {},
+  setRequestHeader:   function() {},
+  onreadystatechange: function() {}
 };
 
 
@@ -4546,7 +4770,7 @@ Xhr.Dummy = {
  * This unit presents a fake drop in replacement for the XmlHTTPRequest unit
  * but works with an iframe targeting in the background
  *
- * Copyright (C) 2008-2010 Nikolay Nemshilov
+ * Copyright (C) 2008-2011 Nikolay Nemshilov
  */
 Xhr.IFramed = new Class({
   include: Xhr.Dummy,
@@ -4561,7 +4785,7 @@ Xhr.IFramed = new Class({
     this.form = form;
     this.id   = 'xhr_'+ new Date().getTime();
 
-    form.insert('<i><iframe name="'+this.id+'" id="'+this.id+
+    this.form.doc().first('body').append('<i><iframe name="'+this.id+'" id="'+this.id+
       '" width="0" height="0" frameborder="0" src="about:blank"></iframe></i>',
       'after');
 
@@ -4575,7 +4799,7 @@ Xhr.IFramed = new Class({
   onLoad: function() {
     this.status       = 200;
     this.readyState   = 4;
-    
+
     this.form.set('target', '');
 
     try {
@@ -4583,6 +4807,10 @@ Xhr.IFramed = new Class({
     } catch(e) { }
 
     this.onreadystatechange();
+  },
+
+  abort: function() {
+    $(this.id).set('src', 'about:blank');
   }
 });
 
@@ -4590,7 +4818,7 @@ Xhr.IFramed = new Class({
 /**
  * The JSONP Xhr request tonnel
  *
- * Copyright (C) 2010 Nikolay Nemshilov
+ * Copyright (C) 2010-2011 Nikolay Nemshilov
  */
 Xhr.JSONP = new Class({
   include: Xhr.Dummy,
@@ -4654,6 +4882,16 @@ Xhr.JSONP = new Class({
     this.xhr.json = this.xhr.responseJSON = data;
 
     this.onreadystatechange();
+  },
+
+  /**
+   * We can't really cancel a JSONP request
+   * but we can prevent the default handler to ckick in
+   *
+   * @return void
+   */
+  abort: function() {
+    window[this.name] = function() {};
   }
 });
 
@@ -4665,7 +4903,7 @@ Xhr.JSONP = new Class({
  *   The basic principles, structures and naming system are inspired by
  *     - MooTools  (http://mootools.net)      Copyright (C) Valerio Proietti
  *
- * Copyright (C) 2008-2010 Nikolay V. Nemshilov
+ * Copyright (C) 2008-2011 Nikolay V. Nemshilov
  */
 var Fx = RightJS.Fx = new Class(Observer, {
   extend: {
@@ -4680,7 +4918,7 @@ var Fx = RightJS.Fx = new Class(Observer, {
 
     // default options
     Options: {
-      fps:        Browser.IE ? 40 : 60,
+      fps:        IE8_OR_LESS ? 40 : 60,
       duration:   'normal',
       transition: 'Sin',
       queue:      true
@@ -4707,10 +4945,7 @@ var Fx = RightJS.Fx = new Class(Observer, {
       Lin: function(i) {
         return i;
       }
-    },
-
-    ch: [], // scheduled effects registries
-    cr: []  // currently running effects registries
+    }
   },
 
   /**
@@ -4720,12 +4955,8 @@ var Fx = RightJS.Fx = new Class(Observer, {
    */
   initialize: function(element, options) {
     this.$super(options);
-
-    if ((this.element = element = $(element))) {
-      var uid = $uid(element);
-      this.ch = (Fx.ch[uid] = Fx.ch[uid] || []);
-      this.cr = (Fx.cr[uid] = Fx.cr[uid] || []);
-    }
+    this.element = $(element);
+    fx_register(this);
   },
 
   /**
@@ -4734,21 +4965,21 @@ var Fx = RightJS.Fx = new Class(Observer, {
    * @return Fx this
    */
   start: function() {
-    if (this.queue(arguments)) { return this; }
+    if (fx_add_to_queue(this, arguments)) { return this; }
+
+    var options    = this.options,
+        duration   = Fx.Durations[options.duration] || options.duration,
+        transition = Fx.Transitions[options.transition] || options.transition,
+        steps      = (duration / 1000 * this.options.fps).ceil(),
+        interval   = (1000 / this.options.fps).round();
+
+    fx_mark_current(this);
+
     this.prepare.apply(this, arguments);
 
-    var options = this.options,
-        duration  = Fx.Durations[options.duration] || options.duration;
-    this.transition = Fx.Transitions[options.transition] || options.transition;
+    fx_start_timer(this, transition, interval, steps);
 
-    this.steps  = (duration / 1000 * this.options.fps).ceil();
-    this.number = 1;
-
-    if (this.cr) {
-      this.cr.push(this); // adding this effect to the list of currently active
-    }
-
-    return this.fire('start', this).startTimer();
+    return this.fire('start', this);
   },
 
   /**
@@ -4757,7 +4988,11 @@ var Fx = RightJS.Fx = new Class(Observer, {
    * @return Fx this
    */
   finish: function() {
-    return this.stopTimer().unreg().fire('finish').next();
+    fx_stop_timer(this);
+    fx_remove_from_queue(this);
+    this.fire('finish');
+    fx_run_next(this);
+    return this;
   },
 
   /**
@@ -4770,100 +5005,140 @@ var Fx = RightJS.Fx = new Class(Observer, {
    * @return Fx this
    */
   cancel: function() {
-    this.ch.clean();
-    return this.stopTimer().unreg().fire('cancel');
-  },
-
-  /**
-   * pauses the transition
-   *
-   * @return Fx this
-   */
-  pause: function() {
-    return this.stopTimer();
-  },
-
-  /**
-   * resumes a paused transition
-   *
-   * @return Fx this
-   */
-  resume: function() {
-    return this.startTimer();
+    fx_stop_timer(this);
+    fx_remove_from_queue(this);
+    return this.fire('cancel');
   },
 
 // protected
   // dummy method, should be implemented in a subclass
-  prepare: function(values) {},
+  prepare: function() {},
 
   // dummy method, processes the element properties
-  render: function(delta) {},
+  render: function() {}
+}),
 
-  // the periodically called method
-  // NOTE: called outside of the instance scope!
-  step: function(that) {
-    if (that.number > that.steps) {
-      that.finish();
-    } else {
-      if (!that.w) {
-        that.w = true;
-        that.render(that.transition(that.number / that.steps));
-        that.w = false;
-      }
-      that.number ++;
-    }
-  },
+// global effects registry
+scheduled_fx = [], running_fx = [];
 
-  // starts the effect timer
-  startTimer: function() {
-    this.timer = this.step.periodical((1000 / this.options.fps).round(), this);
-    return this;
-  },
+/**
+ * Registers the element in the effects queue
+ *
+ * @param Fx effect
+ * @return void
+ */
+function fx_register(fx) {
+  var uid = $uid((fx.element || {})._ || {});
+  fx.ch = (scheduled_fx[uid] = scheduled_fx[uid] || []);
+  fx.cr = (running_fx[uid]   = running_fx[uid]   || []);
+}
 
-  // stops the effect timer
-  stopTimer: function() {
-    if (this.timer) {
-      this.timer.stop();
-    }
-    return this;
-  },
+/**
+ * Registers the effect in the effects queue
+ *
+ * @param Fx fx
+ * @param Arguments original arguments list
+ * @return boolean true if it queued and false if it's ready to go
+ */
+function fx_add_to_queue(fx, args) {
+  var chain = fx.ch, queue = fx.options.queue;
 
-  // handles effects queing
-  // should return false if there's no queue and true if there is a queue
-  queue: function(args) {
-    var chain = this.ch, queue = this.options.queue;
-
-    if (!chain || this.$ch) {
-      return (this.$ch = false);
-    }
-
-    if (queue) {
-      chain.push([args, this]);
-    }
-
-    return queue && chain[0][1] !== this;
-  },
-
-  // calls for the next effect in the queue
-  next: function() {
-    var chain = this.ch, next = chain.shift();
-    if ((next = chain[0])) {
-      next[1].$ch = true;
-      next[1].start.apply(next[1], next[0]);
-    }
-    return this;
-  },
-
-  // unregisters this effect out of the currently running list
-  unreg: function() {
-    var currents = this.cr;
-    if (currents) {
-      currents.splice(currents.indexOf(this), 1);
-    }
-    return this;
+  if (!chain || fx.$ch) {
+    return (fx.$ch = false);
   }
 
-});
+  if (queue) {
+    chain.push([args, fx]);
+  }
+
+  return queue && chain[0][1] !== fx;
+}
+
+/**
+ * Puts the fx into the list of currently running effects
+ *
+ * @param Fx fx
+ * @return void
+ */
+function fx_mark_current(fx) {
+  if (fx.cr) {
+    fx.cr.push(fx);
+  }
+}
+
+/**
+ * Removes the fx from the queue
+ *
+ * @param Fx fx
+ * @return void
+ */
+function fx_remove_from_queue(fx) {
+  var currents = fx.cr;
+  if (currents) {
+    currents.splice(currents.indexOf(fx), 1);
+  }
+}
+
+/**
+ * Tries to invoke the next effect in the queue
+ *
+ * @param Fx fx
+ * @return void
+ */
+function fx_run_next(fx) {
+  var chain = fx.ch, next = chain.shift();
+  if ((next = chain[0])) {
+    next[1].$ch = true;
+    next[1].start.apply(next[1], next[0]);
+  }
+}
+
+/**
+ * Cancels all currently running and scheduled effects
+ * on the element
+ *
+ * @param Element element
+ * @return void
+ */
+function fx_cancel_all(element) {
+  var uid = $uid(element._);
+
+  (running_fx[uid] || []).each('cancel');
+  (scheduled_fx[uid] || []).splice(0);
+}
+
+/**
+ * Initializes the fx rendering timer
+ *
+ * @param Fx fx
+ * @param Function transition stops calculator
+ * @param Float interval
+ * @param Integer number of steps
+ * @return void
+ */
+function fx_start_timer(fx, transition, interval, steps) {
+  var number = 1;
+  fx._timer = setInterval(function() {
+    if (number > steps) {
+      fx.finish();
+    } else {
+      fx.render(transition(number/steps));
+      number ++;
+    }
+  }, interval);
+}
+
+/**
+ * Cancels the Fx rendering timer (if any)
+ *
+ * @param Fx fx
+ * @return void
+ */
+function fx_stop_timer(fx) {
+  if (fx._timer) {
+    clearInterval(fx._timer);
+  }
+}
 
 
 /**
@@ -4941,14 +5216,8 @@ String.include({
  *   Some ideas are inspired by
  *     - MooTools  (http://mootools.net)      Copyright (C) Valerio Proietti
  *
- * Copyright (C) 2008-2010 Nikolay V. Nemshilov
+ * Copyright (C) 2008-2011 Nikolay V. Nemshilov
  */
-var methods    = Element.prototype,
-    old_hide   = methods.hide,
-    old_show   = methods.show,
-    old_remove = methods.remove,
-    old_scroll = methods.scrollTo;
-
 Element.include({
   /**
    * Stops all the visual effects on the element
@@ -4956,7 +5225,7 @@ Element.include({
    * @return Element this
    */
   stop: function() {
-    (Fx.cr[$uid(this)] || []).each('cancel');
+    fx_cancel_all(this);
     return this;
   },
 
@@ -4968,7 +5237,7 @@ Element.include({
    * @return Element this
    */
   hide: function(fx, options) {
-    return (fx && this.visible()) ? this.fx(fx, ['out', options]) : old_hide.call(this);
+    return (fx && this.visible()) ? call_fx(this, fx, ['out', options]) : this.$super();
   },
 
   /**
@@ -4979,7 +5248,18 @@ Element.include({
    * @return Element this
    */
   show: function(fx, options) {
-    return (fx && !this.visible()) ? this.fx(fx, ['in', options]) : old_show.call(this);
+    return (fx && !this.visible()) ? call_fx(this, fx, ['in', options]) : this.$super();
+  },
+
+  /**
+   * Toggles the element state with visual effect
+   *
+   * @param String fx name
+   * @param Object fx options
+   * @return Element this
+   */
+  toggle: function(fx, options) {
+    return fx ? call_fx(this, fx, ['toggle', options]) : this.$super();
   },
 
   /**
@@ -4990,9 +5270,9 @@ Element.include({
    * @return Element this
    */
   remove: function(fx, options) {
-    return (fx && this.visible()) ? this.fx(fx, ['out', Object.merge(options, {
-      onFinish: old_remove.bind(this)
-    })]) : old_remove.call(this);
+    return (fx && this.visible()) ? call_fx(this, fx, ['out', $ext(options || {}, {
+      onFinish: this.$super.bind(this)
+    })]) : this.$super();
   },
 
   /**
@@ -5003,7 +5283,7 @@ Element.include({
    * @return Element self
    */
   morph: function(style, options) {
-    return this.fx('morph', [style, options || {}]); // <- don't replace with arguments
+    return call_fx(this, 'morph', [style, options || {}]); // <- don't replace with arguments
   },
 
   /**
@@ -5015,7 +5295,7 @@ Element.include({
    * @return Element self
    */
   highlight: function() {
-    return this.fx('highlight', arguments);
+    return call_fx(this, 'highlight', arguments);
   },
 
   /**
@@ -5025,7 +5305,7 @@ Element.include({
    * @return Element self
    */
   fade: function() {
-    return this.fx('fade', arguments);
+    return call_fx(this, 'fade', arguments);
   },
 
   /**
@@ -5036,7 +5316,7 @@ Element.include({
    * @return Element self
    */
   slide: function() {
-    return this.fx('slide', arguments);
+    return call_fx(this, 'slide', arguments);
   },
 
   /**
@@ -5047,7 +5327,7 @@ Element.include({
    * @return Element this
    */
   scroll: function(value, options) {
-    return this.fx('scroll', [value, options||{}]);
+    return call_fx(this, 'scroll', [value, options||{}]);
   },
 
   /**
@@ -5059,34 +5339,133 @@ Element.include({
    * @return Element this
    */
   scrollTo: function(value, options) {
-    return isHash(options) ? this.scroll(value, options) : old_scroll.apply(this, arguments);
-  },
-
-
-// protected
-
-  // runs an Fx on the element
-  fx: function(name, params) {
-    var args = $A(params).compact(), options = isHash(args.last()) ? args.pop() : {},
-      fx = new Fx[name.capitalize()](this, options);
-
-    fx.start.apply(fx, args);
-
-    return this;
+    return isHash(options) ? this.scroll(value, options) : this.$super.apply(this, arguments);
   }
-
 });
+
+/**
+ * Calls the visual effect on the element
+ *
+ * @param Element context
+ * @param String fx-name
+ * @param Object fx-options
+ * @return Element context
+ */
+function call_fx(element, name, params) {
+  var args    = $A(params).compact(),
+      options = isHash(args.last()) ? args.pop() : {},
+      fx      = new Fx[name.capitalize()](element, options);
+
+  fx.start.apply(fx, args);
+
+  return element;
+}
 
 
 /**
  * This class provides the basic effect for styles manipulation
  *
- * Credits:
- *   The idea is inspired by the Morph effect from
- *     - MooTools  (http://mootools.net)      Copyright (C) Valerio Proietti
- *
- * Copyright (C) 2008-2010 Nikolay Nemshilov
+ * Copyright (C) 2008-2011 Nikolay Nemshilov
  */
+
+/////////////////////////////////////////////////////////////////////////////
+// Native css-transitions based implementation
+/////////////////////////////////////////////////////////////////////////////
+
+var native_fx_prefix = ['WebkitT', 'OT', 'MozT', 'MsT', 't'].first(function(name) {
+  return name + 'ransition' in HTML.style;
+}),
+native_fx_transition = native_fx_prefix     + 'ransition',
+native_fx_property   = native_fx_transition + 'Property',
+native_fx_duration   = native_fx_transition + 'Duration',
+native_fx_function   = native_fx_transition + 'TimingFunction',
+
+// basic transition algorithm replacements
+native_fx_functions  = {
+  Sin: 'cubic-bezier(.3,0,.6,1)',
+  Cos: 'cubic-bezier(0,.3,.6,0)',
+  Log: 'cubic-bezier(0.6,.3,.8)',
+  Exp: 'cubic-bezier(.6,0,.8,.3)',
+  Lin: 'cubic-bezier(0,0,1,1)'
+};
+
+function native_fx_prepare(style) {
+  var options = this.options,
+      element = this.element,
+      element_style = element._.style,
+      old_style = Object.only(
+        element.computedStyles(),
+        native_fx_property,
+        native_fx_duration,
+        native_fx_function
+      );
+
+  function reset_transitions_style() {
+    for (var key in old_style) {
+      element_style[key] = old_style[key];
+    }
+  }
+
+  this
+    .onFinish(reset_transitions_style)
+    .onCancel(function() {
+      element_style[native_fx_property] = 'none';
+      setTimeout(reset_transitions_style, 1);
+    });
+
+  // setting up the transition
+  element_style[native_fx_property] = 'all';
+  element_style[native_fx_duration] = (Fx.Durations[options.duration] || options.duration) +'ms';
+  element_style[native_fx_function] = native_fx_functions[options.transition] || options.transition;
+
+  setTimeout(function() { element.setStyle(style); }, 0);
+}
+
+// NOTE: OPERA's css-transitions are a bit jerky so we disable them by default
+Fx.Options.engine = native_fx_prefix === undefined || Browser_Opera ? 'javascript' : 'native';
+
+////////////////////////////////////////////////////////////////////////////
+// Manual version
+////////////////////////////////////////////////////////////////////////////
+
+Fx.Morph = new Class(Fx, {
+// protected
+
+  // parepares the effect
+  prepare: function(style) {
+    if (this.options.engine === 'native' && native_fx_prefix !== undefined) {
+      this.render = this.transition = function() {};
+      native_fx_prepare.call(this, style);
+    } else {
+      var keys   = style_keys(style),
+          before = clone_style(this.element, keys),
+          after  = end_style(this.element, style, keys);
+
+      clean_styles(this.element, before, after);
+
+      this.before = parse_style(before);
+      this.after  = parse_style(after);
+    }
+  },
+
+  render: function(delta) {
+    var before, after, value, style = this.element._.style, key, i, l;
+    for (key in this.after) {
+      before = this.before[key];
+      after  = this.after[key];
+
+      for (i=0, l = after.length; i < l; i++) {
+        value = before[i] + (after[i] - before[i]) * delta;
+        if (after.r) {
+          value = Math.round(value);
+        }
+        after.t[i*2 + 1] = value;
+      }
+
+      style[key] = after.t.join('');
+    }
+  }
+});
 
 // a list of common style names to compact the code a bit
 var directions = $w('Top Left Right Bottom');
@@ -5098,6 +5477,32 @@ function add_variants(keys, key, variants) {
   }
 }
 
+// creates an appropriate style-keys list out of the user styles
+function style_keys(style) {
+  var keys = [], border_types = ['Style', 'Color', 'Width'], key, i, j;
+
+  for (key in style) {
+    if (key.startsWith('border')) {
+      for (i=0; i < 3; i++) {
+        for (j=0; j < 4; j++) {
+          keys.push('border' + directions[j] + border_types[i]);
+        }
+      }
+    } else if (key === 'margin' || key === 'padding') {
+      add_variants(keys, key, directions);
+    } else if (key.startsWith('background')) {
+      add_variants(keys, 'background', ['Color', 'Position', 'PositionX', 'PositionY']);
+    } else if (key === 'opacity' && Browser_IE) {
+      keys.push('filter');
+    } else {
+      keys.push(key);
+    }
+  }
+
+  return keys;
+}
+
+
 // checks if the color is transparent
 function is_transparent(color) {
   return color === 'transparent' || color === 'rgba(0, 0, 0, 0)';
@@ -5106,10 +5511,10 @@ function is_transparent(color) {
 // adjusts the border-styles
 function check_border_styles(element, before, after) {
   for (var i=0; i < 4; i++) {
-    var direction = directions[i],
-      bd_style = 'border' + direction + 'Style',
-      bd_width = 'border' + direction + 'Width',
-      bd_color = 'border' + direction + 'Color';
+    var
+      bd_style = 'border' + directions[i] + 'Style',
+      bd_width = 'border' + directions[i] + 'Width',
+      bd_color = 'border' + directions[i] + 'Color';
 
     if (bd_style in before && before[bd_style] != after[bd_style]) {
       var style = element._.style;
@@ -5149,7 +5554,7 @@ function parse_style(values) {
 
 // cleans up and optimizies the styles
 function clean_styles(element, before, after) {
-  var remove = [], key;
+  var key;
 
   for (key in after) {
     // checking the height/width options
@@ -5169,8 +5574,8 @@ function clean_styles(element, before, after) {
   // cleaing up the list
   for (key in after) {
     // proprocessing colors
-    if (after[key] !== before[key] && !remove.include(key) && /color/i.test(key)) {
-      if (Browser.Opera) {
+    if (after[key] !== before[key] && /color/i.test(key)) {
+      if (Browser_Opera) {
         after[key] = after[key].replace(/"/g, '');
         before[key] = before[key].replace(/"/g, '');
       }
@@ -5187,131 +5592,54 @@ function clean_styles(element, before, after) {
     }
 
     // removing unprocessable keys
-    if (after[key] === before[key] || remove.include(key) || !/\d/.test(before[key]) || !/\d/.test(after[key])) {
+    if (after[key] === before[key] || !/\d/.test(before[key]) || !/\d/.test(after[key])) {
       delete(after[key]);
       delete(before[key]);
     }
   }
 }
 
-/**
- * creates an appropriate style-keys list out of the user styles
- *
- * @param Object the style hash
- * @return Array of clean style keys list
- */
-function style_keys(style) {
-  var keys = [], border_types = ['Style', 'Color', 'Width'], key, i, j;
+// cloning the element current styles hash
+function clone_style(element, keys) {
+  var i=0, len = keys.length, style = element.computedStyles(), clean = {}, key;
 
-  for (key in style) {
-    if (key.startsWith('border')) {
-      for (i=0; i < border_types.length; i++) {
-        for (j=0; j < directions.length; j++) {
-          keys.push('border' + directions[j] + border_types[i]);
-        }
-      }
-    } else if (key == 'margin' || key == 'padding') {
-      add_variants(keys, key, directions);
-    } else if (key.startsWith('background')) {
-      add_variants(keys, 'background', ['Color', 'Position', 'PositionX', 'PositionY']);
-    } else if (key == 'opacity' && Browser.IE) {
-      keys.push('filter');
-    } else {
-      keys.push(key);
+  for (; i < len; i++) {
+    key = keys[i];
+    if (key in style) {
+      clean[key] = ''+ style[key];
+    }
+
+    // libwebkit bug fix for in case of languages pack applied
+    if (key === 'opacity') {
+      clean[key] = clean[key].replace(',', '.');
     }
   }
 
-  return keys;
+  return clean;
 }
 
-Fx.Morph = new Class(Fx, {
+// calculating the end styles hash
+function end_style(element, style, keys) {
+  var dummy = element.clone()
+      .setStyle('position:absolute;z-index:-1;visibility:hidden')
+      .setWidth(element.size().x)
+      .setStyle(style), after;
 
-// protected
-
-  // parepares the effect
-  prepare: function(style) {
-    var keys   = style_keys(style),
-        before = this._cloneStyle(this.element, keys),
-        after  = this._endStyle(style, keys);
-
-    clean_styles(this.element, before, after);
-
-    this.before = parse_style(before);
-    this.after  = parse_style(after);
-  },
-
-  render: function(delta) {
-    var before, after, value, style = this.element._.style, key, i, l;
-    for (key in this.after) {
-      before = this.before[key];
-      after  = this.after[key];
-
-      for (i=0, l = after.length; i < l; i++) {
-        value = before[i] + (after[i] - before[i]) * delta;
-        if (after.r) {
-          value = Math.round(value);
-        }
-        after.t[i*2 + 1] = value;
-      }
-
-      style[key] = after.t.join('');
-    }
-  },
-
-  /**
-   * Returns a hash of the end style
-   *
-   * @param Object style
-   * @return Object end style
-   */
-  _endStyle: function(style, keys) {
-    var element = this.element,
-        dummy   = element.clone()
-        .setStyle('position:absolute;z-index:-1;visibility:hidden')
-        .setWidth(element.size().x)
-        .setStyle(style);
-
-    if (element.parent()) {
-      element.insert(dummy, 'before');
-    }
-
-    var after  = this._cloneStyle(dummy, keys);
-
-    dummy.remove();
-
-    return after;
-  },
-
-  /**
-   * Fast styles cloning
-   *
-   * @param Element element
-   * @param Array style keys
-   * @return Hash of styles
-   */
-  _cloneStyle: function(element, keys) {
-    for (var i=0, len = keys.length, style = element.computedStyles(), clean = {}, key; i < len; i++) {
-      key = keys[i];
-      if (key in style) {
-        clean[key] = ''+ style[key];
-      }
-
-      // libwebkit bug fix for in case of languages pack applied
-      if (key === 'opacity') {
-        clean[key] = clean[key].replace(',', '.');
-      }
-    }
-
-    return clean;
+  if (element.parent()) {
+    element.insert(dummy, 'before');
   }
-});
 
+  after = clone_style(dummy, keys);
+  dummy.remove();
+
+  return after;
+}
 
 
 /**
  * the elements hightlighting effect
  *
- * Copyright (C) 2008-2010 Nikolay V. Nemshilov
+ * Copyright (C) 2008-2011 Nikolay V. Nemshilov
  */
 Fx.Highlight = new Class(Fx.Morph, {
   extend: {
@@ -5331,19 +5659,22 @@ Fx.Highlight = new Class(Fx.Morph, {
    * @return self
    */
   prepare: function(start, end) {
-    var element = this.element, style = element._.style, end_color = end || element.getStyle('backgroundColor');
+    var element       = this.element,
+        element_style = element._.style,
+        style_name    = 'backgroundColor',
+        end_color     = end || element.getStyle(style_name);
 
     if (is_transparent(end_color)) {
-      this.onFinish(function() { style.backgroundColor = 'transparent'; });
+      this.onFinish(function() { element_style[style_name] = 'transparent'; });
 
       // trying to find the end color
-      end_color = [element].concat(element.parents()).map(function(node) {
-        var bg = node.getStyle('backgroundColor');
-        return (bg && !is_transparent(bg)) ? bg : null;
-      }).compact().first() || '#FFF';
+      end_color = [element].concat(element.parents())
+        .map('getStyle', style_name)
+        .reject(is_transparent)
+        .compact().first() || '#FFF';
     }
 
-    style.backgroundColor = (start || this.options.color);
+    element_style[style_name] = (start || this.options.color);
 
     return this.$super({backgroundColor: end_color});
   }
@@ -5353,7 +5684,7 @@ Fx.Highlight = new Class(Fx.Morph, {
 /**
  * this is a superclass for the bidirectional effects
  *
- * Copyright (C) 2008-2010 Nikolay V. Nemshilov
+ * Copyright (C) 2008-2011 Nikolay V. Nemshilov
  */
 Fx.Twin = new Class(Fx.Morph, {
 
@@ -5363,8 +5694,9 @@ Fx.Twin = new Class(Fx.Morph, {
    * @return Fx self
    */
   finish: function() {
-    if (this.how == 'out') {
-      old_hide.call(this.element);
+    if (this.how === 'out') {
+      // calling 'prototype' to prevent circular calls from subclasses
+      Element.prototype.hide.call(this.element);
     }
 
     return this.$super();
@@ -5380,7 +5712,7 @@ Fx.Twin = new Class(Fx.Morph, {
   setHow: function(how) {
     this.how = how || 'toggle';
 
-    if (this.how == 'toggle') {
+    if (this.how === 'toggle') {
       this.how = this.element.visible() ? 'out' : 'in';
     }
   }
@@ -5391,7 +5723,7 @@ Fx.Twin = new Class(Fx.Morph, {
 /**
  * the slide effects wrapper
  *
- * Copyright (C) 2008-2010 Nikolay V. Nemshilov
+ * Copyright (C) 2008-2011 Nikolay V. Nemshilov
  */
 Fx.Slide = new Class(Fx.Twin, {
   extend: {
@@ -5404,111 +5736,145 @@ Fx.Slide = new Class(Fx.Twin, {
   prepare: function(how) {
     this.setHow(how);
 
-    var element = old_show.call(this.element);
-    this.size = element.size();
+    // calling 'prototype' to prevent circular calls from subclasses
+    var element = Element.prototype.show.call(this.element),
+        element_style = element._.style,
+        old_styles = Object.only(
+          element_style,
+          'overflow', 'width', 'height',
+          'marginTop', 'marginLeft'
+        );
 
-    this.styles = {};
-    $w('overflow height width marginTop marginLeft').each(function(key) {
-      this.styles[key] = element._.style[key];
-    }, this);
-
-    element._.style.overflow = 'hidden';
-    this.onFinish('_getBack').onCancel('_getBack');
-
-    return this.$super(this._getStyle(this.options.direction));
-  },
-
-  _getBack: function() {
-    this.element.setStyle(this.styles);
-  },
-
-  // calculates the final style
-  _getStyle: function(direction) {
-    var style = {}, size = this.size,
-      margin_left = this.styles.marginLeft.toFloat() || 0,
-      margin_top  = this.styles.marginTop.toFloat() || 0;
-
-    if (this.how == 'out') {
-      style[['top', 'bottom'].include(direction) ? 'height' : 'width'] = '0px';
-
-      if (direction == 'right') {
-        style.marginLeft = margin_left + size.x+'px';
-      } else if (direction == 'bottom') {
-        style.marginTop = margin_top + size.y +'px';
-      }
-
-    } else if (this.how == 'in') {
-      var element_style = this.element._.style;
-
-      if (['top', 'bottom'].include(direction)) {
-        style.height = size.y + 'px';
-        element_style.height = '0px';
-      } else {
-        style.width = size.x + 'px';
-        element_style.width = '0px';
-      }
-
-      if (direction == 'right') {
-        style.marginLeft = margin_left + 'px';
-        element_style.marginLeft = margin_left + size.x + 'px';
-      } else if (direction == 'bottom') {
-        style.marginTop = margin_top + 'px';
-        element_style.marginTop = margin_top + size.y + 'px';
+    function restore_styles() {
+      for (var key in old_styles) {
+        element_style[key] = old_styles[key];
       }
     }
 
-    return style;
+    this.onFinish(restore_styles).onCancel(restore_styles);
+
+    element_style.overflow = 'hidden';
+
+    return this.$super(fx_slide_prepare_styles(
+      element_style,
+      element.size(),
+      this.options.direction,
+      this.how
+    ));
+  }
+});
+
+function fx_slide_prepare_styles(element_style, size, direction, how) {
+  var style = {},
+      margin_left = element_style.marginLeft.toFloat() || 0,
+      margin_top  = element_style.marginTop.toFloat()  || 0,
+      to_right  = direction === 'right',
+      to_bottom = direction === 'bottom',
+      vertical  = direction === 'top' || to_bottom;
+
+  if (how === 'out') {
+    style[vertical ? 'height' : 'width'] = '0px';
+
+    if (to_right) {
+      style.marginLeft = margin_left + size.x+'px';
+    } else if (to_bottom) {
+      style.marginTop = margin_top + size.y +'px';
+    }
+  } else {
+    if (vertical) {
+      style.height = size.y + 'px';
+      element_style.height = '0px';
+    } else {
+      style.width = size.x + 'px';
+      element_style.width = '0px';
+    }
+
+    if (to_right) {
+      style.marginLeft = margin_left + 'px';
+      element_style.marginLeft = margin_left + size.x + 'px';
+    } else if (to_bottom) {
+      style.marginTop = margin_top + 'px';
+      element_style.marginTop = margin_top + size.y + 'px';
+    }
   }
 
-});
+  return style;
+}
 
 
 /**
  * The opacity effects wrapper
  *
- * Copyright (C) 2008-2010 Nikolay V. Nemshilov
+ * Copyright (C) 2008-2011 Nikolay V. Nemshilov
  */
 Fx.Fade = new Class(Fx.Twin, {
   prepare: function(how) {
     this.setHow(how);
 
-    if (this.how == 'in') {
-      old_show.call(this.element.setStyle({opacity: 0}));
+    if (this.how === 'in') {
+      // calling 'prototype' to prevent circular calls from subclasses
+      Element.prototype.show.call(this.element.setStyle({opacity: 0}));
     }
 
-    return this.$super({opacity: isNumber(how) ? how : this.how == 'in' ? 1 : 0});
+    return this.$super({opacity: this.how === 'in' ? 1 : 0});
   }
 });
 
 
 /**
+ * An abstract attributes based Fx
+ *
+ * Copyright (C) 2010 Nikolay Nemshilov
+ */
+Fx.Attr = new Class(Fx, {
+
+  prepare: function(attrs) {
+    this.before = {};
+    this.after  = attrs;
+    var key, element = this.element._;
+
+    for (key in attrs) {
+      this.before[key] = element[key];
+    }
+  },
+
+  render: function(delta) {
+    var key, element = this.element._, before = this.before;
+    for (key in before) {
+      element[key] = before[key] + (this.after[key] - before[key]) * delta;
+    }
+  }
+
+});
+
+/**
  * A smooth scrolling visual effect
  *
- * Copyright (C) 2009-2010 Nikolay V. Nemshilov
+ * Copyright (C) 2009-2011 Nikolay Nemshilov
  */
-Fx.Scroll = new Class(Fx, {
+Fx.Scroll = new Class(Fx.Attr, {
 
   initialize: function(element, options) {
     element = $(element);
     // swapping the actual scrollable when it's the window
-    this.$super(element instanceof Window ? element._.document[Browser.WebKit ? 'body' : 'documentElement'] : element, options);
+    this.$super(
+      element instanceof Window ?
+        element._.document[
+          Browser.WebKit ? 'body' : 'documentElement'
+        ] : element,
+      options
+    );
   },
 
   prepare: function(value) {
-    var before = this.before = {}, element = this.element._;
+    var attrs = {};
 
-    this.after  = value;
+    if ('x' in value) { attrs.scrollLeft = value.x; }
+    if ('y' in value) { attrs.scrollTop  = value.y; }
 
-    if ('x' in value) { before.x = element.scrollLeft; }
-    if ('y' in value) { before.y = element.scrollTop;  }
-  },
-
-  render: function(delta) {
-    var before = this.before, key;
-    for (key in before) {
-      this.element._['scroll' + (key == 'x' ? 'Left' : 'Top')] = before[key] + (this.after[key] - before[key]) * delta;
-    }
+    this.$super(attrs);
   }
+
 });
 
 
@@ -5588,8 +5954,10 @@ var Cookie = RightJS.Cookie = new Class({
    * @return mixed saved value or null if nothing found
    */
   get: function() {
-    var value = this.options.document.cookie.match('(?:^|;)\\s*' + RegExp.escape(this.name) + '=([^;]*)');
-    return (value) ? decodeURIComponent(value[1]) : null;
+    var value = this.options.document.cookie.match(
+      '(?:^|;)\\s*' + RegExp.escape(this.name) + '=([^;]*)'
+    );
+    return value ? decodeURIComponent(value[1]) : null;
   },
 
   /**
@@ -5618,11 +5986,16 @@ return RightJS;
  * finds the core inclusion tag and uses it's src attribute
  * to dynamically load the olds patch
  *
- * Copyright (C) 2009-2010 Nikolay V. Nemshilov
+ * Copyright (C) 2009-2011 Nikolay V. Nemshilov
  */
-if (!document.querySelector) {
-  document.write('<script src="' +
-    RightJS.$A(document.getElementsByTagName('script')).last()
-      .src.replace(/(^|\/)(right)([^\/]+)$/, '$1$2-olds$3') +
-  '"></script>');
+if (RightJS.Browser.OLD) {
+  (function(d) {
+    var script  = d.createElement('script'),
+        scripts = d.getElementsByTagName('script'),
+        rjs_spt = scripts[scripts.length - 1];
+
+    script.src = rjs_spt.src.replace(/(^|\/)(right)([^\/]+)$/, '$1$2-olds$3');
+
+    rjs_spt.parentNode.appendChild(script);
+  })(document);
 }

@@ -1,7 +1,8 @@
 /**
- * Tabs widget for RightJS (http://rightjs.org/ui/tabs)
+ * RightJS-UI Tabs v2.2.2
+ * http://rightjs.org/ui/tabs
  *
- * Copyright (C) 2009-2010 Nikolay Nemshilov
+ * Copyright (C) 2009-2011 Nikolay Nemshilov
  */
 var Tabs = RightJS.Tabs = (function(document, parseInt, RightJS) {
 /**
@@ -9,33 +10,8 @@ var Tabs = RightJS.Tabs = (function(document, parseInt, RightJS) {
  * it creates an abstract proxy with the common functionality
  * which then we reuse and override in the actual widgets
  *
- * Copyright (C) 2010 Nikolay Nemshilov
+ * Copyright (C) 2010-2011 Nikolay Nemshilov
  */
-
-/**
- * The tabs init-script
- *
- * Copyright (C) 2010 Nikolay Nemshilov
- */
-var R  = RightJS,
-    $  = RightJS.$,
-    $$ = RightJS.$$,
-    $w = RightJS.$w,
-    $E = RightJS.$E,
-    Fx      = RightJS.Fx,
-    Object  = RightJS.Object,
-    Browser = RightJS.Browser,
-    isArray = RightJS.isArray,
-    isNumber = RightJS.isNumber,
-    Wrapper = RightJS.Wrapper,
-    Element = RightJS.Element,
-    Cookie  = RightJS.Cookie;
-
-
-
-
-
-
 
 /**
  * The widget units constructor
@@ -55,7 +31,7 @@ function Widget(tag_name, methods) {
    *
    * Copyright (C) 2010 Nikolay Nemshilov
    */
-  var AbstractWidget = new RightJS.Wrapper(RightJS.Element.Wrappers[tag_name] || RightJS.Element, {
+  var AbstractWidget = new RightJS.Class(RightJS.Element.Wrappers[tag_name] || RightJS.Element, {
     /**
      * The common constructor
      *
@@ -87,7 +63,8 @@ function Widget(tag_name, methods) {
         options = {};
       }
       this.setOptions(options, this);
-      return this;
+
+      return (RightJS.Wrapper.Cache[RightJS.$uid(this._)] = this);
     },
 
   // protected
@@ -100,12 +77,16 @@ function Widget(tag_name, methods) {
      * @return void
      */
     setOptions: function(options, element) {
-      element = element || this;
-      RightJS.Options.setOptions.call(this,
-        RightJS.Object.merge(options, eval("("+(
+      if (element) {
+        options = RightJS.Object.merge(options, new Function("return "+(
           element.get('data-'+ this.key) || '{}'
-        )+")"))
-      );
+        ))());
+      }
+
+      if (options) {
+        RightJS.Options.setOptions.call(this, RightJS.Object.merge(this.options, options));
+      }
+
       return this;
     }
   });
@@ -114,7 +95,7 @@ function Widget(tag_name, methods) {
    * Creating the actual widget class
    *
    */
-  var Klass = new RightJS.Wrapper(AbstractWidget, methods);
+  var Klass = new RightJS.Class(AbstractWidget, methods);
 
   // creating the widget related shortcuts
   RightJS.Observer.createShortcuts(Klass.prototype, Klass.EVENTS || []);
@@ -126,9 +107,9 @@ function Widget(tag_name, methods) {
 /**
  * A shared module to create textual spinners
  *
- * Copyright (C) 2010 Nikolay Nemshilov
+ * Copyright (C) 2010-2011 Nikolay Nemshilov
  */
-var Spinner = new RightJS.Wrapper(RightJS.Element, {
+var Spinner = new RightJS.Class(RightJS.Element, {
   /**
    * Constructor
    *
@@ -164,13 +145,38 @@ var Spinner = new RightJS.Wrapper(RightJS.Element, {
 
 
 /**
+ * The tabs init-script
+ *
+ * Copyright (C) 2010-2011 Nikolay Nemshilov
+ */
+var R  = RightJS,
+    $  = RightJS.$,
+    $$ = RightJS.$$,
+    $w = RightJS.$w,
+    $E = RightJS.$E,
+    Fx       = RightJS.Fx,
+    Object   = RightJS.Object,
+    Browser  = RightJS.Browser,
+    isArray  = RightJS.isArray,
+    isNumber = RightJS.isNumber,
+    Class    = RightJS.Class,
+    Element  = RightJS.Element,
+    Cookie   = RightJS.Cookie;
+
+
+
+
+
+
+
+/**
  * The basic tabs handling engine
  *
- * Copyright (C) 2009-2010 Nikolay Nemshilov
+ * Copyright (C) 2009-2011 Nikolay Nemshilov
  */
 var Tabs = new Widget('UL', {
   extend: {
-    version: '2.0.1',
+    version: '2.2.2',
 
     EVENTS: $w('select hide load disable enable add remove move'),
 
@@ -325,9 +331,9 @@ var Tabs = new Widget('UL', {
 /**
  * A single tab handling object
  *
- * Copyright (C) 2009-2010 Nikolay Nemshilov
+ * Copyright (C) 2009-2011 Nikolay Nemshilov
  */
-var Tab = Tabs.Tab = new Wrapper(Element, {
+var Tab = Tabs.Tab = new Class(Element, {
   extend: {
     autoId: 0
   },
@@ -414,7 +420,12 @@ var Tab = Tabs.Tab = new Wrapper(Element, {
     this.main.tabs.splice(this.main.tabs.indexOf(this), 1);
     this.panel.remove();
 
-    return this.$super().fire('remove');
+    var parent = this.parent();
+    this.fire('beforeremove');
+    this.$super();
+    parent.fire('remove', {target: this});
+
+    return this;
   },
 
 // protected
@@ -456,9 +467,9 @@ var Tab = Tabs.Tab = new Wrapper(Element, {
 /**
  * The tab panels behavior logic
  *
- * Copyright (C) 2009-2010 Nikolay Nemshilov
+ * Copyright (C) 2009-2011 Nikolay Nemshilov
  */
-var Panel = Tabs.Panel = new Wrapper(Element, {
+var Panel = Tabs.Panel = new Class(Element, {
 
   /**
    * Basic constructor
@@ -972,7 +983,7 @@ Tabs.include({
    * @return Tabs this
    */
   remove: function(tab) {
-    return this.callTab(tab, 'remove');
+    return arguments.length === 0 ? this.$super() : this.callTab(tab, 'remove');
   }
 
 });
@@ -1127,7 +1138,18 @@ $(document).onReady(function() {
 });
 
 
-document.write("<style type=\"text/css\">div.rui-spinner,div.rui-spinner div{margin:0;padding:0;border:none;background:none;list-style:none;font-weight:normal;float:none;display:inline-block; *display:inline; *zoom:1;border-radius:.12em;-moz-border-radius:.12em;-webkit-border-radius:.12em}div.rui-spinner{text-align:center;white-space:nowrap;background:#EEE;border:1px solid #DDD;height:1.2em;padding:0 .2em}div.rui-spinner div{width:.4em;height:70%;background:#BBB;margin-left:1px}div.rui-spinner div:first-child{margin-left:0}div.rui-spinner div.glowing{background:#777}.rui-tabs,.rui-tabs-list,.rui-tabs-tab,.rui-tabs-panel,.rui-tabs-scroll-left,.rui-tabs-scroll-right,.rui-tabs-scroll-body,.rui-tabs-panel-locker,.rui-tabs-resizer{margin:0;padding:0;background:none;border:none;list-style:none;display:block;width:auto;height:auto}.rui-tabs{display:block;visibility:hidden;border-bottom:1px solid #CCC}.rui-tabs-resizer{overflow:hidden}.rui-tabs-list{display:block;position:relative;padding:0 .5em;border-bottom:1px solid #CCC;white-space:nowrap}.rui-tabs-list .rui-tabs-tab,.rui-tabs-tab *,.rui-tabs-tab *:hover{display:inline-block; *display:inline; *zoom:1;cursor:pointer;text-decoration:none;vertical-align:center}.rui-tabs-list .rui-tabs-tab{vertical-align:bottom;margin-right:.1em}.rui-tabs-tab a{outline:none;position:relative;border:1px solid #CCC;background:#DDD;color:#444;padding:.3em 1em;border-radius:.3em;-moz-border-radius:.3em;-webkit-border-radius:.3em;border-bottom:none;border-bottom-left-radius:0;border-bottom-right-radius:0;-moz-border-radius-bottomleft:0;-moz-border-radius-bottomright:0;-webkit-border-bottom-left-radius:0;-webkit-border-bottom-right-radius:0}.rui-tabs-tab a:hover{border-color:#CCC;background:#EEE}.rui-tabs-list .rui-tabs-current a,.rui-tabs-list .rui-tabs-current a:hover{font-weight:bold;color:#000;background:#FFF;border-bottom:1px solid #FFF;border-top-width:2px;padding-top:.34em;padding-bottom:.34em;top:1px}.rui-tabs-tab a img{border:none;opacity:.6;filter:alpha(opacity=60)}.rui-tabs-tab a:hover img,.rui-tabs-list .rui-tabs-current a img{opacity:1;filter:alpha(opacity=100)}.rui-tabs-disabled a,.rui-tabs-disabled a:hover{background:#EEE;border-color:#DDD;color:#AAA;cursor:default}.rui-tabs-disabled a img,.rui-tabs-disabled a:hover img{opacity:.5;filter:alpha(opacity=50)}.rui-tabs-tab-close-icon{display:inline-block; *display:inline; *zoom:1;margin-right:-0.5em;margin-left:0.5em;cursor:pointer;opacity:0.5;filter:alpha(opacity=50)}.rui-tabs-tab-close-icon:hover{opacity:1;filter:alpha(opacity=100);color:#B00;text-shadow:#888 .15em .15em .2em}.rui-tabs-panel{display:none;position:relative;min-height:4em;padding:.5em 0}.rui-tabs-current{display:block}.rui-tabs-scroller{position:relative;padding:0 1.4em}.rui-tabs-scroller-prev,.rui-tabs-scroller-next{width:1.1em;text-align:center;background:#EEE;color:#666;cursor:pointer;border:1px solid #CCC;border-radius:.2em;-moz-border-radius:.2em;-webkit-border-radius:.2em;position:absolute;bottom:0px;left:0px;padding:0.3em 0;user-select:none;-moz-user-select:none;-webkit-user-select:none}.rui-tabs-scroller-prev:hover,.rui-tabs-scroller-next:hover{color:#000;background:#DDD;border-color:#AAA}.rui-tabs-scroller-prev:active,.rui-tabs-scroller-next:active{background:#eee;border-color:#ccc}.rui-tabs-scroller-next{left:auto;right:0px}.rui-tabs-scroller-disabled,.rui-tabs-scroller-disabled:hover{cursor:default;background:#DDD;border-color:#DDD;color:#AAA}.rui-tabs-scroller-body{overflow:hidden;width:100%;position:relative}.rui-tabs-scroller .rui-tabs-list{padding-left:0;padding-right:0;width:9999em;z-index:10}.rui-tabs-panel-locker{position:absolute;top:0px;left:0px;opacity:0.5;filter:alpha(opacity=50);background:#CCC;width:100%;height:100%;text-align:center}.rui-tabs-panel-locker .rui-spinner{position:absolute;left:44%;top:44%;background:none;border:none;height:2em}.rui-tabs-panel-locker .rui-spinner div{background:#666;width:.65em;margin-left:.15em}.rui-tabs-panel-locker .rui-spinner div.glowing{background:#000}.rui-tabs-carousel .rui-tabs-list{border:none}.rui-tabs-carousel .rui-tabs-tab a,.rui-tabs-carousel .rui-tabs-scroller .rui-tabs-scroller-prev,.rui-tabs-carousel .rui-tabs-scroller .rui-tabs-scroller-next{height:6em;line-height:6em;padding:0;border-bottom:1px solid #ccc;border-radius:.25em;-moz-border-radius:.25em;-webkit-border-radius:.25em}.rui-tabs-carousel .rui-tabs-tab{margin-right:3px}.rui-tabs-carousel .rui-tabs-tab a img{border:1px solid #CCC;vertical-align:middle;margin:.4em;padding:0;border-radius:0;-moz-border-radius:0;-webkit-border-radius:0}.rui-tabs-carousel .rui-tabs-list .rui-tabs-current a{border-width:1px;border-color:#AAA;padding:0;top:auto}.rui-tabs-carousel .rui-tabs-list .rui-tabs-current a img{border-color:#bbb}.rui-tabs-carousel .rui-tabs-panel{text-align:center}dl.rui-tabs{border:none}dt.rui-tabs-tab,dt.rui-tabs-tab a,dt.rui-tabs-tab a:hover{display:block;float:none}dt.rui-tabs-tab a,dt.rui-tabs-tab a:hover{padding:.2em 1em;border:1px solid #ccc;border-radius:.25em;-moz-border-radius:.3em;-webkit-border-radius:.3em}dl.rui-tabs dt.rui-tabs-current a{background:#EEE;border-bottom-left-radius:0;border-bottom-right-radius:0;-moz-border-radius-bottomleft:0;-moz-border-radius-bottomright:0;-webkit-border-bottom-left-radius:0;-webkit-border-bottom-right-radius:0}dl.rui-tabs dd.rui-tabs-current+dt.rui-tabs-tab a{border-top-left-radius:0;border-top-right-radius:0;-moz-border-radius-topleft:0;-moz-border-radius-topright:0;-webkit-border-top-left-radius:0;-webkit-border-top-right-radius:0}</style>");
+var embed_style = document.createElement('style'),                 
+    embed_rules = document.createTextNode("div.rui-spinner,div.rui-spinner div{margin:0;padding:0;border:none;background:none;list-style:none;font-weight:normal;float:none;display:inline-block; *display:inline; *zoom:1;border-radius:.12em;-moz-border-radius:.12em;-webkit-border-radius:.12em}div.rui-spinner{text-align:center;white-space:nowrap;background:#EEE;border:1px solid #DDD;height:1.2em;padding:0 .2em}div.rui-spinner div{width:.4em;height:70%;background:#BBB;margin-left:1px}div.rui-spinner div:first-child{margin-left:0}div.rui-spinner div.glowing{background:#777}.rui-tabs,.rui-tabs-list,.rui-tabs-tab,.rui-tabs-panel,.rui-tabs-scroll-left,.rui-tabs-scroll-right,.rui-tabs-scroll-body,.rui-tabs-panel-locker,.rui-tabs-resizer{margin:0;padding:0;background:none;border:none;list-style:none;display:block;width:auto;height:auto}.rui-tabs{display:block;visibility:hidden;border-bottom:1px solid #CCC}.rui-tabs-resizer{overflow:hidden}.rui-tabs-list{display:block;position:relative;padding:0 .5em;border-bottom:1px solid #CCC;white-space:nowrap}.rui-tabs-list .rui-tabs-tab,.rui-tabs-tab *,.rui-tabs-tab *:hover{display:inline-block; *display:inline; *zoom:1;cursor:pointer;text-decoration:none;vertical-align:center}.rui-tabs-list .rui-tabs-tab{vertical-align:bottom;margin-right:.1em}.rui-tabs-tab a{outline:none;position:relative;border:1px solid #CCC;background:#DDD;color:#444;padding:.3em 1em;border-radius:.3em;-moz-border-radius:.3em;-webkit-border-radius:.3em;border-bottom:none;border-bottom-left-radius:0;border-bottom-right-radius:0;-moz-border-radius-bottomleft:0;-moz-border-radius-bottomright:0;-webkit-border-bottom-left-radius:0;-webkit-border-bottom-right-radius:0}.rui-tabs-tab a:hover{border-color:#CCC;background:#EEE}.rui-tabs-list .rui-tabs-current a,.rui-tabs-list .rui-tabs-current a:hover{font-weight:bold;color:#000;background:#FFF;border-bottom:1px solid #FFF;border-top-width:2px;padding-top:.34em;padding-bottom:.34em;top:1px}.rui-tabs-tab a img{border:none;opacity:.6;filter:alpha(opacity=60)}.rui-tabs-tab a:hover img,.rui-tabs-list .rui-tabs-current a img{opacity:1;filter:alpha(opacity=100)}.rui-tabs-disabled a,.rui-tabs-disabled a:hover{background:#EEE;border-color:#DDD;color:#AAA;cursor:default}.rui-tabs-disabled a img,.rui-tabs-disabled a:hover img{opacity:.5;filter:alpha(opacity=50)}.rui-tabs-tab-close-icon{display:inline-block; *display:inline; *zoom:1;margin-right:-0.5em;margin-left:0.5em;cursor:pointer;opacity:0.5;filter:alpha(opacity=50)}.rui-tabs-tab-close-icon:hover{opacity:1;filter:alpha(opacity=100);color:#B00;text-shadow:#888 .15em .15em .2em}.rui-tabs-panel{display:none;position:relative;min-height:4em;padding:.5em 0}.rui-tabs-current{display:block}.rui-tabs-scroller{position:relative;padding:0 1.4em}.rui-tabs-scroller-prev,.rui-tabs-scroller-next{width:1.1em;text-align:center;background:#EEE;color:#666;cursor:pointer;border:1px solid #CCC;border-radius:.2em;-moz-border-radius:.2em;-webkit-border-radius:.2em;position:absolute;bottom:0px;left:0px;padding:0.3em 0;user-select:none;-moz-user-select:none;-webkit-user-select:none}.rui-tabs-scroller-prev:hover,.rui-tabs-scroller-next:hover{color:#000;background:#DDD;border-color:#AAA}.rui-tabs-scroller-prev:active,.rui-tabs-scroller-next:active{background:#eee;border-color:#ccc}.rui-tabs-scroller-next{left:auto;right:0px}.rui-tabs-scroller-disabled,.rui-tabs-scroller-disabled:hover{cursor:default;background:#DDD;border-color:#DDD;color:#AAA}.rui-tabs-scroller-body{overflow:hidden;width:100%;position:relative}.rui-tabs-scroller .rui-tabs-list{padding-left:0;padding-right:0;width:9999em;z-index:10}.rui-tabs-panel-locker{position:absolute;top:0px;left:0px;opacity:0.5;filter:alpha(opacity=50);background:#CCC;width:100%;height:100%;text-align:center}.rui-tabs-panel-locker .rui-spinner{position:absolute;left:44%;top:44%;background:none;border:none;height:2em}.rui-tabs-panel-locker .rui-spinner div{background:#666;width:.65em;margin-left:.15em}.rui-tabs-panel-locker .rui-spinner div.glowing{background:#000}.rui-tabs-carousel .rui-tabs-list{border:none}.rui-tabs-carousel .rui-tabs-tab a,.rui-tabs-carousel .rui-tabs-scroller .rui-tabs-scroller-prev,.rui-tabs-carousel .rui-tabs-scroller .rui-tabs-scroller-next{height:6em;line-height:6em;padding:0;border-bottom:1px solid #ccc;border-radius:.25em;-moz-border-radius:.25em;-webkit-border-radius:.25em}.rui-tabs-carousel .rui-tabs-tab{margin-right:3px}.rui-tabs-carousel .rui-tabs-tab a img{border:1px solid #CCC;vertical-align:middle;margin:.4em;padding:0;border-radius:0;-moz-border-radius:0;-webkit-border-radius:0}.rui-tabs-carousel .rui-tabs-list .rui-tabs-current a{border-width:1px;border-color:#AAA;padding:0;top:auto}.rui-tabs-carousel .rui-tabs-list .rui-tabs-current a img{border-color:#bbb}.rui-tabs-carousel .rui-tabs-panel{text-align:center}dl.rui-tabs{border:none}dt.rui-tabs-tab,dt.rui-tabs-tab a,dt.rui-tabs-tab a:hover{display:block;float:none}dt.rui-tabs-tab a,dt.rui-tabs-tab a:hover{padding:.2em 1em;border:1px solid #ccc;border-radius:.25em;-moz-border-radius:.3em;-webkit-border-radius:.3em}dl.rui-tabs dt.rui-tabs-current a{background:#EEE;border-bottom-left-radius:0;border-bottom-right-radius:0;-moz-border-radius-bottomleft:0;-moz-border-radius-bottomright:0;-webkit-border-bottom-left-radius:0;-webkit-border-bottom-right-radius:0}dl.rui-tabs dd.rui-tabs-current+dt.rui-tabs-tab a{border-top-left-radius:0;border-top-right-radius:0;-moz-border-radius-topleft:0;-moz-border-radius-topright:0;-webkit-border-top-left-radius:0;-webkit-border-top-right-radius:0}");      
+                                                                   
+embed_style.type = 'text/css';                                     
+document.getElementsByTagName('head')[0].appendChild(embed_style); 
+                                                                   
+if(embed_style.styleSheet) {                                       
+  embed_style.styleSheet.cssText = embed_rules.nodeValue;          
+} else {                                                           
+  embed_style.appendChild(embed_rules);                            
+}                                                                  
+
 
 return Tabs;
 })(document, parseInt, RightJS);

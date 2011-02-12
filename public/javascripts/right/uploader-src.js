@@ -1,8 +1,8 @@
 /**
- * Form uploading progress bar feature
+ * RightJS-UI Uploader v2.2.0
  * http://rightjs.org/ui/uploader
  *
- * Copyright (C) 2010 Nikolay Nemshilov
+ * Copyright (C) 2010-2011 Nikolay Nemshilov
  */
 var Uploader = RightJS.Uploader = (function(RightJS) {
 /**
@@ -10,26 +10,8 @@ var Uploader = RightJS.Uploader = (function(RightJS) {
  * it creates an abstract proxy with the common functionality
  * which then we reuse and override in the actual widgets
  *
- * Copyright (C) 2010 Nikolay Nemshilov
+ * Copyright (C) 2010-2011 Nikolay Nemshilov
  */
-
-/**
- * The uploader initialization script
- *
- * Copyright (C) 2010 Nikolay Nemshilov
- */
-var R      = RightJS,
-    $      = RightJS.$,
-    $w     = RightJS.$w,
-    $E     = RightJS.$E,
-    Xhr    = RightJS.Xhr,
-    Form   = RightJS.Form,
-    RegExp = RightJS.RegExp;
-
-
-
-
-
 
 /**
  * The widget units constructor
@@ -49,7 +31,7 @@ function Widget(tag_name, methods) {
    *
    * Copyright (C) 2010 Nikolay Nemshilov
    */
-  var AbstractWidget = new RightJS.Wrapper(RightJS.Element.Wrappers[tag_name] || RightJS.Element, {
+  var AbstractWidget = new RightJS.Class(RightJS.Element.Wrappers[tag_name] || RightJS.Element, {
     /**
      * The common constructor
      *
@@ -81,7 +63,8 @@ function Widget(tag_name, methods) {
         options = {};
       }
       this.setOptions(options, this);
-      return this;
+
+      return (RightJS.Wrapper.Cache[RightJS.$uid(this._)] = this);
     },
 
   // protected
@@ -94,12 +77,16 @@ function Widget(tag_name, methods) {
      * @return void
      */
     setOptions: function(options, element) {
-      element = element || this;
-      RightJS.Options.setOptions.call(this,
-        RightJS.Object.merge(options, eval("("+(
+      if (element) {
+        options = RightJS.Object.merge(options, new Function("return "+(
           element.get('data-'+ this.key) || '{}'
-        )+")"))
-      );
+        ))());
+      }
+
+      if (options) {
+        RightJS.Options.setOptions.call(this, RightJS.Object.merge(this.options, options));
+      }
+
       return this;
     }
   });
@@ -108,7 +95,7 @@ function Widget(tag_name, methods) {
    * Creating the actual widget class
    *
    */
-  var Klass = new RightJS.Wrapper(AbstractWidget, methods);
+  var Klass = new RightJS.Class(AbstractWidget, methods);
 
   // creating the widget related shortcuts
   RightJS.Observer.createShortcuts(Klass.prototype, Klass.EVENTS || []);
@@ -118,13 +105,31 @@ function Widget(tag_name, methods) {
 
 
 /**
- * The uploading progress feature
+ * The uploader initialization script
  *
  * Copyright (C) 2010 Nikolay Nemshilov
  */
+var R      = RightJS,
+    $      = RightJS.$,
+    $w     = RightJS.$w,
+    $E     = RightJS.$E,
+    Xhr    = RightJS.Xhr,
+    Form   = RightJS.Form,
+    RegExp = RightJS.RegExp;
+
+
+
+
+
+
+/**
+ * The uploading progress feature
+ *
+ * Copyright (C) 2010-2011 Nikolay Nemshilov
+ */
 var Uploader = new Widget({
   extend: {
-    version: '2.0.0',
+    version: '2.2.0',
 
     EVENTS: $w('start update finish error'),
 
@@ -231,7 +236,7 @@ var Uploader = new Widget({
     Xhr.load(this.options.url + "?" + this.options.param + "=" + this.uid, {
       evalJSON: false,
       onSuccess: R(function(xhr) {
-        this.update(eval('('+xhr.text+')'));
+        this.update(new Function('return '+xhr.text)());
       }).bind(this)
     });
 
@@ -245,7 +250,7 @@ var Uploader = new Widget({
 
     var param = this.options.param;
     var url = this.form.get('action').replace(new RegExp('(\\?|&)'+RegExp.escape(param) + '=[^&]*', 'i'), '');
-    this.form.set('action', (R(url).includes('?') ? '&' : '?') + param + '=' + this.uid);
+    this.form.set('action', url + (R(url).includes('?') ? '&' : '?') + param + '=' + this.uid);
 
     this.show();
 
@@ -279,7 +284,18 @@ Form.include({
 });
 
 
-document.write("<style type=\"text/css\">div.rui-progress-bar,div.rui-progress-bar *{margin:0;padding:0;border:none;background:none}div.rui-progress-bar{position:relative;height:1.4em;line-height:1.4em;width:20em;border:1px solid #999}div.rui-progress-bar,div.rui-progress-bar div.bar{border-radius:0.25em;-moz-border-radius:0.25em;-webkit-border-radius:0.25em}div.rui-progress-bar div.bar{position:absolute;left:0;top:0;width:0%;height:100%;background:#CCC;z-index:1}div.rui-progress-bar div.num{position:absolute;width:100%;height:100%;z-index:2;text-align:center}div.rui-progress-bar-failed{border-color:red;color:red;background:pink}.rui-uploader{display:none}</style>");
+var embed_style = document.createElement('style'),                 
+    embed_rules = document.createTextNode("div.rui-progress-bar,div.rui-progress-bar *{margin:0;padding:0;border:none;background:none}div.rui-progress-bar{position:relative;height:1.4em;line-height:1.4em;width:20em;border:1px solid #999}div.rui-progress-bar,div.rui-progress-bar div.bar{border-radius:0.25em;-moz-border-radius:0.25em;-webkit-border-radius:0.25em}div.rui-progress-bar div.bar{position:absolute;left:0;top:0;width:0%;height:100%;background:#CCC;z-index:1}div.rui-progress-bar div.num{position:absolute;width:100%;height:100%;z-index:2;text-align:center}div.rui-progress-bar-failed{border-color:red;color:red;background:pink}.rui-uploader{display:none}");      
+                                                                   
+embed_style.type = 'text/css';                                     
+document.getElementsByTagName('head')[0].appendChild(embed_style); 
+                                                                   
+if(embed_style.styleSheet) {                                       
+  embed_style.styleSheet.cssText = embed_rules.nodeValue;          
+} else {                                                           
+  embed_style.appendChild(embed_rules);                            
+}                                                                  
+
 
 return Uploader;
 })(RightJS);

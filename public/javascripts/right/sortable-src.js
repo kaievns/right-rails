@@ -1,10 +1,8 @@
 /**
- * Sortable feature for RightJS
- * See http://rightjs.org/ui/sortable
+ * RightJS-UI Sortable v2.2.0
+ * http://rightjs.org/ui/sortable
  *
- * NOTE: requires the dnd-plugin
- *
- * Copyright (C) 2009-2010 Nikolay Nemshilov
+ * Copyright (C) 2009-2011 Nikolay Nemshilov
  */
 var Sortable = RightJS.Sortable = (function(document, RightJS) {
 /**
@@ -12,23 +10,8 @@ var Sortable = RightJS.Sortable = (function(document, RightJS) {
  * it creates an abstract proxy with the common functionality
  * which then we reuse and override in the actual widgets
  *
- * Copyright (C) 2010 Nikolay Nemshilov
+ * Copyright (C) 2010-2011 Nikolay Nemshilov
  */
-
-/**
- * Sortable initialization script
- *
- * Copyright (C) 2010 Nikolay Nemshilov
- */
-var R        = RightJS,
-    $        = RightJS.$,
-    $w       = RightJS.$w,
-    isString = RightJS.isString,
-    isArray  = RightJS.isArray,
-    Object   = RightJS.Object;
-
-
-
 
 /**
  * The widget units constructor
@@ -48,7 +31,7 @@ function Widget(tag_name, methods) {
    *
    * Copyright (C) 2010 Nikolay Nemshilov
    */
-  var AbstractWidget = new RightJS.Wrapper(RightJS.Element.Wrappers[tag_name] || RightJS.Element, {
+  var AbstractWidget = new RightJS.Class(RightJS.Element.Wrappers[tag_name] || RightJS.Element, {
     /**
      * The common constructor
      *
@@ -80,7 +63,8 @@ function Widget(tag_name, methods) {
         options = {};
       }
       this.setOptions(options, this);
-      return this;
+
+      return (RightJS.Wrapper.Cache[RightJS.$uid(this._)] = this);
     },
 
   // protected
@@ -93,12 +77,16 @@ function Widget(tag_name, methods) {
      * @return void
      */
     setOptions: function(options, element) {
-      element = element || this;
-      RightJS.Options.setOptions.call(this,
-        RightJS.Object.merge(options, eval("("+(
+      if (element) {
+        options = RightJS.Object.merge(options, new Function("return "+(
           element.get('data-'+ this.key) || '{}'
-        )+")"))
-      );
+        ))());
+      }
+
+      if (options) {
+        RightJS.Options.setOptions.call(this, RightJS.Object.merge(this.options, options));
+      }
+
       return this;
     }
   });
@@ -107,7 +95,7 @@ function Widget(tag_name, methods) {
    * Creating the actual widget class
    *
    */
-  var Klass = new RightJS.Wrapper(AbstractWidget, methods);
+  var Klass = new RightJS.Class(AbstractWidget, methods);
 
   // creating the widget related shortcuts
   RightJS.Observer.createShortcuts(Klass.prototype, Klass.EVENTS || []);
@@ -117,13 +105,28 @@ function Widget(tag_name, methods) {
 
 
 /**
+ * Sortable initialization script
+ *
+ * Copyright (C) 2010 Nikolay Nemshilov
+ */
+var R        = RightJS,
+    $        = RightJS.$,
+    $w       = RightJS.$w,
+    isString = RightJS.isString,
+    isArray  = RightJS.isArray,
+    Object   = RightJS.Object;
+
+
+
+
+/**
  * The Sortable unit
  *
- * Copyright (C) 2009-2010 Nikolay Nemshilov
+ * Copyright (C) 2009-2011 Nikolay Nemshilov
  */
 var Sortable = new Widget('UL', {
   extend: {
-    version: '2.0.0',
+    version: '2.2.0',
 
     EVENTS: $w('start change finish'),
 
@@ -410,7 +413,18 @@ $(window).onBlur(function() {
 });
 
 
-document.write("<style type=\"text/css\">.rui-sortable{user-select:none;-moz-user-select:none;-webkit-user-select:none}</style>");
+var embed_style = document.createElement('style'),                 
+    embed_rules = document.createTextNode(".rui-sortable{user-select:none;-moz-user-select:none;-webkit-user-select:none}");      
+                                                                   
+embed_style.type = 'text/css';                                     
+document.getElementsByTagName('head')[0].appendChild(embed_style); 
+                                                                   
+if(embed_style.styleSheet) {                                       
+  embed_style.styleSheet.cssText = embed_rules.nodeValue;          
+} else {                                                           
+  embed_style.appendChild(embed_rules);                            
+}                                                                  
+
 
 return Sortable;
 })(document, RightJS);

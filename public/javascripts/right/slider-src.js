@@ -1,8 +1,8 @@
 /**
- * RightJS UI Slider unit
+ * RightJS-UI Slider v2.2.1
  * http://rightjs.org/ui/slider
  *
- * Copyright (C) 2009-2010 Nikolay Nemshilov
+ * Copyright (C) 2009-2011 Nikolay Nemshilov
  */
 var Slider = RightJS.Slider = (function(document, Math, RightJS) {
 /**
@@ -10,27 +10,8 @@ var Slider = RightJS.Slider = (function(document, Math, RightJS) {
  * it creates an abstract proxy with the common functionality
  * which then we reuse and override in the actual widgets
  *
- * Copyright (C) 2010 Nikolay Nemshilov
+ * Copyright (C) 2010-2011 Nikolay Nemshilov
  */
-
-/**
- * The filenames to include
- *
- * Copyright (C) 2010 Nikolay Nemshilov
- */
-var R       = RightJS,
-    $       = RightJS.$,
-    $$      = RightJS.$$,
-    $w      = RightJS.$w,
-    $E      = RightJS.$E,
-    $A      = RightJS.$A,
-    isHash  = RightJS.isHash,
-    Element = RightJS.Element;
-
-
-
-
-
 
 /**
  * The widget units constructor
@@ -50,7 +31,7 @@ function Widget(tag_name, methods) {
    *
    * Copyright (C) 2010 Nikolay Nemshilov
    */
-  var AbstractWidget = new RightJS.Wrapper(RightJS.Element.Wrappers[tag_name] || RightJS.Element, {
+  var AbstractWidget = new RightJS.Class(RightJS.Element.Wrappers[tag_name] || RightJS.Element, {
     /**
      * The common constructor
      *
@@ -82,7 +63,8 @@ function Widget(tag_name, methods) {
         options = {};
       }
       this.setOptions(options, this);
-      return this;
+
+      return (RightJS.Wrapper.Cache[RightJS.$uid(this._)] = this);
     },
 
   // protected
@@ -95,12 +77,16 @@ function Widget(tag_name, methods) {
      * @return void
      */
     setOptions: function(options, element) {
-      element = element || this;
-      RightJS.Options.setOptions.call(this,
-        RightJS.Object.merge(options, eval("("+(
+      if (element) {
+        options = RightJS.Object.merge(options, new Function("return "+(
           element.get('data-'+ this.key) || '{}'
-        )+")"))
-      );
+        ))());
+      }
+
+      if (options) {
+        RightJS.Options.setOptions.call(this, RightJS.Object.merge(this.options, options));
+      }
+
       return this;
     }
   });
@@ -109,7 +95,7 @@ function Widget(tag_name, methods) {
    * Creating the actual widget class
    *
    */
-  var Klass = new RightJS.Wrapper(AbstractWidget, methods);
+  var Klass = new RightJS.Class(AbstractWidget, methods);
 
   // creating the widget related shortcuts
   RightJS.Observer.createShortcuts(Klass.prototype, Klass.EVENTS || []);
@@ -164,15 +150,34 @@ var Updater = {
 
 
 /**
+ * The filenames to include
+ *
+ * Copyright (C) 2010 Nikolay Nemshilov
+ */
+var R       = RightJS,
+    $       = RightJS.$,
+    $$      = RightJS.$$,
+    $w      = RightJS.$w,
+    $E      = RightJS.$E,
+    $A      = RightJS.$A,
+    isHash  = RightJS.isHash,
+    Element = RightJS.Element;
+
+
+
+
+
+
+/**
  * RightJS UI Slider unit
  *
- * Copyright (C) 2009-2010 Nikolay Nemshilov
+ * Copyright (C) 2009-2011 Nikolay Nemshilov
  */
 var Slider = new Widget({
   include: Updater,
 
   extend: {
-    version: '2.0.0',
+    version: '2.2.1',
 
     EVENTS: $w('change'),
 
@@ -373,7 +378,18 @@ $(window).onBlur(function() {
 });
 
 
-document.write("<style type=\"text/css\">div.rui-slider,div.rui-slider .handle div.rui-slider .level{margin:0;padding:0;border:none;background:none}div.rui-slider{height:0.4em;width:20em;border:1px solid #bbb;background:#F8F8F8;border-radius:.2em;-moz-border-radius:.2em;-webkit-border-radius:.2em;position:relative;margin:.6em 0;display:inline-block; *display:inline; *zoom:1;vertical-align:middle;user-select:none;-moz-user-select:none;-webkit-user-select:none;cursor:pointer}div.rui-slider .handle{font-size:25%;position:absolute;left:0;top:0;width:4pt;height:4em;margin-top:-1.6em;margin-left:0.4em;background:#BBB;border:1px solid #999;border-radius:.8em;-moz-border-radius:.8em;-webkit-border-radius:.8em;z-index:20}div.rui-slider .level{font-size:25%;position:absolute;top:0;left:0;width:0;height:100%;background:#ddd;z-index:1}div.rui-slider-vertical{height:10em;width:0.4em;margin:0 .3em}div.rui-slider-vertical .handle{top:auto;bottom:0;margin:0;margin-left:-1.6em;margin-bottom:0.4em;height:4pt;width:4em}div.rui-slider-vertical .level{height:0;width:100%;top:auto;bottom:0}</style>");
+var embed_style = document.createElement('style'),                 
+    embed_rules = document.createTextNode("div.rui-slider,div.rui-slider .handle div.rui-slider .level{margin:0;padding:0;border:none;background:none}div.rui-slider{height:0.4em;width:20em;border:1px solid #bbb;background:#F8F8F8;border-radius:.2em;-moz-border-radius:.2em;-webkit-border-radius:.2em;position:relative;margin:.6em 0;display:inline-block; *display:inline; *zoom:1;vertical-align:middle;user-select:none;-moz-user-select:none;-webkit-user-select:none;cursor:pointer}div.rui-slider .handle{font-size:25%;position:absolute;left:0;top:0;width:4pt;height:10pt;margin-top:-4pt;margin-left:0.4em;background:#BBB;border:1px solid #999;border-radius:.8em;-moz-border-radius:.8em;-webkit-border-radius:.8em;z-index:20}div.rui-slider .level{font-size:25%;position:absolute;top:0;left:0;width:0;height:100%;background:#ddd;z-index:1}div.rui-slider-vertical{height:10em;width:0.4em;margin:0 .3em}div.rui-slider-vertical .handle{top:auto;bottom:0;margin:0;margin-left:-4pt;margin-bottom:0.4em;height:5pt;width:10pt}div.rui-slider-vertical .level{height:0;width:100%;top:auto;bottom:0}");      
+                                                                   
+embed_style.type = 'text/css';                                     
+document.getElementsByTagName('head')[0].appendChild(embed_style); 
+                                                                   
+if(embed_style.styleSheet) {                                       
+  embed_style.styleSheet.cssText = embed_rules.nodeValue;          
+} else {                                                           
+  embed_style.appendChild(embed_rules);                            
+}                                                                  
+
 
 return Slider;
 })(document, Math, RightJS);

@@ -1,8 +1,8 @@
 /**
- * Resizable unit for RightJS
+ * RightJS-UI Resizable v2.2.2
  * http://rightjs.org/ui/resizable
  *
- * Copyright (C) 2010 Nikolay Nemshilov
+ * Copyright (C) 2010-2011 Nikolay Nemshilov
  */
 var Resizable = RightJS.Resizable = (function(document, RightJS) {
 /**
@@ -10,23 +10,8 @@ var Resizable = RightJS.Resizable = (function(document, RightJS) {
  * it creates an abstract proxy with the common functionality
  * which then we reuse and override in the actual widgets
  *
- * Copyright (C) 2010 Nikolay Nemshilov
+ * Copyright (C) 2010-2011 Nikolay Nemshilov
  */
-
-/**
- * The filenames to include
- *
- * Copyright (C) 2010 Nikolay Nemshilov
- */
-var R       = RightJS,
-    $       = RightJS.$,
-    $w      = RightJS.$w,
-    $E      = RightJS.$E,
-    Wrapper = RightJS.Wrapper,
-    Element = RightJS.Element;
-
-
-
 
 /**
  * The widget units constructor
@@ -46,7 +31,7 @@ function Widget(tag_name, methods) {
    *
    * Copyright (C) 2010 Nikolay Nemshilov
    */
-  var AbstractWidget = new RightJS.Wrapper(RightJS.Element.Wrappers[tag_name] || RightJS.Element, {
+  var AbstractWidget = new RightJS.Class(RightJS.Element.Wrappers[tag_name] || RightJS.Element, {
     /**
      * The common constructor
      *
@@ -78,7 +63,8 @@ function Widget(tag_name, methods) {
         options = {};
       }
       this.setOptions(options, this);
-      return this;
+
+      return (RightJS.Wrapper.Cache[RightJS.$uid(this._)] = this);
     },
 
   // protected
@@ -91,12 +77,16 @@ function Widget(tag_name, methods) {
      * @return void
      */
     setOptions: function(options, element) {
-      element = element || this;
-      RightJS.Options.setOptions.call(this,
-        RightJS.Object.merge(options, eval("("+(
+      if (element) {
+        options = RightJS.Object.merge(options, new Function("return "+(
           element.get('data-'+ this.key) || '{}'
-        )+")"))
-      );
+        ))());
+      }
+
+      if (options) {
+        RightJS.Options.setOptions.call(this, RightJS.Object.merge(this.options, options));
+      }
+
       return this;
     }
   });
@@ -105,7 +95,7 @@ function Widget(tag_name, methods) {
    * Creating the actual widget class
    *
    */
-  var Klass = new RightJS.Wrapper(AbstractWidget, methods);
+  var Klass = new RightJS.Class(AbstractWidget, methods);
 
   // creating the widget related shortcuts
   RightJS.Observer.createShortcuts(Klass.prototype, Klass.EVENTS || []);
@@ -115,13 +105,28 @@ function Widget(tag_name, methods) {
 
 
 /**
+ * The filenames to include
+ *
+ * Copyright (C) 2010-2011 Nikolay Nemshilov
+ */
+var R       = RightJS,
+    $       = RightJS.$,
+    $w      = RightJS.$w,
+    $E      = RightJS.$E,
+    Class   = RightJS.Class,
+    Element = RightJS.Element;
+
+
+
+
+/**
  * The resizable unit main file
  *
- * Copyright (C) 2010 Nikolay Nemshilov
+ * Copyright (C) 2010-2011 Nikolay Nemshilov
  */
 var Resizable = new Widget({
   extend: {
-    version: '2.0.0',
+    version: '2.2.2',
 
     EVENTS: $w('resize start release'),
 
@@ -155,9 +160,21 @@ var Resizable = new Widget({
 
     // initializing the inner structure
     this.content = this.first('.rui-resizable-content') ||
-      $E('div', {'class': 'rui-resizable-content'}).insert(this._.childNodes).insertTo(this);
+      $E('div', {'class': 'rui-resizable-content'}).insert(this.children()).insertTo(this);
     this.handle  = this.first('.rui-resizable-handle')  ||
       $E('div', {'class': 'rui-resizable-handle'}).insertTo(this);
+
+    // resizing the content block so it fully fit the resizable element
+    this.content.setWidth(this.size().x -
+      parseInt(this.getStyle('borderLeftWidth'), 10) -
+      parseInt(this.getStyle('borderRightWidth'), 10)
+    );
+    if (this.options.direction !== 'left' && this.options.direction !== 'right') {
+      this.content.setHeight(this.size().y -
+        parseInt(this.getStyle('borderTopWidth'), 10) -
+        parseInt(this.getStyle('borderBottomWidth'), 10)
+      );
+    }
   },
 
   /**
@@ -341,7 +358,7 @@ $(document).on({
     if (handle) {
       var resizable = handle.parent();
 
-      if (resizable instanceof Element) {
+      if (!(resizable instanceof Resizable)) {
         resizable = new Resizable(resizable);
       }
 
@@ -388,8 +405,7 @@ Element.include({
    * @return Element this
    */
   makeResizable: function(options) {
-    new Resizable(this, options);
-    return this;
+    return new Resizable(this, options);
   },
 
   /**
@@ -406,7 +422,18 @@ Element.include({
 });
 
 
-document.write("<style type=\"text/css\">.rui-resizable,.rui-resizable-top,.rui-resizable-left,.rui-resizable-right,.rui-resizable-bottom,.rui-resizable-content .rui-resizable-handle{margin:0;padding:0;overflow:none;border:none;background:none;width:auto;height:auto;min-width:none;max-width:none;min-height:none;max-height:none}.rui-resizable,.rui-resizable-top,.rui-resizable-left,.rui-resizable-right,.rui-resizable-bottom{position:relative;min-width:8em;min-height:8em;border:1px solid #DDD}.rui-resizable-content{overflow:auto;padding:.5em;position:relative}.rui-resizable-handle{position:absolute;background-image:url(/images/rightjs-ui/resizable.png);background-repeat:no-repeat;background-color:#DDD;cursor:move}.rui-resizable .rui-resizable-handle{right:0;bottom:0;background-position:-2px -2px;background-color:transparent;width:16px;height:16px}.rui-resizable-top .rui-resizable-handle,.rui-resizable-bottom .rui-resizable-handle{height:8px;width:100%;background-position:center -26px;cursor:row-resize}.rui-resizable-left .rui-resizable-handle,.rui-resizable-right .rui-resizable-handle{top:0px;width:8px;height:100%;background-position:-26px center;cursor:col-resize}.rui-resizable-top .rui-resizable-content{padding-top:1em}.rui-resizable-top .rui-resizable-handle{top:0}.rui-resizable-bottom .rui-resizable-content{padding-bottom:1em}.rui-resizable-bottom .rui-resizable-handle{bottom:0}.rui-resizable-left .rui-resizable-content{padding-left:1em}.rui-resizable-left .rui-resizable-handle{left:0}.rui-resizable-right .rui-resizable-content{padding-right:1em}.rui-resizable-right .rui-resizable-handle{right:0}</style>");
+var embed_style = document.createElement('style'),                 
+    embed_rules = document.createTextNode(".rui-resizable,.rui-resizable-top,.rui-resizable-left,.rui-resizable-right,.rui-resizable-bottom,.rui-resizable-content .rui-resizable-handle{margin:0;padding:0;overflow:none;border:none;background:none;width:auto;height:auto;min-width:none;max-width:none;min-height:none;max-height:none}.rui-resizable,.rui-resizable-top,.rui-resizable-left,.rui-resizable-right,.rui-resizable-bottom{position:relative;min-width:8em;min-height:8em;border:1px solid #DDD}.rui-resizable-content{overflow:auto;padding:.5em;position:relative}.rui-resizable-handle{position:absolute;background-image:url(/images/rightjs-ui/resizable.png);background-repeat:no-repeat;background-color:#DDD;cursor:move}.rui-resizable .rui-resizable-handle{right:0;bottom:0;background-position:-2px -2px;background-color:transparent;width:16px;height:16px}.rui-resizable-top .rui-resizable-handle,.rui-resizable-bottom .rui-resizable-handle{height:8px;width:100%;background-position:center -26px;cursor:row-resize}.rui-resizable-left .rui-resizable-handle,.rui-resizable-right .rui-resizable-handle{top:0px;width:8px;height:100%;background-position:-26px center;cursor:col-resize}.rui-resizable-top .rui-resizable-content{padding-top:1em}.rui-resizable-top .rui-resizable-handle{top:0}.rui-resizable-bottom .rui-resizable-content{padding-bottom:1em}.rui-resizable-bottom .rui-resizable-handle{bottom:0}.rui-resizable-left .rui-resizable-content{padding-left:1em}.rui-resizable-left .rui-resizable-handle{left:0}.rui-resizable-right .rui-resizable-content{padding-right:1em}.rui-resizable-right .rui-resizable-handle{right:0}");      
+                                                                   
+embed_style.type = 'text/css';                                     
+document.getElementsByTagName('head')[0].appendChild(embed_style); 
+                                                                   
+if(embed_style.styleSheet) {                                       
+  embed_style.styleSheet.cssText = embed_rules.nodeValue;          
+} else {                                                           
+  embed_style.appendChild(embed_rules);                            
+}                                                                  
+
 
 return Resizable;
 })(document, RightJS);

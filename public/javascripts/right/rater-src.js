@@ -1,8 +1,8 @@
 /**
- * Rating widget for RightJS
+ * RightJS-UI Rater v2.2.0
  * http://rightjs.org/ui/rater
  *
- * Copyright (C) 2009-2010 Nikolay Nemshilov
+ * Copyright (C) 2009-2011 Nikolay Nemshilov
  */
 var Rater = RightJS.Rater = (function(document, RightJS) {
 /**
@@ -10,25 +10,8 @@ var Rater = RightJS.Rater = (function(document, RightJS) {
  * it creates an abstract proxy with the common functionality
  * which then we reuse and override in the actual widgets
  *
- * Copyright (C) 2010 Nikolay Nemshilov
+ * Copyright (C) 2010-2011 Nikolay Nemshilov
  */
-
-/**
- * The init script for Rater
- *
- * Copyright (C) 2010 Nikolay Nemshilov
- */
-var R        = RightJS,
-    $        = RightJS.$,
-    $w       = RightJS.$w,
-    Xhr      = RightJS.Xhr,
-    isString = RightJS.isString,
-    isNumber = RightJS.isNumber;
-
-
-
-
-
 
 /**
  * The widget units constructor
@@ -48,7 +31,7 @@ function Widget(tag_name, methods) {
    *
    * Copyright (C) 2010 Nikolay Nemshilov
    */
-  var AbstractWidget = new RightJS.Wrapper(RightJS.Element.Wrappers[tag_name] || RightJS.Element, {
+  var AbstractWidget = new RightJS.Class(RightJS.Element.Wrappers[tag_name] || RightJS.Element, {
     /**
      * The common constructor
      *
@@ -80,7 +63,8 @@ function Widget(tag_name, methods) {
         options = {};
       }
       this.setOptions(options, this);
-      return this;
+
+      return (RightJS.Wrapper.Cache[RightJS.$uid(this._)] = this);
     },
 
   // protected
@@ -93,12 +77,16 @@ function Widget(tag_name, methods) {
      * @return void
      */
     setOptions: function(options, element) {
-      element = element || this;
-      RightJS.Options.setOptions.call(this,
-        RightJS.Object.merge(options, eval("("+(
+      if (element) {
+        options = RightJS.Object.merge(options, new Function("return "+(
           element.get('data-'+ this.key) || '{}'
-        )+")"))
-      );
+        ))());
+      }
+
+      if (options) {
+        RightJS.Options.setOptions.call(this, RightJS.Object.merge(this.options, options));
+      }
+
       return this;
     }
   });
@@ -107,7 +95,7 @@ function Widget(tag_name, methods) {
    * Creating the actual widget class
    *
    */
-  var Klass = new RightJS.Wrapper(AbstractWidget, methods);
+  var Klass = new RightJS.Class(AbstractWidget, methods);
 
   // creating the widget related shortcuts
   RightJS.Observer.createShortcuts(Klass.prototype, Klass.EVENTS || []);
@@ -162,15 +150,32 @@ var Updater = {
 
 
 /**
+ * The init script for Rater
+ *
+ * Copyright (C) 2010 Nikolay Nemshilov
+ */
+var R        = RightJS,
+    $        = RightJS.$,
+    $w       = RightJS.$w,
+    Xhr      = RightJS.Xhr,
+    isString = RightJS.isString,
+    isNumber = RightJS.isNumber;
+
+
+
+
+
+
+/**
  * The Rating widget
  *
- * Copyright (C) 2009-2010 Nikolay Nemshilov
+ * Copyright (C) 2009-2011 Nikolay Nemshilov
  */
 var Rater = new Widget({
   include: Updater,
 
   extend: {
-    version: '2.0.0',
+    version: '2.2.0',
 
     EVENTS: $w('change hover send'),
 
@@ -362,7 +367,18 @@ $(document).onMouseover(function(event) {
 });
 
 
-document.write("<style type=\"text/css\">div.rui-rater,div.rui-rater div{margin:0;padding:0;background:none;border:none;display:inline-block; *display:inline; *zoom:1;font-family:Arial;font-size:110%}div.rui-rater{width:6em;height:1em;vertical-align:middle}div.rui-rater div{float:left;width:1em;height:1em;line-height:1em;text-align:center;cursor:pointer;color:#888}div.rui-rater div.active{color:brown;text-shadow:#666 .05em .05em .15em}div.rui-rater-disabled div{cursor:default}</style>");
+var embed_style = document.createElement('style'),                 
+    embed_rules = document.createTextNode("div.rui-rater,div.rui-rater div{margin:0;padding:0;background:none;border:none;display:inline-block; *display:inline; *zoom:1;font-family:Arial;font-size:110%}div.rui-rater{width:6em;height:1em;vertical-align:middle}div.rui-rater div{float:left;width:1em;height:1em;line-height:1em;text-align:center;cursor:pointer;color:#888}div.rui-rater div.active{color:brown;text-shadow:#666 .05em .05em .15em}div.rui-rater-disabled div{cursor:default}");      
+                                                                   
+embed_style.type = 'text/css';                                     
+document.getElementsByTagName('head')[0].appendChild(embed_style); 
+                                                                   
+if(embed_style.styleSheet) {                                       
+  embed_style.styleSheet.cssText = embed_rules.nodeValue;          
+} else {                                                           
+  embed_style.appendChild(embed_rules);                            
+}                                                                  
+
 
 return Rater;
 })(document, RightJS);

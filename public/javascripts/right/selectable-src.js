@@ -1,8 +1,8 @@
 /**
- * Selectable unit for RightJS
+ * RightJS-UI Selectable v2.2.2
  * http://rightjs.org/ui/selectable
  *
- * Copyright (C) 2009-2010 Nikolay Nemshilov
+ * Copyright (C) 2009-2011 Nikolay Nemshilov
  */
 var Selectable = RightJS.Selectable = (function(document, RightJS) {
 /**
@@ -10,34 +10,8 @@ var Selectable = RightJS.Selectable = (function(document, RightJS) {
  * it creates an abstract proxy with the common functionality
  * which then we reuse and override in the actual widgets
  *
- * Copyright (C) 2010 Nikolay Nemshilov
+ * Copyright (C) 2010-2011 Nikolay Nemshilov
  */
-
-/**
- * The filenames to include
- *
- * Copyright (C) 2010 Nikolay Nemshilov
- */
-var R        = RightJS,
-    $        = RightJS.$,
-    $$       = RightJS.$$,
-    $w       = RightJS.$w,
-    $E       = RightJS.$E,
-    $A       = RightJS.$A,
-    isHash   = RightJS.isHash,
-    isArray  = RightJS.isArray,
-    isString = RightJS.isString,
-    isNumber = RightJS.isNumber,
-    defined  = RightJS.defined,
-    Input    = RightJS.Input,
-    Element  = RightJS.Element;
-
-
-
-
-
-
-
 
 /**
  * The widget units constructor
@@ -57,7 +31,7 @@ function Widget(tag_name, methods) {
    *
    * Copyright (C) 2010 Nikolay Nemshilov
    */
-  var AbstractWidget = new RightJS.Wrapper(RightJS.Element.Wrappers[tag_name] || RightJS.Element, {
+  var AbstractWidget = new RightJS.Class(RightJS.Element.Wrappers[tag_name] || RightJS.Element, {
     /**
      * The common constructor
      *
@@ -89,7 +63,8 @@ function Widget(tag_name, methods) {
         options = {};
       }
       this.setOptions(options, this);
-      return this;
+
+      return (RightJS.Wrapper.Cache[RightJS.$uid(this._)] = this);
     },
 
   // protected
@@ -102,12 +77,16 @@ function Widget(tag_name, methods) {
      * @return void
      */
     setOptions: function(options, element) {
-      element = element || this;
-      RightJS.Options.setOptions.call(this,
-        RightJS.Object.merge(options, eval("("+(
+      if (element) {
+        options = RightJS.Object.merge(options, new Function("return "+(
           element.get('data-'+ this.key) || '{}'
-        )+")"))
-      );
+        ))());
+      }
+
+      if (options) {
+        RightJS.Options.setOptions.call(this, RightJS.Object.merge(this.options, options));
+      }
+
       return this;
     }
   });
@@ -116,7 +95,7 @@ function Widget(tag_name, methods) {
    * Creating the actual widget class
    *
    */
-  var Klass = new RightJS.Wrapper(AbstractWidget, methods);
+  var Klass = new RightJS.Class(AbstractWidget, methods);
 
   // creating the widget related shortcuts
   RightJS.Observer.createShortcuts(Klass.prototype, Klass.EVENTS || []);
@@ -171,15 +150,42 @@ var Updater = {
 
 
 /**
+ * The filenames to include
+ *
+ * Copyright (C) 2010-2011 Nikolay Nemshilov
+ */
+var R        = RightJS,
+    $        = RightJS.$,
+    $$       = RightJS.$$,
+    $w       = RightJS.$w,
+    $E       = RightJS.$E,
+    $A       = RightJS.$A,
+    Object   = RightJS.Object,
+    isHash   = RightJS.isHash,
+    isArray  = RightJS.isArray,
+    isString = RightJS.isString,
+    isNumber = RightJS.isNumber,
+    defined  = RightJS.defined,
+    Input    = RightJS.Input,
+    Element  = RightJS.Element;
+
+
+
+
+
+
+
+
+/**
  * Selectable unit main script
  *
- * Copyright (C) 2009-2010 Nikolay Nemshilov
+ * Copyright (C) 2009-2011 Nikolay Nemshilov
  */
 var Selectable = new Widget('UL', {
   include: Updater,
 
   extend: {
-    version: '2.0.1',
+    version: '2.2.2',
 
     EVENTS: $w('change select unselect disable enable hover leave show hide'),
 
@@ -224,13 +230,14 @@ var Selectable = new Widget('UL', {
     // figuring out the arguments
     if (!isHash(options) || options instanceof Element) {
       element = $(element || options);
-      options = {};
+      options = null;
     }
 
     // converting the selectboxes
-    if (element && element instanceof Input) {
-      options = this.harvestOptions(selectbox = element);
-      element = options;
+    if (element && (element = $(element)) instanceof Input) {
+      this.selectbox = selectbox = element;
+      options = Object.merge(this.harvestOptions(element), options);
+      element = null;
     }
 
     // main initialization
@@ -420,10 +427,21 @@ var Selectable = new Widget('UL', {
    * @return Selectable this
    */
   insertTo: function(target, where) {
-    Element.prototype.insertTo.call(
+    this.$super.call(
       (this.isSingle ? this.container : this), target, where
     );
 
+    return this;
+  },
+
+  /**
+   * Overloading the method so that single selectables were removed
+   * properly
+   *
+   * @return Selectable this
+   */
+  remove: function() {
+    this.$super.call(this.isSingle ? this.container : this);
     return this;
   },
 
@@ -441,8 +459,11 @@ var Selectable = new Widget('UL', {
 
   // finds out the value for the item
   itemValue: function(item) {
-    var value = item.get('id') || item.get('val');
-    return value ? this.options.parseIds ? value.match(/\d+/) : value : this.items().indexOf(item);
+    var value = R([item._value, item.get('id') || item.get('val')]).compact()[0];
+
+    return  value !== undefined ? (
+      this.options.parseIds ? value.match(/\d+/) : value
+    ) : this.items().indexOf(item);
   },
 
   // returns the list of items
@@ -573,7 +594,9 @@ var Selectable = new Widget('UL', {
     }
 
     items.each(function(option) {
-      this.insert($E('li', {val: option[1], html: option[0]}));
+      var item = $E('li', {val: option[1], html: option[0]});
+      item._value = option[1];
+      this.insert(item);
     }, this);
 
     return this;
@@ -652,15 +675,17 @@ var Selectable = new Widget('UL', {
 
   // harvests options from a selectbox element
   harvestOptions: function(selectbox) {
-    var options = {};
+    var options = new Function('return '+ selectbox.get('data-selectable'))() || {};
 
-    options.multiple = selectbox.has('multiple');
+    options.multiple = selectbox._.type == 'select-multiple';
     options.options  = R([]);
     options.selected = R([]);
     options.disabled = R([]);
 
     $A(selectbox._.getElementsByTagName('OPTION')).each(function(option, index) {
-      options.options.push([option.innerHTML, $(option).get('value') || option.innerHTML]);
+      var html = option.innerHTML, value = option.getAttribute('value');
+
+      options.options.push([html, value === null ? html : value]);
 
       if (option.selected && !selectbox._.disabled) { options.selected.push(index); }
       if (option.disabled ||  selectbox._.disabled) { options.disabled.push(index); }
@@ -683,7 +708,18 @@ $(document).onReady(function() {
 });
 
 
-document.write("<style type=\"text/css\"> *.rui-dd-menu, *.rui-dd-menu li{margin:0;padding:0;border:none;background:none;list-style:none;font-weight:normal;float:none} *.rui-dd-menu{display:none;position:absolute;z-index:9999;background:white;border:1px solid #BBB;border-radius:.2em;-moz-border-radius:.2em;-webkit-border-radius:.2em;box-shadow:#DDD .2em .2em .4em;-moz-box-shadow:#DDD .2em .2em .4em;-webkit-box-shadow:#DDD .2em .2em .4em} *.rui-dd-menu li{padding:.2em .4em;border-top:none;border-bottom:none;cursor:pointer} *.rui-dd-menu li.current{background:#DDD} *.rui-dd-menu li:hover{background:#EEE}dl.rui-dd-menu dt{padding:.3em .5em;cursor:default;font-weight:bold;font-style:italic;color:#444;background:#EEE}dl.rui-dd-menu dd li{padding-left:1.5em} *.rui-selectable, *.rui-selectable li, *.rui-selectable dt, *.rui-selectable dd, *.rui-selectable ul,div.rui-selectable-container ul.rui-selectable-display,div.rui-selectable-container ul.rui-selectable-display li{margin:0;padding:0;border:none;background:none;list-style:none} *.rui-selectable{border:1px solid #CCC;border-bottom:none;display:inline-block; *display:inline; *zoom:1;min-width:10em;-moz-border-radius:.2em;-webkit-border-radius:.2em;user-select:none;-moz-user-select:none;-webkit-user-select:none} *.rui-selectable li{padding:.3em 1em;cursor:pointer;border-bottom:1px solid #CCC} *.rui-selectable li:hover{background:#EEE} *.rui-selectable li.rui-selectable-selected{font-weight:bold;background:#DDD} *.rui-selectable li.rui-selectable-disabled, *.rui-selectable li.rui-selectable-disabled:hover{background:#CCC;color:#777;cursor:default}dl.rui-selectable dt{padding:.3em .5em;cursor:default;font-weight:bold;font-style:italic;color:#444;background:#EEE;border-bottom:1px solid #CCC}dl.rui-selectable dd li{padding-left:1.5em} *.rui-selectable-single{background:#FFF;display:none}div.rui-selectable-container{border:1px solid #CCC;-moz-border-radius:.2em;-webkit-border-radius:.2em;display:inline-block; *display:inline; *zoom:1; *width:10em;vertical-align:middle;min-width:10em;cursor:pointer;height:1.6em;position:relative}div.rui-selectable-container div.rui-selectable-handle{font-family:Arial;float:right;width:0.8em;background:#DDD;text-align:center;height:100%;line-height:0.8em;font-size:200%;color:#888;border-left:1px solid #CCC}div.rui-selectable-container:hover div.rui-selectable-handle{color:#666}div.rui-selectable-container ul.rui-selectable-display{display:block;width:auto;margin-right:2em;overflow:hidden}div.rui-selectable-container ul.rui-selectable-display li{line-height:1.6em;padding:0 .5em}select.rui-selectable{visibility:hidden}</style>");
+var embed_style = document.createElement('style'),                 
+    embed_rules = document.createTextNode("*.rui-dd-menu, *.rui-dd-menu li{margin:0;padding:0;border:none;background:none;list-style:none;font-weight:normal;float:none} *.rui-dd-menu{display:none;position:absolute;z-index:9999;background:white;border:1px solid #BBB;border-radius:.2em;-moz-border-radius:.2em;-webkit-border-radius:.2em;box-shadow:#DDD .2em .2em .4em;-moz-box-shadow:#DDD .2em .2em .4em;-webkit-box-shadow:#DDD .2em .2em .4em} *.rui-dd-menu li{padding:.2em .4em;border-top:none;border-bottom:none;cursor:pointer} *.rui-dd-menu li.current{background:#DDD} *.rui-dd-menu li:hover{background:#EEE}dl.rui-dd-menu dt{padding:.3em .5em;cursor:default;font-weight:bold;font-style:italic;color:#444;background:#EEE}dl.rui-dd-menu dd li{padding-left:1.5em} *.rui-selectable, *.rui-selectable li, *.rui-selectable dt, *.rui-selectable dd, *.rui-selectable ul,div.rui-selectable-container ul.rui-selectable-display,div.rui-selectable-container ul.rui-selectable-display li{margin:0;padding:0;border:none;background:none;list-style:none} *.rui-selectable{border:1px solid #CCC;border-bottom:none;display:inline-block; *display:inline; *zoom:1;min-width:10em;border-radius:.2em;-moz-border-radius:.2em;-webkit-border-radius:.2em;user-select:none;-moz-user-select:none;-webkit-user-select:none} *.rui-selectable li{padding:.3em 1em;cursor:pointer;border-bottom:1px solid #CCC} *.rui-selectable li:hover{background:#EEE} *.rui-selectable li.rui-selectable-selected{font-weight:bold;background:#DDD} *.rui-selectable li.rui-selectable-disabled, *.rui-selectable li.rui-selectable-disabled:hover{background:#CCC;color:#777;cursor:default}dl.rui-selectable dt{padding:.3em .5em;cursor:default;font-weight:bold;font-style:italic;color:#444;background:#EEE;border-bottom:1px solid #CCC}dl.rui-selectable dd li{padding-left:1.5em} *.rui-selectable-single{background:#FFF;display:none} *.rui-selectable-single li{overflow:hidden}div.rui-selectable-container{border:1px solid #CCC;border-radius:.2em;-moz-border-radius:.2em;-webkit-border-radius:.2em;display:inline-block; *display:inline; *zoom:1; *width:10em;vertical-align:middle;min-width:10em;cursor:pointer;height:1.6em;position:relative}div.rui-selectable-container div.rui-selectable-handle{font-family:Arial;position:absolute;right:0;width:0.8em;background:#DDD;text-align:center;height:100%;line-height:0.8em;font-size:200%;color:#888;border-left:1px solid #CCC}div.rui-selectable-container:hover div.rui-selectable-handle{color:#666}div.rui-selectable-container ul.rui-selectable-display{display:block;width:auto;overflow:hidden;margin-right:2em}div.rui-selectable-container ul.rui-selectable-display li{line-height:1.6em;padding:0 .5em;overflow:hidden;width:100%;white-space:nowrap}select.rui-selectable{visibility:hidden}");      
+                                                                   
+embed_style.type = 'text/css';                                     
+document.getElementsByTagName('head')[0].appendChild(embed_style); 
+                                                                   
+if(embed_style.styleSheet) {                                       
+  embed_style.styleSheet.cssText = embed_rules.nodeValue;          
+} else {                                                           
+  embed_style.appendChild(embed_rules);                            
+}                                                                  
+
 
 return Selectable;
 })(document, RightJS);

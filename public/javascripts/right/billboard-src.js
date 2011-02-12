@@ -1,8 +1,8 @@
 /**
- * Standard billboard widget for RightJS
+ * RightJS-UI Billboard v2.2.0
  * http://rightjs.org/ui/billboard
  *
- * Copyright (C) 2010 Nikolay Nemshilov
+ * Copyright (C) 2010-2011 Nikolay Nemshilov
  */
 var Billboard = RightJS.Billboard = (function(RightJS) {
 /**
@@ -10,25 +10,8 @@ var Billboard = RightJS.Billboard = (function(RightJS) {
  * it creates an abstract proxy with the common functionality
  * which then we reuse and override in the actual widgets
  *
- * Copyright (C) 2010 Nikolay Nemshilov
+ * Copyright (C) 2010-2011 Nikolay Nemshilov
  */
-
-/**
- * Billboard initialization script
- *
- * Copyright (C) 2010 Nikolay Nemshilov
- */
-var R      = RightJS,
-    $      = RightJS.$,
-    $$     = RightJS.$$,
-    $w     = RightJS.$w,
-    $E     = RightJS.$E,
-    Fx     = RightJS.Fx,
-    Class  = RightJS.Class,
-    Object = RightJS.Object;
-
-
-
 
 /**
  * The widget units constructor
@@ -48,7 +31,7 @@ function Widget(tag_name, methods) {
    *
    * Copyright (C) 2010 Nikolay Nemshilov
    */
-  var AbstractWidget = new RightJS.Wrapper(RightJS.Element.Wrappers[tag_name] || RightJS.Element, {
+  var AbstractWidget = new RightJS.Class(RightJS.Element.Wrappers[tag_name] || RightJS.Element, {
     /**
      * The common constructor
      *
@@ -80,7 +63,8 @@ function Widget(tag_name, methods) {
         options = {};
       }
       this.setOptions(options, this);
-      return this;
+
+      return (RightJS.Wrapper.Cache[RightJS.$uid(this._)] = this);
     },
 
   // protected
@@ -93,12 +77,16 @@ function Widget(tag_name, methods) {
      * @return void
      */
     setOptions: function(options, element) {
-      element = element || this;
-      RightJS.Options.setOptions.call(this,
-        RightJS.Object.merge(options, eval("("+(
+      if (element) {
+        options = RightJS.Object.merge(options, new Function("return "+(
           element.get('data-'+ this.key) || '{}'
-        )+")"))
-      );
+        ))());
+      }
+
+      if (options) {
+        RightJS.Options.setOptions.call(this, RightJS.Object.merge(this.options, options));
+      }
+
       return this;
     }
   });
@@ -107,7 +95,7 @@ function Widget(tag_name, methods) {
    * Creating the actual widget class
    *
    */
-  var Klass = new RightJS.Wrapper(AbstractWidget, methods);
+  var Klass = new RightJS.Class(AbstractWidget, methods);
 
   // creating the widget related shortcuts
   RightJS.Observer.createShortcuts(Klass.prototype, Klass.EVENTS || []);
@@ -117,13 +105,30 @@ function Widget(tag_name, methods) {
 
 
 /**
- * Billboards basic class
+ * Billboard initialization script
  *
  * Copyright (C) 2010 Nikolay Nemshilov
  */
+var R      = RightJS,
+    $      = RightJS.$,
+    $$     = RightJS.$$,
+    $w     = RightJS.$w,
+    $E     = RightJS.$E,
+    Fx     = RightJS.Fx,
+    Class  = RightJS.Class,
+    Object = RightJS.Object;
+
+
+
+
+/**
+ * Billboards basic class
+ *
+ * Copyright (C) 2010-2011 Nikolay Nemshilov
+ */
 var Billboard = new Widget('UL', {
   extend: {
-    version: '2.0.1',
+    version: '2.2.0',
 
     EVENTS:  $w('change first last'),
 
@@ -435,7 +440,7 @@ Billboard.Fx.Slide = new Class(Billboard.Fx, {
 /**
  * Stripe visual effects class
  *
- * Copyright (C) 2010 Nikolay Nemshilov
+ * Copyright (C) 2010-2011 Nikolay Nemshilov
  */
 Billboard.Fx.Stripe = new Class(Billboard.Fx, {
 
@@ -477,12 +482,13 @@ Billboard.Fx.Stripe = new Class(Billboard.Fx, {
       };
 
       if (direction !== 'right' && i === (length - 1) || (direction === 'right' && i === 0)) {
-        options.onFinish = R(this.finish).bind(this);
+        options.onFinish = R(this.finish).bind(this, true);
       }
 
       switch (direction) {
         case 'up':
           R(function(stripe, options) {
+            stripe.setHeight(stripe.size().y);
             stripe.morph({height: '0px'}, options);
           }).bind(this, stripe, options).delay(i * delay);
           break;
@@ -490,6 +496,7 @@ Billboard.Fx.Stripe = new Class(Billboard.Fx, {
         case 'down':
           stripe.setStyle('top: auto; bottom: 0px');
           R(function(stripe, options) {
+            stripe.setHeight(stripe.size().y);
             stripe.morph({height: '0px'}, options);
           }).bind(this, stripe, options).delay(i * delay);
           break;
@@ -507,20 +514,22 @@ Billboard.Fx.Stripe = new Class(Billboard.Fx, {
           break;
 
         default:
-          this.finish();
+          this.finish(true);
       }
     }
   },
 
 
   /**
-   * Stubbing the timer so it didn't count nothing
+   * Stubbing the finish method so it didn't finish prematurely
    *
    * @return Fx this
    */
-  start: function() {
-    this.$super.apply(this, arguments);
-    return this.pause();
+  finish: function(for_sure) {
+    if (for_sure) {
+      this.$super();
+    }
+    return this;
   }
 
 });
@@ -538,7 +547,18 @@ $(document).onReady(function() {
   });
 });
 
-document.write("<style type=\"text/css\"> *.rui-billboard, *.rui-billboard> *{margin:0;padding:0;list-style:none} *.rui-billboard{display:inline-block; *display:inline; *zoom:1;position:relative} *.rui-billboard> *{display:none;width:100%;height:100%} *.rui-billboard> *:first-child, *.rui-billboard> *.rui-billboard-current:first-child{display:block;position:relative} *.rui-billboard> *>img{margin:0;padding:0} *.rui-billboard-current{position:absolute;left:0;top:0;display:block;z-index:999} *.rui-billboard-button-prev, *.rui-billboard-button-next{position:absolute;z-index:99999;left:.25em;top:auto;bottom:.25em;display:block;width:.5em;height:auto;text-align:center;font-size:200%;font-family:Arial;font-weight:bold;padding:0em .5em .2em .5em;background:white;opacity:0;filter:alpha(opacity:0);cursor:pointer;border:.12em solid #888;border-radius:.2em;-moz-border-radius:.2em;-webkit-border-radius:.2em;user-select:none;-moz-user-select:none;-webkit-user-select:none;transition:opacity .3s ease-in-out;-o-transition:opacity .3s ease-in-out;-moz-transition:opacity .3s ease-in-out;-webkit-transition:opacity .3s ease-in-out} *.rui-billboard-button-next{left:auto;right:.25em;text-align:right} *.rui-billboard-button-prev:active{text-indent:-.1em} *.rui-billboard-button-next:active{text-indent:.2em} *.rui-billboard:hover *.rui-billboard-button-prev, *.rui-billboard:hover *.rui-billboard-button-next{opacity:0.4;filter:alpha(opacity:40)} *.rui-billboard:hover *.rui-billboard-button-prev:hover, *.rui-billboard:hover *.rui-billboard-button-next:hover{opacity:0.7;filter:alpha(opacity:70)}.rui-billboard-fx-container{position:absolute;left:0;top:0;display:block;z-index:9999;overflow:hidden}.rui-billboard-fx-container> *{position:absolute;left:0;top:0}.rui-billboard-stripe{overflow:hidden}.rui-billboard-stripe> *{position:relative}</style>");
+var embed_style = document.createElement('style'),                 
+    embed_rules = document.createTextNode("*.rui-billboard, *.rui-billboard> *{margin:0;padding:0;list-style:none} *.rui-billboard{display:inline-block; *display:inline; *zoom:1;position:relative} *.rui-billboard> *{display:none;width:100%;height:100%} *.rui-billboard> *:first-child, *.rui-billboard> *.rui-billboard-current:first-child{display:block;position:relative} *.rui-billboard> *>img{margin:0;padding:0} *.rui-billboard-current{position:absolute;left:0;top:0;display:block;z-index:999} *.rui-billboard-button-prev, *.rui-billboard-button-next{position:absolute;z-index:99999;left:.25em;top:auto;bottom:.25em;display:block;width:.5em;height:auto;text-align:center;font-size:200%;font-family:Arial;font-weight:bold;padding:0em .5em .2em .5em;background:white;opacity:0;filter:alpha(opacity:0);cursor:pointer;border:.12em solid #888;border-radius:.2em;-moz-border-radius:.2em;-webkit-border-radius:.2em;user-select:none;-moz-user-select:none;-webkit-user-select:none;transition:opacity .3s ease-in-out;-o-transition:opacity .3s ease-in-out;-moz-transition:opacity .3s ease-in-out;-webkit-transition:opacity .3s ease-in-out} *.rui-billboard-button-next{left:auto;right:.25em;text-align:right} *.rui-billboard-button-prev:active{text-indent:-.1em} *.rui-billboard-button-next:active{text-indent:.2em} *.rui-billboard:hover *.rui-billboard-button-prev, *.rui-billboard:hover *.rui-billboard-button-next{opacity:0.4;filter:alpha(opacity:40)} *.rui-billboard:hover *.rui-billboard-button-prev:hover, *.rui-billboard:hover *.rui-billboard-button-next:hover{opacity:0.7;filter:alpha(opacity:70)}.rui-billboard-fx-container{position:absolute;left:0;top:0;display:block;z-index:9999;overflow:hidden}.rui-billboard-fx-container> *{position:absolute;left:0;top:0}.rui-billboard-stripe{overflow:hidden}.rui-billboard-stripe> *{position:relative}");      
+                                                                   
+embed_style.type = 'text/css';                                     
+document.getElementsByTagName('head')[0].appendChild(embed_style); 
+                                                                   
+if(embed_style.styleSheet) {                                       
+  embed_style.styleSheet.cssText = embed_rules.nodeValue;          
+} else {                                                           
+  embed_style.appendChild(embed_rules);                            
+}                                                                  
+
 
 return Billboard;
 })(RightJS);

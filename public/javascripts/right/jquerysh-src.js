@@ -2,14 +2,8 @@
  * jQuery-like '$' function behavior for RightJS
  * http://rightjs.org/plugins/jquerysh
  *
- * Copyright (C) 2010 Nikolay Nemshilov
+ * Copyright (C) 2010-2011 Nikolay Nemshilov
  */
-/**
- * jQuery-like '$' function behavior
- *
- * Copyright (C) 2010 Nikolay Nemshilov
- */
-
 /**
  * jquerysh initialization script
  *
@@ -17,6 +11,12 @@
  */
 
 
+
+/**
+ * jQuery-like '$' function behavior
+ *
+ * Copyright (C) 2010 Nikolay Nemshilov
+ */
 $ = function(something) {
   switch(typeof something) {
     case 'string':

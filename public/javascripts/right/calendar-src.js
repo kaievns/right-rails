@@ -1,9 +1,8 @@
 /**
- * The calendar widget implemented with RightJS
+ * RightJS-UI Calendar v2.2.0
+ * http://rightjs.org/ui/calendar
  *
- * Home page: http://rightjs.org/ui/calendar
- *
- * @copyright (C) 2009-2010 Nikolay Nemshilov
+ * Copyright (C) 2009-2011 Nikolay Nemshilov
  */
 var Calendar = RightJS.Calendar = (function(document, parseInt, RightJS) {
 /**
@@ -11,37 +10,8 @@ var Calendar = RightJS.Calendar = (function(document, parseInt, RightJS) {
  * it creates an abstract proxy with the common functionality
  * which then we reuse and override in the actual widgets
  *
- * Copyright (C) 2010 Nikolay Nemshilov
+ * Copyright (C) 2010-2011 Nikolay Nemshilov
  */
-
-/**
- * The filenames to include
- *
- * Copyright (C) 2010 Nikolay Nemshilov
- */
-
-var R          = RightJS,
-    $          = RightJS.$,
-    $$         = RightJS.$$,
-    $w         = RightJS.$w,
-    $ext       = RightJS.$ext,
-    $uid       = RightJS.$uid,
-    isString   = RightJS.isString,
-    isArray    = RightJS.isArray,
-    isFunction = RightJS.isFunction,
-    Wrapper    = RightJS.Wrapper,
-    Element    = RightJS.Element,
-    Input      = RightJS.Input,
-    RegExp     = RightJS.RegExp,
-    Browser    = RightJS.Browser;
-
-
-
-
-
-
-
-
 
 /**
  * The widget units constructor
@@ -61,7 +31,7 @@ function Widget(tag_name, methods) {
    *
    * Copyright (C) 2010 Nikolay Nemshilov
    */
-  var AbstractWidget = new RightJS.Wrapper(RightJS.Element.Wrappers[tag_name] || RightJS.Element, {
+  var AbstractWidget = new RightJS.Class(RightJS.Element.Wrappers[tag_name] || RightJS.Element, {
     /**
      * The common constructor
      *
@@ -93,7 +63,8 @@ function Widget(tag_name, methods) {
         options = {};
       }
       this.setOptions(options, this);
-      return this;
+
+      return (RightJS.Wrapper.Cache[RightJS.$uid(this._)] = this);
     },
 
   // protected
@@ -106,12 +77,16 @@ function Widget(tag_name, methods) {
      * @return void
      */
     setOptions: function(options, element) {
-      element = element || this;
-      RightJS.Options.setOptions.call(this,
-        RightJS.Object.merge(options, eval("("+(
+      if (element) {
+        options = RightJS.Object.merge(options, new Function("return "+(
           element.get('data-'+ this.key) || '{}'
-        )+")"))
-      );
+        ))());
+      }
+
+      if (options) {
+        RightJS.Options.setOptions.call(this, RightJS.Object.merge(this.options, options));
+      }
+
       return this;
     }
   });
@@ -120,7 +95,7 @@ function Widget(tag_name, methods) {
    * Creating the actual widget class
    *
    */
-  var Klass = new RightJS.Wrapper(AbstractWidget, methods);
+  var Klass = new RightJS.Class(AbstractWidget, methods);
 
   // creating the widget related shortcuts
   RightJS.Observer.createShortcuts(Klass.prototype, Klass.EVENTS || []);
@@ -135,9 +110,9 @@ function Widget(tag_name, methods) {
  *       so those buttons didn't interfere with
  *       the user's tab-index on his page
  *
- * Copyright (C) 2010 Nikolay Nemshilov
+ * Copyright (C) 2010-2011 Nikolay Nemshilov
  */
-var Button = new RightJS.Wrapper(RightJS.Element, {
+var Button = new RightJS.Class(RightJS.Element, {
   /**
    * Constructor
    *
@@ -207,30 +182,81 @@ var Button = new RightJS.Wrapper(RightJS.Element, {
  * A shared module that toggles a widget visibility status
  * in a uniformed way according to the options settings
  *
- * Copyright (C) 2010 Nikolay Nemshilov
+ * Copyright (C) 2010-2011 Nikolay Nemshilov
  */
+var Toggler = {
+  /**
+   * Shows the element
+   *
+   * @param String fx-name
+   * @param Object fx-options
+   * @return Element this
+   */
+  show: function(fx_name, fx_options) {
+    this.constructor.current = this;
+    return Toggler_toggle(this, 'show', fx_name, fx_options);
+  },
+
+  /**
+   * Hides the element
+   *
+   * @param String fx-name
+   * @param Object fx-options
+   * @return Element this
+   */
+  hide: function(fx_name, fx_options) {
+    this.constructor.current = null;
+    return Toggler_toggle(this, 'show', fx_name, fx_options);
+  },
+
+  /**
+   * Toggles the widget at the given element
+   *
+   * @param Element the related element
+   * @param String position right/bottom (bottom is the default)
+   * @param Boolean marker if the element should be resized to the element size
+   * @return Widget this
+   */
+  showAt: function(element, where, resize) {
+    this.hide(null).shownAt = element = RightJS.$(element);
+
+    // moves this element at the given one
+    Toggler_re_position.call(this, element, where, resize);
+
+    return this.show();
+  },
+
+  /**
+   * Toggles the widget at the given element
+   *
+   * @param Element the related element
+   * @param String position top/left/right/bottom (bottom is the default)
+   * @param Boolean marker if the element should be resized to the element size
+   * @return Widget this
+   */
+  toggleAt: function(element, where, resize) {
+    return this.hidden() ? this.showAt(element, where, resize) : this.hide();
+  }
+};
+
 
 /**
- * The toggler's common functionality
+ * toggles the element's state according to the current settings
  *
- * NOTE: this function getting called in the context
- *       of a widget
- *
- * @param Element the element to toggle
  * @param event String 'show' or 'hide' the event name
  * @param String an optional fx-name
  * @param Object an optional fx-options hash
  * @return void
  */
-function toggler(element, event, fx_name, fx_options) {
+function Toggler_toggle(element, event, fx_name, fx_options) {
   if (RightJS.Fx) {
     if (fx_name === undefined) {
-      fx_name = this.options.fxName;
+      fx_name = element.options.fxName;
 
       if (fx_options === undefined) {
         fx_options = {
-          duration: this.options.fxDuration,
-          onFinish: RightJS(this.fire).bind(this, event)
+          duration: element.options.fxDuration,
+          onFinish: RightJS(element.fire).bind(element, event)
         };
 
         // hide on double time
@@ -242,12 +268,10 @@ function toggler(element, event, fx_name, fx_options) {
     }
   }
 
-  RightJS.Element.prototype[event].call(element, fx_name, fx_options);
-
   // manually trigger the event if no fx were specified
-  if (!RightJS.Fx || !fx_name) { this.fire(event); }
+  if (!RightJS.Fx || !fx_name) { element.fire(event); }
 
-  return this;
+  return element.$super(fx_name, fx_options);
 }
 
 /**
@@ -262,7 +286,7 @@ function toggler(element, event, fx_name, fx_options) {
  * @param Boolean if `true` then the element size will be adjusted
  * @return void
  */
-function re_position(element, where, resize) {
+function Toggler_re_position(element, where, resize) {
   var anchor = this.reAnchor || (this.reAnchor =
         new RightJS.Element('div', {'class': 'rui-re-anchor'}))
         .insert(this),
@@ -292,7 +316,7 @@ function re_position(element, where, resize) {
   target.moveTo(left, top);
 
   if (resize) {
-    if (['left', 'right'].include(where)) {
+    if (where === 'left' || where === 'right') {
       target.setHeight(height);
     } else {
       target.setWidth(width);
@@ -302,67 +326,6 @@ function re_position(element, where, resize) {
   // rolling the invisibility back
   target.setStyle('visibility:visible').hide(null);
 }
-
-/**
- * The actual shared module to be inserted in the widgets
- *
- * Copyright (C) 2010 Nikolay Nemshilov
- */
-var Toggler = {
-  /**
-   * Shows the element
-   *
-   * @param String fx-name
-   * @param Object fx-options
-   * @return Element this
-   */
-  show: function(fx_name, fx_options) {
-    this.constructor.current = this;
-    return toggler.call(this, this, 'show', fx_name, fx_options);
-  },
-
-  /**
-   * Hides the element
-   *
-   * @param String fx-name
-   * @param Object fx-options
-   * @return Element this
-   */
-  hide: function(fx_name, fx_options) {
-    this.constructor.current = null;
-    return toggler.call(this, this, 'hide', fx_name, fx_options);
-  },
-
-  /**
-   * Toggles the widget at the given element
-   *
-   * @param Element the related element
-   * @param String position right/bottom (bottom is the default)
-   * @param Boolean marker if the element should be resized to the element size
-   * @return Widget this
-   */
-  showAt: function(element, where, resize) {
-    this.hide(null).shownAt = element = RightJS.$(element);
-
-    // moves this element at the given one
-    re_position.call(this, element, where, resize);
-
-    return this.show();
-  },
-
-  /**
-   * Toggles the widget at the given element
-   *
-   * @param Element the related element
-   * @param String position top/left/right/bottom (bottom is the default)
-   * @param Boolean marker if the element should be resized to the element size
-   * @return Widget this
-   */
-  toggleAt: function(element, where, resize) {
-    return this.hidden() ? this.showAt(element, where, resize) : this.hide();
-  }
-};
-
 
 /**
  * A shared module that provides for the widgets an ability
@@ -430,15 +393,44 @@ function zerofy(number) {
 
 
 /**
+ * The filenames to include
+ *
+ * Copyright (C) 2010-2011 Nikolay Nemshilov
+ */
+
+var R          = RightJS,
+    $          = RightJS.$,
+    $$         = RightJS.$$,
+    $w         = RightJS.$w,
+    $ext       = RightJS.$ext,
+    $uid       = RightJS.$uid,
+    isString   = RightJS.isString,
+    isArray    = RightJS.isArray,
+    isFunction = RightJS.isFunction,
+    Class      = RightJS.Class,
+    Element    = RightJS.Element,
+    Input      = RightJS.Input,
+    RegExp     = RightJS.RegExp,
+    Browser    = RightJS.Browser;
+
+
+
+
+
+
+
+
+
+/**
  * The calendar widget for RightJS
  *
- * Copyright (C) 2009-2010 Nikolay Nemshilov
+ * Copyright (C) 2009-2011 Nikolay Nemshilov
  */
 var Calendar = new Widget({
   include: [Toggler, Assignable],
 
   extend: {
-    version: '2.0.0',
+    version: '2.2.0',
 
     EVENTS: $w('show hide change done'),
 
@@ -720,9 +712,9 @@ var Calendar = new Widget({
 /**
  * The calendar month/year swapping buttons block
  *
- * Copyright (C) 2010 Nikolay Nemshilov
+ * Copyright (C) 2010-2011 Nikolay Nemshilov
  */
-var Swaps = new Wrapper(Element, {
+var Swaps = new Class(Element, {
   /**
    * Constructor
    *
@@ -821,9 +813,9 @@ var Swaps = new Wrapper(Element, {
 /**
  * Represents a single month block
  *
- * Copyright (C) 2010 Nikolay Nemshilov
+ * Copyright (C) 2010-2011 Nikolay Nemshilov
  */
-var Month = new Wrapper(Element, {
+var Month = new Class(Element, {
   /**
    * Constructor
    *
@@ -953,9 +945,9 @@ var Month = new Wrapper(Element, {
 /**
  * The calendar months greed unit
  *
- * Copyright (C) 2010 Nikolay Nemshilov
+ * Copyright (C) 2010-2011 Nikolay Nemshilov
  */
-var Greed = new Wrapper(Element, {
+var Greed = new Class(Element, {
   /**
    * Constructor
    *
@@ -1002,9 +994,9 @@ var Greed = new Wrapper(Element, {
 /**
  * The time-picker block unit
  *
- * Copyright (C) 2010 Nikolay Nemshilov
+ * Copyright (C) 2010-2011 Nikolay Nemshilov
  */
-var Timepicker = new Wrapper(Element, {
+var Timepicker = new Class(Element, {
   /**
    * Constructor
    *
@@ -1105,7 +1097,7 @@ var Timepicker = new Wrapper(Element, {
  *
  * Copyright (C) 2010 Nikolay Nemshilov
  */
-var Buttons = new Wrapper(Element, {
+var Buttons = new Class(Element, {
   /**
    * Constructor
    *
@@ -1455,7 +1447,18 @@ $(document).on({
 });
 
 
-document.write("<style type=\"text/css\">.rui-panel{margin:0;padding:.5em;position:relative;background-color:#EEE;border:1px solid #BBB;border-radius:.3em;-moz-border-radius:.3em;-webkit-border-radius:.3em;box-shadow:.15em .3em .5em #BBB;-moz-box-shadow:.15em .3em .5em #BBB;-webkit-box-shadow:.15em .3em .5em #BBB;cursor:default} *.rui-button{display:inline-block; *display:inline; *zoom:1;height:1em;line-height:1em;margin:0;padding:.2em .5em;text-align:center;border:1px solid #CCC;border-radius:.2em;-moz-border-radius:.2em;-webkit-border-radius:.2em;cursor:pointer;color:#333;background-color:#FFF;user-select:none;-moz-user-select:none;-webkit-user-select:none} *.rui-button:hover{color:#111;border-color:#999;background-color:#DDD;box-shadow:#888 0 0 .1em;-moz-box-shadow:#888 0 0 .1em;-webkit-box-shadow:#888 0 0 .1em} *.rui-button:active{color:#000;border-color:#777;text-indent:1px;box-shadow:none;-moz-box-shadow:none;-webkit-box-shadow:none} *.rui-button-disabled, *.rui-button-disabled:hover, *.rui-button-disabled:active{color:#888;background:#DDD;border-color:#CCC;cursor:default;text-indent:0;box-shadow:none;-moz-box-shadow:none;-webkit-box-shadow:none}div.rui-re-anchor{margin:0;padding:0;background:none;border:none;float:none;display:inline;position:absolute;z-index:9999}div.rui-calendar .swaps,div.rui-calendar .greed,div.rui-calendar .timepicker,div.rui-calendar .buttons,div.rui-calendar table,div.rui-calendar table tr,div.rui-calendar table th,div.rui-calendar table td,div.rui-calendar table tbody,div.rui-calendar table thead,div.rui-calendar table caption{background:none;border:none;width:auto;height:auto;margin:0;padding:0}div.rui-calendar-inline{position:relative;display:inline-block; *display:inline; *zoom:1;box-shadow:none;-moz-box-shadow:none;-webkit-box-shadow:none}div.rui-calendar .swaps{position:relative}div.rui-calendar .swaps .rui-button{position:absolute;float:left;width:1em;padding:.15em .4em}div.rui-calendar .swaps .next-month{right:0em;_right:.5em}div.rui-calendar .swaps .prev-year{left:2.05em}div.rui-calendar .swaps .next-year{right:2.05em;_right:2.52em}div.rui-calendar .greed{border-spacing:0px;border-collapse:collapse;border-size:0}div.rui-calendar .greed td{vertical-align:top;padding-left:.4em}div.rui-calendar .greed>tbody>tr>td:first-child{padding:0}div.rui-calendar .month{margin-top:.2em;border-spacing:1px;border-collapse:separate}div.rui-calendar .month caption{text-align:center}div.rui-calendar .month th{color:#666;text-align:center}div.rui-calendar .month td{text-align:right;padding:.1em .3em;background-color:#FFF;border:1px solid #CCC;cursor:pointer;color:#555;border-radius:.2em;-moz-border-radius:.2em;-webkit-border-radius:.2em}div.rui-calendar .month td:hover{background-color:#CCC;border-color:#AAA;color:#000}div.rui-calendar .month td.blank{background:transparent;cursor:default;border:none}div.rui-calendar .month td.selected{background-color:#BBB;border-color:#AAA;color:#222;font-weight:bold;padding:.1em .2em}div.rui-calendar .month td.disabled{color:#888;background:#EEE;border-color:#CCC;cursor:default}div.rui-calendar .timepicker{border-top:1px solid #ccc;margin-top:.3em;padding-top:.5em;text-align:center}div.rui-calendar .timepicker select{margin:0 .4em}div.rui-calendar .buttons{position:relative;margin-top:.5em}div.rui-calendar .buttons div.rui-button{width:4em;padding:.25em .5em}div.rui-calendar .buttons .done{position:absolute;right:0em;top:0}</style>");
+var embed_style = document.createElement('style'),                 
+    embed_rules = document.createTextNode(".rui-panel{margin:0;padding:.5em;position:relative;background-color:#EEE;border:1px solid #BBB;border-radius:.3em;-moz-border-radius:.3em;-webkit-border-radius:.3em;box-shadow:.15em .3em .5em #BBB;-moz-box-shadow:.15em .3em .5em #BBB;-webkit-box-shadow:.15em .3em .5em #BBB;cursor:default} *.rui-button{display:inline-block; *display:inline; *zoom:1;height:1em;line-height:1em;margin:0;padding:.2em .5em;text-align:center;border:1px solid #CCC;border-radius:.2em;-moz-border-radius:.2em;-webkit-border-radius:.2em;cursor:pointer;color:#333;background-color:#FFF;user-select:none;-moz-user-select:none;-webkit-user-select:none} *.rui-button:hover{color:#111;border-color:#999;background-color:#DDD;box-shadow:#888 0 0 .1em;-moz-box-shadow:#888 0 0 .1em;-webkit-box-shadow:#888 0 0 .1em} *.rui-button:active{color:#000;border-color:#777;text-indent:1px;box-shadow:none;-moz-box-shadow:none;-webkit-box-shadow:none} *.rui-button-disabled, *.rui-button-disabled:hover, *.rui-button-disabled:active{color:#888;background:#DDD;border-color:#CCC;cursor:default;text-indent:0;box-shadow:none;-moz-box-shadow:none;-webkit-box-shadow:none}div.rui-re-anchor{margin:0;padding:0;background:none;border:none;float:none;display:inline;position:absolute;z-index:9999}div.rui-calendar .swaps,div.rui-calendar .greed,div.rui-calendar .timepicker,div.rui-calendar .buttons,div.rui-calendar table,div.rui-calendar table tr,div.rui-calendar table th,div.rui-calendar table td,div.rui-calendar table tbody,div.rui-calendar table thead,div.rui-calendar table caption{background:none;border:none;width:auto;height:auto;margin:0;padding:0}div.rui-calendar-inline{position:relative;display:inline-block; *display:inline; *zoom:1;box-shadow:none;-moz-box-shadow:none;-webkit-box-shadow:none}div.rui-calendar .swaps{position:relative}div.rui-calendar .swaps .rui-button{position:absolute;float:left;width:1em;padding:.15em .4em}div.rui-calendar .swaps .next-month{right:0em;_right:.5em}div.rui-calendar .swaps .prev-year{left:2.05em}div.rui-calendar .swaps .next-year{right:2.05em;_right:2.52em}div.rui-calendar .greed{border-spacing:0px;border-collapse:collapse;border-size:0}div.rui-calendar .greed td{vertical-align:top;padding-left:.4em}div.rui-calendar .greed>tbody>tr>td:first-child{padding:0}div.rui-calendar .month{margin-top:.2em;border-spacing:1px;border-collapse:separate}div.rui-calendar .month caption{text-align:center}div.rui-calendar .month th{color:#666;text-align:center}div.rui-calendar .month td{text-align:right;padding:.1em .3em;background-color:#FFF;border:1px solid #CCC;cursor:pointer;color:#555;border-radius:.2em;-moz-border-radius:.2em;-webkit-border-radius:.2em}div.rui-calendar .month td:hover{background-color:#CCC;border-color:#AAA;color:#000}div.rui-calendar .month td.blank{background:transparent;cursor:default;border:none}div.rui-calendar .month td.selected{background-color:#BBB;border-color:#AAA;color:#222;font-weight:bold;padding:.1em .2em}div.rui-calendar .month td.disabled{color:#888;background:#EEE;border-color:#CCC;cursor:default}div.rui-calendar .timepicker{border-top:1px solid #ccc;margin-top:.3em;padding-top:.5em;text-align:center}div.rui-calendar .timepicker select{margin:0 .4em}div.rui-calendar .buttons{position:relative;margin-top:.5em}div.rui-calendar .buttons div.rui-button{width:4em;padding:.25em .5em}div.rui-calendar .buttons .done{position:absolute;right:0em;top:0}");      
+                                                                   
+embed_style.type = 'text/css';                                     
+document.getElementsByTagName('head')[0].appendChild(embed_style); 
+                                                                   
+if(embed_style.styleSheet) {                                       
+  embed_style.styleSheet.cssText = embed_rules.nodeValue;          
+} else {                                                           
+  embed_style.appendChild(embed_rules);                            
+}                                                                  
+
 
 return Calendar;
 })(document, parseInt, RightJS);

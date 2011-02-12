@@ -1,8 +1,8 @@
 /**
- * Standard dialog widget for RightJS
+ * RightJS-UI Dialog v2.2.0
  * http://rightjs.org/ui/dialog
  *
- * Copyright (C) 2010 Nikolay Nemshilov
+ * Copyright (C) 2010-2011 Nikolay Nemshilov
  */
 var Dialog = RightJS.Dialog = (function(RightJS) {
 /**
@@ -10,26 +10,8 @@ var Dialog = RightJS.Dialog = (function(RightJS) {
  * it creates an abstract proxy with the common functionality
  * which then we reuse and override in the actual widgets
  *
- * Copyright (C) 2010 Nikolay Nemshilov
+ * Copyright (C) 2010-2011 Nikolay Nemshilov
  */
-
-/**
- * Dialog widget initialization script
- *
- * Copyright (C) 2010 Nikolay Nemshilov
- */
-var R  = RightJS,
-    $  = RightJS.$,
-    $w = RightJS.$w,
-    $E = RightJS.$E,
-    Class  = RightJS.Class,
-    Object = RightJS.Object;
-
-
-
-
-
-
 
 /**
  * The widget units constructor
@@ -49,7 +31,7 @@ function Widget(tag_name, methods) {
    *
    * Copyright (C) 2010 Nikolay Nemshilov
    */
-  var AbstractWidget = new RightJS.Wrapper(RightJS.Element.Wrappers[tag_name] || RightJS.Element, {
+  var AbstractWidget = new RightJS.Class(RightJS.Element.Wrappers[tag_name] || RightJS.Element, {
     /**
      * The common constructor
      *
@@ -81,7 +63,8 @@ function Widget(tag_name, methods) {
         options = {};
       }
       this.setOptions(options, this);
-      return this;
+
+      return (RightJS.Wrapper.Cache[RightJS.$uid(this._)] = this);
     },
 
   // protected
@@ -94,12 +77,16 @@ function Widget(tag_name, methods) {
      * @return void
      */
     setOptions: function(options, element) {
-      element = element || this;
-      RightJS.Options.setOptions.call(this,
-        RightJS.Object.merge(options, eval("("+(
+      if (element) {
+        options = RightJS.Object.merge(options, new Function("return "+(
           element.get('data-'+ this.key) || '{}'
-        )+")"))
-      );
+        ))());
+      }
+
+      if (options) {
+        RightJS.Options.setOptions.call(this, RightJS.Object.merge(this.options, options));
+      }
+
       return this;
     }
   });
@@ -108,7 +95,7 @@ function Widget(tag_name, methods) {
    * Creating the actual widget class
    *
    */
-  var Klass = new RightJS.Wrapper(AbstractWidget, methods);
+  var Klass = new RightJS.Class(AbstractWidget, methods);
 
   // creating the widget related shortcuts
   RightJS.Observer.createShortcuts(Klass.prototype, Klass.EVENTS || []);
@@ -123,9 +110,9 @@ function Widget(tag_name, methods) {
  *       so those buttons didn't interfere with
  *       the user's tab-index on his page
  *
- * Copyright (C) 2010 Nikolay Nemshilov
+ * Copyright (C) 2010-2011 Nikolay Nemshilov
  */
-var Button = new RightJS.Wrapper(RightJS.Element, {
+var Button = new RightJS.Class(RightJS.Element, {
   /**
    * Constructor
    *
@@ -194,9 +181,9 @@ var Button = new RightJS.Wrapper(RightJS.Element, {
 /**
  * A shared module to create textual spinners
  *
- * Copyright (C) 2010 Nikolay Nemshilov
+ * Copyright (C) 2010-2011 Nikolay Nemshilov
  */
-var Spinner = new RightJS.Wrapper(RightJS.Element, {
+var Spinner = new RightJS.Class(RightJS.Element, {
   /**
    * Constructor
    *
@@ -232,18 +219,38 @@ var Spinner = new RightJS.Wrapper(RightJS.Element, {
 
 
 /**
- * Basic dialog class
+ * Dialog widget initialization script
  *
  * Copyright (C) 2010 Nikolay Nemshilov
  */
+var R  = RightJS,
+    $  = RightJS.$,
+    $w = RightJS.$w,
+    $E = RightJS.$E,
+    Class  = RightJS.Class,
+    Object = RightJS.Object,
+    Element = RightJS.Element;
+
+
+
+
+
+
+
+/**
+ * Basic dialog class
+ *
+ * Copyright (C) 2010-2011 Nikolay Nemshilov
+ */
 var Dialog = new Widget({
   extend: {
-    version: '2.0.0',
+    version: '2.2.0',
 
     EVENTS: $w('ok cancel help expand collapse resize load'),
 
     Options: {
       lockScreen:  true,  // if you need to lock the scrreen
+      fxDuration:  'short', // dialog appearance duration
 
       draggable:   true,  // sets if the user should be able to drag the dialog around
       closeable:   true,  // allow the user to close the dialog
@@ -315,7 +322,19 @@ var Dialog = new Widget({
       this.locker.insertTo(document.body);
     }
 
-    this.insertTo(document.body).resize();
+    this
+      .setStyle('visibility:hidden')
+      .insertTo(document.body)
+      .resize()
+      .setStyle('visibility:visible;opacity:0');
+
+    if (this.options.fxDuration) {
+      this.morph({opacity: 1}, {
+        duration: this.options.fxDuration
+      });
+    } else {
+      this.setStyle('opacity:1');
+    }
 
     return (Dialog.current = this);
   },
@@ -732,7 +751,18 @@ $(window).onResize(function() {
   }
 });
 
-document.write("<style type=\"text/css\"> *.rui-button{display:inline-block; *display:inline; *zoom:1;height:1em;line-height:1em;margin:0;padding:.2em .5em;text-align:center;border:1px solid #CCC;border-radius:.2em;-moz-border-radius:.2em;-webkit-border-radius:.2em;cursor:pointer;color:#333;background-color:#FFF;user-select:none;-moz-user-select:none;-webkit-user-select:none} *.rui-button:hover{color:#111;border-color:#999;background-color:#DDD;box-shadow:#888 0 0 .1em;-moz-box-shadow:#888 0 0 .1em;-webkit-box-shadow:#888 0 0 .1em} *.rui-button:active{color:#000;border-color:#777;text-indent:1px;box-shadow:none;-moz-box-shadow:none;-webkit-box-shadow:none} *.rui-button-disabled, *.rui-button-disabled:hover, *.rui-button-disabled:active{color:#888;background:#DDD;border-color:#CCC;cursor:default;text-indent:0;box-shadow:none;-moz-box-shadow:none;-webkit-box-shadow:none}div.rui-spinner,div.rui-spinner div{margin:0;padding:0;border:none;background:none;list-style:none;font-weight:normal;float:none;display:inline-block; *display:inline; *zoom:1;border-radius:.12em;-moz-border-radius:.12em;-webkit-border-radius:.12em}div.rui-spinner{text-align:center;white-space:nowrap;background:#EEE;border:1px solid #DDD;height:1.2em;padding:0 .2em}div.rui-spinner div{width:.4em;height:70%;background:#BBB;margin-left:1px}div.rui-spinner div:first-child{margin-left:0}div.rui-spinner div.glowing{background:#777}div.rui-screen-locker{position:fixed;top:0;left:0;width:100%;height:100%;margin:0;padding:0;background:#000;opacity:.5;filter:alpha(opacity=50);z-index:99999;cursor:default}div.rui-dialog{position:absolute;z-index:99999;background:white;margin:0;padding:0;padding-top:2.5em;padding-bottom:2.8em;border-radius:.35em;-moz-border-radius:.35em;-webkit-border-radius:.35em;border:1px solid #ccc}div.rui-dialog-body{min-width:20em;min-height:4.5em;margin:0;padding:0 1em;height:100%;overflow:auto;position:relative}div.rui-dialog-body-locker{position:absolute;z-index:9999;left:0;top:0;width:100%;height:100%;text-align:center;opacity:.6;filter:alpha(opacity=60)}div.rui-dialog-body-locker div.rui-spinner{border:none;background:none;font-size:150%;margin-top:8%}div.rui-dialog-body-icon{float:left;background:#eee;font-size:360%;font-family:Arial;border:2px solid gray;border-radius:.1em;-moz-border-radius:.1em;-webkit-border-radius:.1em;width:1em;line-height:1em;text-align:center;margin-right:.2em;margin-top:.05em;cursor:default;user-select:none;-moz-user-select:none;-webkit-user-select:none}div.rui-dialog-head{position:absolute;top:0;left:0;margin:0;padding:0;width:100%;line-height:2em;background:#ccc;border-radius:.35em;-moz-border-radius:.35em;-webkit-border-radius:.35em;border-bottom-left-radius:0;border-bottom-right-radius:0;-moz-border-radius-bottomleft:0;-moz-border-radius-bottomright:0;-webkit-border-bottom-left-radius:0;-webkit-border-bottom-right-radius:0;cursor:move;user-select:none;-moz-user-select:none;-webkit-user-select:none}div.rui-dialog-head div.icon{float:left;height:1.4em;width:1.4em;margin-left:1em;margin-top:.3em;margin-right:.3em;display:none}div.rui-dialog-head div.title{margin-left:1em;color:#444}div.rui-dialog-head div.tools{position:absolute;right:.3em;top:.3em}div.rui-dialog-head div.tools div{float:left;width:1.4em;line-height:1.4em;text-align:center;margin-left:.15em;cursor:pointer;background:#aaa;border-radius:.2em;-moz-border-radius:.2em;-webkit-border-radius:.2em;font-family:Verdana;opacity:.6;filter:alpha(opacity=60)}div.rui-dialog-head div.tools div:hover{opacity:1;filter:alpha(opacity=100);box-shadow:#444 0 0 .1em;-moz-box-shadow:#444 0 0 .1em;-webkit-box-shadow:#444 0 0 .1em}div.rui-dialog-head div.tools div.close:hover{background:#daa}div.rui-dialog-nodrag div.rui-dialog-head{cursor:default}div.rui-dialog-foot{position:absolute;bottom:0;left:0;width:100%;text-align:right}div.rui-dialog-foot div.rui-button{margin:.6em 1em;background:#eee;width:4em}div.rui-dialog-foot div.help{float:left}div.rui-dialog-foot div.cancel{margin-right:-.5em}div.rui-dialog-foot div.ok:hover{background-color:#ded}div.rui-dialog-foot div.cancel:hover{background-color:#ecc}div.rui-dialog-alert div.rui-dialog-foot{text-align:center}div.rui-dialog-alert div.rui-dialog-foot div.cancel{display:none}div.rui-dialog-alert div.rui-dialog-body-icon{color:brown;background:#FEE;border-color:brown}div.rui-dialog-confirm div.rui-dialog-body-icon{color:#44A;background:#EEF;border-color:#44a}div.rui-dialog-prompt div.rui-dialog-body-icon{color:#333}div.rui-dialog-prompt div.rui-dialog-body label{display:block;font-weight:bold;font-size:120%;color:#444;margin-bottom:.5em}div.rui-dialog-prompt div.rui-dialog-body input,div.rui-dialog-prompt div.rui-dialog-body textarea{border:1px solid #aaa;font-size:1em;display:block;width:16em;margin:0;padding:.2em;margin-left:4.7em;border-radius:.2em;-moz-border-radius:.2em;-webkit-border-radius:.2em;outline:none}div.rui-dialog-prompt div.rui-dialog-body textarea{width:24em;height:8em}</style>");
+var embed_style = document.createElement('style'),                 
+    embed_rules = document.createTextNode("*.rui-button{display:inline-block; *display:inline; *zoom:1;height:1em;line-height:1em;margin:0;padding:.2em .5em;text-align:center;border:1px solid #CCC;border-radius:.2em;-moz-border-radius:.2em;-webkit-border-radius:.2em;cursor:pointer;color:#333;background-color:#FFF;user-select:none;-moz-user-select:none;-webkit-user-select:none} *.rui-button:hover{color:#111;border-color:#999;background-color:#DDD;box-shadow:#888 0 0 .1em;-moz-box-shadow:#888 0 0 .1em;-webkit-box-shadow:#888 0 0 .1em} *.rui-button:active{color:#000;border-color:#777;text-indent:1px;box-shadow:none;-moz-box-shadow:none;-webkit-box-shadow:none} *.rui-button-disabled, *.rui-button-disabled:hover, *.rui-button-disabled:active{color:#888;background:#DDD;border-color:#CCC;cursor:default;text-indent:0;box-shadow:none;-moz-box-shadow:none;-webkit-box-shadow:none}div.rui-spinner,div.rui-spinner div{margin:0;padding:0;border:none;background:none;list-style:none;font-weight:normal;float:none;display:inline-block; *display:inline; *zoom:1;border-radius:.12em;-moz-border-radius:.12em;-webkit-border-radius:.12em}div.rui-spinner{text-align:center;white-space:nowrap;background:#EEE;border:1px solid #DDD;height:1.2em;padding:0 .2em}div.rui-spinner div{width:.4em;height:70%;background:#BBB;margin-left:1px}div.rui-spinner div:first-child{margin-left:0}div.rui-spinner div.glowing{background:#777}div.rui-screen-locker{position:fixed;top:0;left:0;width:100%;height:100%;margin:0;padding:0;background:#000;opacity:.5;filter:alpha(opacity=50);z-index:99999;cursor:default}div.rui-dialog{position:absolute;z-index:99999;background:white;margin:0;padding:0;padding-top:2.5em;padding-bottom:2.8em;border-radius:.35em;-moz-border-radius:.35em;-webkit-border-radius:.35em;border:1px solid #ccc}div.rui-dialog-body{min-width:20em;min-height:4.5em;margin:0;padding:0 1em;height:100%;overflow:auto;position:relative}div.rui-dialog-body-locker{position:absolute;z-index:9999;left:0;top:0;width:100%;height:100%;text-align:center;opacity:.6;filter:alpha(opacity=60)}div.rui-dialog-body-locker div.rui-spinner{border:none;background:none;font-size:150%;margin-top:8%}div.rui-dialog-body-icon{float:left;background:#eee;font-size:360%;font-family:Arial;border:2px solid gray;border-radius:.1em;-moz-border-radius:.1em;-webkit-border-radius:.1em;width:1em;line-height:1em;text-align:center;margin-right:.2em;margin-top:.05em;cursor:default;user-select:none;-moz-user-select:none;-webkit-user-select:none}div.rui-dialog-head{position:absolute;top:0;left:0;margin:0;padding:0;width:100%;line-height:2em;background:#ccc;border-radius:.35em;-moz-border-radius:.35em;-webkit-border-radius:.35em;border-bottom-left-radius:0;border-bottom-right-radius:0;-moz-border-radius-bottomleft:0;-moz-border-radius-bottomright:0;-webkit-border-bottom-left-radius:0;-webkit-border-bottom-right-radius:0;cursor:move;user-select:none;-moz-user-select:none;-webkit-user-select:none}div.rui-dialog-head div.icon{float:left;height:1.4em;width:1.4em;margin-left:1em;margin-top:.3em;margin-right:.3em;display:none}div.rui-dialog-head div.title{margin-left:1em;color:#444}div.rui-dialog-head div.tools{position:absolute;right:.3em;top:.3em}div.rui-dialog-head div.tools div{float:left;width:1.4em;line-height:1.4em;text-align:center;margin-left:.15em;cursor:pointer;background:#aaa;border-radius:.2em;-moz-border-radius:.2em;-webkit-border-radius:.2em;font-family:Verdana;opacity:.6;filter:alpha(opacity=60)}div.rui-dialog-head div.tools div:hover{opacity:1;filter:alpha(opacity=100);box-shadow:#444 0 0 .1em;-moz-box-shadow:#444 0 0 .1em;-webkit-box-shadow:#444 0 0 .1em}div.rui-dialog-head div.tools div.close:hover{background:#daa}div.rui-dialog-nodrag div.rui-dialog-head{cursor:default}div.rui-dialog-foot{position:absolute;bottom:0;left:0;width:100%;text-align:right}div.rui-dialog-foot div.rui-button{margin:.6em 1em;background:#eee;width:4em}div.rui-dialog-foot div.help{float:left}div.rui-dialog-foot div.cancel{margin-right:-.5em}div.rui-dialog-foot div.ok:hover{background-color:#ded}div.rui-dialog-foot div.cancel:hover{background-color:#ecc}div.rui-dialog-alert div.rui-dialog-foot{text-align:center}div.rui-dialog-alert div.rui-dialog-foot div.cancel{display:none}div.rui-dialog-alert div.rui-dialog-body-icon{color:brown;background:#FEE;border-color:brown}div.rui-dialog-confirm div.rui-dialog-body-icon{color:#44A;background:#EEF;border-color:#44a}div.rui-dialog-prompt div.rui-dialog-body-icon{color:#333}div.rui-dialog-prompt div.rui-dialog-body label{display:block;font-weight:bold;font-size:120%;color:#444;margin-bottom:.5em}div.rui-dialog-prompt div.rui-dialog-body input,div.rui-dialog-prompt div.rui-dialog-body textarea{border:1px solid #aaa;font-size:1em;display:block;width:16em;margin:0;padding:.2em;margin-left:4.7em;border-radius:.2em;-moz-border-radius:.2em;-webkit-border-radius:.2em;outline:none}div.rui-dialog-prompt div.rui-dialog-body textarea{width:24em;height:8em}");      
+                                                                   
+embed_style.type = 'text/css';                                     
+document.getElementsByTagName('head')[0].appendChild(embed_style); 
+                                                                   
+if(embed_style.styleSheet) {                                       
+  embed_style.styleSheet.cssText = embed_rules.nodeValue;          
+} else {                                                           
+  embed_style.appendChild(embed_rules);                            
+}                                                                  
+
 
 return Dialog;
 })(RightJS);

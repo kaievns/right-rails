@@ -1,8 +1,8 @@
 /**
- * RightJS-UI: Autocompleter
+ * RightJS-UI Autocompleter v2.2.1
  * http://rightjs.org/ui/autocompleter
  *
- * Copyright (C) 2010 Nikolay Nemshilov
+ * Copyright (C) 2010-2011 Nikolay Nemshilov
  */
 var Autocompleter = RightJS.Autocompleter = (function(document, RightJS) {
 /**
@@ -10,28 +10,8 @@ var Autocompleter = RightJS.Autocompleter = (function(document, RightJS) {
  * it creates an abstract proxy with the common functionality
  * which then we reuse and override in the actual widgets
  *
- * Copyright (C) 2010 Nikolay Nemshilov
+ * Copyright (C) 2010-2011 Nikolay Nemshilov
  */
-
-/**
- * Autocompleter initializer
- *
- * Copyright (C) 2010 Nikolay Nemshilov
- */
-var R       = RightJS,
-    $       = RightJS.$,
-    $w      = RightJS.$w,
-    $E      = RightJS.$E,
-    Xhr     = RightJS.Xhr,
-    RegExp  = RightJS.RegExp,
-    isArray = RightJS.isArray;
-
-
-
-
-
-
-
 
 /**
  * The widget units constructor
@@ -51,7 +31,7 @@ function Widget(tag_name, methods) {
    *
    * Copyright (C) 2010 Nikolay Nemshilov
    */
-  var AbstractWidget = new RightJS.Wrapper(RightJS.Element.Wrappers[tag_name] || RightJS.Element, {
+  var AbstractWidget = new RightJS.Class(RightJS.Element.Wrappers[tag_name] || RightJS.Element, {
     /**
      * The common constructor
      *
@@ -83,7 +63,8 @@ function Widget(tag_name, methods) {
         options = {};
       }
       this.setOptions(options, this);
-      return this;
+
+      return (RightJS.Wrapper.Cache[RightJS.$uid(this._)] = this);
     },
 
   // protected
@@ -96,12 +77,16 @@ function Widget(tag_name, methods) {
      * @return void
      */
     setOptions: function(options, element) {
-      element = element || this;
-      RightJS.Options.setOptions.call(this,
-        RightJS.Object.merge(options, eval("("+(
+      if (element) {
+        options = RightJS.Object.merge(options, new Function("return "+(
           element.get('data-'+ this.key) || '{}'
-        )+")"))
-      );
+        ))());
+      }
+
+      if (options) {
+        RightJS.Options.setOptions.call(this, RightJS.Object.merge(this.options, options));
+      }
+
       return this;
     }
   });
@@ -110,7 +95,7 @@ function Widget(tag_name, methods) {
    * Creating the actual widget class
    *
    */
-  var Klass = new RightJS.Wrapper(AbstractWidget, methods);
+  var Klass = new RightJS.Class(AbstractWidget, methods);
 
   // creating the widget related shortcuts
   RightJS.Observer.createShortcuts(Klass.prototype, Klass.EVENTS || []);
@@ -122,9 +107,9 @@ function Widget(tag_name, methods) {
 /**
  * A shared module to create textual spinners
  *
- * Copyright (C) 2010 Nikolay Nemshilov
+ * Copyright (C) 2010-2011 Nikolay Nemshilov
  */
-var Spinner = new RightJS.Wrapper(RightJS.Element, {
+var Spinner = new RightJS.Class(RightJS.Element, {
   /**
    * Constructor
    *
@@ -163,30 +148,81 @@ var Spinner = new RightJS.Wrapper(RightJS.Element, {
  * A shared module that toggles a widget visibility status
  * in a uniformed way according to the options settings
  *
- * Copyright (C) 2010 Nikolay Nemshilov
+ * Copyright (C) 2010-2011 Nikolay Nemshilov
  */
+var Toggler = {
+  /**
+   * Shows the element
+   *
+   * @param String fx-name
+   * @param Object fx-options
+   * @return Element this
+   */
+  show: function(fx_name, fx_options) {
+    this.constructor.current = this;
+    return Toggler_toggle(this, 'show', fx_name, fx_options);
+  },
+
+  /**
+   * Hides the element
+   *
+   * @param String fx-name
+   * @param Object fx-options
+   * @return Element this
+   */
+  hide: function(fx_name, fx_options) {
+    this.constructor.current = null;
+    return Toggler_toggle(this, 'show', fx_name, fx_options);
+  },
+
+  /**
+   * Toggles the widget at the given element
+   *
+   * @param Element the related element
+   * @param String position right/bottom (bottom is the default)
+   * @param Boolean marker if the element should be resized to the element size
+   * @return Widget this
+   */
+  showAt: function(element, where, resize) {
+    this.hide(null).shownAt = element = RightJS.$(element);
+
+    // moves this element at the given one
+    Toggler_re_position.call(this, element, where, resize);
+
+    return this.show();
+  },
+
+  /**
+   * Toggles the widget at the given element
+   *
+   * @param Element the related element
+   * @param String position top/left/right/bottom (bottom is the default)
+   * @param Boolean marker if the element should be resized to the element size
+   * @return Widget this
+   */
+  toggleAt: function(element, where, resize) {
+    return this.hidden() ? this.showAt(element, where, resize) : this.hide();
+  }
+};
+
 
 /**
- * The toggler's common functionality
+ * toggles the element's state according to the current settings
  *
- * NOTE: this function getting called in the context
- *       of a widget
- *
- * @param Element the element to toggle
  * @param event String 'show' or 'hide' the event name
  * @param String an optional fx-name
  * @param Object an optional fx-options hash
  * @return void
  */
-function toggler(element, event, fx_name, fx_options) {
+function Toggler_toggle(element, event, fx_name, fx_options) {
   if (RightJS.Fx) {
     if (fx_name === undefined) {
-      fx_name = this.options.fxName;
+      fx_name = element.options.fxName;
 
       if (fx_options === undefined) {
         fx_options = {
-          duration: this.options.fxDuration,
-          onFinish: RightJS(this.fire).bind(this, event)
+          duration: element.options.fxDuration,
+          onFinish: RightJS(element.fire).bind(element, event)
         };
 
         // hide on double time
@@ -198,12 +234,10 @@ function toggler(element, event, fx_name, fx_options) {
     }
   }
 
-  RightJS.Element.prototype[event].call(element, fx_name, fx_options);
-
   // manually trigger the event if no fx were specified
-  if (!RightJS.Fx || !fx_name) { this.fire(event); }
+  if (!RightJS.Fx || !fx_name) { element.fire(event); }
 
-  return this;
+  return element.$super(fx_name, fx_options);
 }
 
 /**
@@ -218,7 +252,7 @@ function toggler(element, event, fx_name, fx_options) {
  * @param Boolean if `true` then the element size will be adjusted
  * @return void
  */
-function re_position(element, where, resize) {
+function Toggler_re_position(element, where, resize) {
   var anchor = this.reAnchor || (this.reAnchor =
         new RightJS.Element('div', {'class': 'rui-re-anchor'}))
         .insert(this),
@@ -248,7 +282,7 @@ function re_position(element, where, resize) {
   target.moveTo(left, top);
 
   if (resize) {
-    if (['left', 'right'].include(where)) {
+    if (where === 'left' || where === 'right') {
       target.setHeight(height);
     } else {
       target.setWidth(width);
@@ -260,76 +294,35 @@ function re_position(element, where, resize) {
 }
 
 /**
- * The actual shared module to be inserted in the widgets
+ * Autocompleter initializer
  *
  * Copyright (C) 2010 Nikolay Nemshilov
  */
-var Toggler = {
-  /**
-   * Shows the element
-   *
-   * @param String fx-name
-   * @param Object fx-options
-   * @return Element this
-   */
-  show: function(fx_name, fx_options) {
-    this.constructor.current = this;
-    return toggler.call(this, this, 'show', fx_name, fx_options);
-  },
+var R       = RightJS,
+    $       = RightJS.$,
+    $w      = RightJS.$w,
+    $E      = RightJS.$E,
+    Xhr     = RightJS.Xhr,
+    RegExp  = RightJS.RegExp,
+    isArray = RightJS.isArray;
 
-  /**
-   * Hides the element
-   *
-   * @param String fx-name
-   * @param Object fx-options
-   * @return Element this
-   */
-  hide: function(fx_name, fx_options) {
-    this.constructor.current = null;
-    return toggler.call(this, this, 'hide', fx_name, fx_options);
-  },
 
-  /**
-   * Toggles the widget at the given element
-   *
-   * @param Element the related element
-   * @param String position right/bottom (bottom is the default)
-   * @param Boolean marker if the element should be resized to the element size
-   * @return Widget this
-   */
-  showAt: function(element, where, resize) {
-    this.hide(null).shownAt = element = RightJS.$(element);
 
-    // moves this element at the given one
-    re_position.call(this, element, where, resize);
 
-    return this.show();
-  },
 
-  /**
-   * Toggles the widget at the given element
-   *
-   * @param Element the related element
-   * @param String position top/left/right/bottom (bottom is the default)
-   * @param Boolean marker if the element should be resized to the element size
-   * @return Widget this
-   */
-  toggleAt: function(element, where, resize) {
-    return this.hidden() ? this.showAt(element, where, resize) : this.hide();
-  }
-};
+
 
 
 /**
  * The RightJS UI Autocompleter unit base class
  *
- * Copyright (C) 2009-2010 Nikolay Nemshilov
+ * Copyright (C) 2009-2011 Nikolay Nemshilov
  */
 var Autocompleter = new Widget('UL', {
   include: Toggler,
 
   extend: {
-    version: '2.0.0',
+    version: '2.2.1',
 
     EVENTS: $w('show hide update load select done'),
 
@@ -407,7 +400,8 @@ var Autocompleter = new Widget('UL', {
     current = current || this.first('li.current');
 
     if (current) {
-      this.input.setValue(R(current.html()).stripTags());
+      current.radioClass('current');
+      this.input.setValue(current._.textContent || current._.innerText);
       this.fire('done');
     }
 
@@ -492,9 +486,13 @@ var Autocompleter = new Widget('UL', {
       this.cache[search] = result_text;
     }
 
-    if (!(result_text).blank()) {
+    if (!R(result_text).blank()) {
       this.update(result_text.replace(/<ul[^>]*>|<\/ul>/im, ''));
-      this.fire('update').showAt(this.input, 'bottom', 'resize');
+      this.fire('update');
+      if (!this._connected || this.hidden()) {
+        this.showAt(this.input, 'bottom', 'resize');
+        this._connected = true;
+      }
     } else {
       this.hide();
     }
@@ -524,7 +522,7 @@ var Autocompleter = new Widget('UL', {
 
     // positioning the native spinner
     if (spinner instanceof Spinner) {
-      re_position.call(spinner, this.input, 'right', 'resize');
+      Toggler_re_position.call(spinner, this.input, 'right', 'resize');
     }
 
     return spinner;
@@ -610,7 +608,18 @@ $(document).on({
 });
 
 
-document.write("<style type=\"text/css\"> *.rui-dd-menu, *.rui-dd-menu li{margin:0;padding:0;border:none;background:none;list-style:none;font-weight:normal;float:none} *.rui-dd-menu{display:none;position:absolute;z-index:9999;background:white;border:1px solid #BBB;border-radius:.2em;-moz-border-radius:.2em;-webkit-border-radius:.2em;box-shadow:#DDD .2em .2em .4em;-moz-box-shadow:#DDD .2em .2em .4em;-webkit-box-shadow:#DDD .2em .2em .4em} *.rui-dd-menu li{padding:.2em .4em;border-top:none;border-bottom:none;cursor:pointer} *.rui-dd-menu li.current{background:#DDD} *.rui-dd-menu li:hover{background:#EEE}dl.rui-dd-menu dt{padding:.3em .5em;cursor:default;font-weight:bold;font-style:italic;color:#444;background:#EEE}dl.rui-dd-menu dd li{padding-left:1.5em}div.rui-spinner,div.rui-spinner div{margin:0;padding:0;border:none;background:none;list-style:none;font-weight:normal;float:none;display:inline-block; *display:inline; *zoom:1;border-radius:.12em;-moz-border-radius:.12em;-webkit-border-radius:.12em}div.rui-spinner{text-align:center;white-space:nowrap;background:#EEE;border:1px solid #DDD;height:1.2em;padding:0 .2em}div.rui-spinner div{width:.4em;height:70%;background:#BBB;margin-left:1px}div.rui-spinner div:first-child{margin-left:0}div.rui-spinner div.glowing{background:#777}div.rui-re-anchor{margin:0;padding:0;background:none;border:none;float:none;display:inline;position:absolute;z-index:9999}.rui-autocompleter{border-top-color:#DDD !important;border-top-left-radius:0 !important;border-top-right-radius:0 !important;-moz-border-radius-topleft:0 !important;-moz-border-radius-topright:0 !important;-webkit-border-top-left-radius:0 !important;-webkit-border-top-right-radius:0 !important}.rui-autocompleter-spinner{border:none !important;background:none !important;position:absolute;z-index:9999}.rui-autocompleter-spinner div{margin-top:.2em !important; *margin-top:0.1em !important}</style>");
+var embed_style = document.createElement('style'),                 
+    embed_rules = document.createTextNode("*.rui-dd-menu, *.rui-dd-menu li{margin:0;padding:0;border:none;background:none;list-style:none;font-weight:normal;float:none} *.rui-dd-menu{display:none;position:absolute;z-index:9999;background:white;border:1px solid #BBB;border-radius:.2em;-moz-border-radius:.2em;-webkit-border-radius:.2em;box-shadow:#DDD .2em .2em .4em;-moz-box-shadow:#DDD .2em .2em .4em;-webkit-box-shadow:#DDD .2em .2em .4em} *.rui-dd-menu li{padding:.2em .4em;border-top:none;border-bottom:none;cursor:pointer} *.rui-dd-menu li.current{background:#DDD} *.rui-dd-menu li:hover{background:#EEE}dl.rui-dd-menu dt{padding:.3em .5em;cursor:default;font-weight:bold;font-style:italic;color:#444;background:#EEE}dl.rui-dd-menu dd li{padding-left:1.5em}div.rui-spinner,div.rui-spinner div{margin:0;padding:0;border:none;background:none;list-style:none;font-weight:normal;float:none;display:inline-block; *display:inline; *zoom:1;border-radius:.12em;-moz-border-radius:.12em;-webkit-border-radius:.12em}div.rui-spinner{text-align:center;white-space:nowrap;background:#EEE;border:1px solid #DDD;height:1.2em;padding:0 .2em}div.rui-spinner div{width:.4em;height:70%;background:#BBB;margin-left:1px}div.rui-spinner div:first-child{margin-left:0}div.rui-spinner div.glowing{background:#777}div.rui-re-anchor{margin:0;padding:0;background:none;border:none;float:none;display:inline;position:absolute;z-index:9999}.rui-autocompleter{border-top-color:#DDD !important;border-top-left-radius:0 !important;border-top-right-radius:0 !important;-moz-border-radius-topleft:0 !important;-moz-border-radius-topright:0 !important;-webkit-border-top-left-radius:0 !important;-webkit-border-top-right-radius:0 !important}.rui-autocompleter-spinner{border:none !important;background:none !important;position:absolute;z-index:9999}.rui-autocompleter-spinner div{margin-top:.2em !important; *margin-top:0.1em !important}");      
+                                                                   
+embed_style.type = 'text/css';                                     
+document.getElementsByTagName('head')[0].appendChild(embed_style); 
+                                                                   
+if(embed_style.styleSheet) {                                       
+  embed_style.styleSheet.cssText = embed_rules.nodeValue;          
+} else {                                                           
+  embed_style.appendChild(embed_rules);                            
+}                                                                  
+
 
 return Autocompleter;
 })(document, RightJS);

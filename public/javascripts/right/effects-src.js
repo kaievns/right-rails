@@ -2,23 +2,17 @@
  * RightJS Additional visual effects module
  * http://rightjs.org/plugins/effects
  *
- * Copyright (C) 2008-2010 Nikolay Nemshilov
+ * Copyright (C) 2008-2011 Nikolay Nemshilov
  */
 (function(RightJS) {
   if (!RightJS.Fx) { throw "RightJS Fx is missing"; }
   
   /**
- * The basic move visual effect
- *
- * @copyright (C) 2009-2010 Nikolay V. Nemshilov
- */
-
-/**
  * The plugin initializtion script
  *
  * Copyright (C) 2010 Nikolay Nemshilov
  */
- 
+
 var R        = RightJS,
     $        = RightJS.$,
     $w       = RightJS.$w,
@@ -30,8 +24,14 @@ var R        = RightJS,
     defined  = RightJS.defined,
     isHash   = RightJS.isHash,
     isString = RightJS.isString;
-     
 
+
+
+/**
+ * The basic move visual effect
+ *
+ * @copyright (C) 2009-2010 Nikolay V. Nemshilov
+ */
 Fx.Move = new Class(Fx.Morph, {
   extend: {
     Options: Object.merge(Fx.Options, {
@@ -99,11 +99,11 @@ Fx.Move = new Class(Fx.Morph, {
 /**
  * Zoom visual effect, graduately zoom and element in or out
  *
- * @copyright (C) 2009-2010 Nikolay V. Nemshilov
+ * @copyright (C) 2009-2011 Nikolay V. Nemshilov
  */
 Fx.Zoom = new Class(Fx.Move, {
   PROPERTIES: $w('width height lineHeight paddingTop paddingRight paddingBottom paddingLeft fontSize borderWidth'),
-  
+
   extend: {
     Options: Object.merge(Fx.Move.Options, {
       position: 'relative', // overriding the Fx.Move default
@@ -111,109 +111,125 @@ Fx.Zoom = new Class(Fx.Move, {
       from:     'center'
     })
   },
-  
+
   prepare: function(size, additional_styles) {
     return this.$super(this._getZoomedStyle(size, additional_styles));
   },
-  
+
 // private
 
   // calculates the end zoommed style
   _getZoomedStyle: function(size, additional_styles) {
     var proportion = this._getProportion(size);
-    
+
     return Object.merge(
       this._getBasicStyle(proportion),
       this._getEndPosition(proportion),
-      additional_styles || {}
+      additional_styles
     );
   },
 
   // calculates the zooming proportion
   _getProportion: function(size) {
     if (isHash(size)) {
-      var sizes = $E('div').insertTo(
-        $E('div', {style: "visibility:hidden;float:left;height:0;width:0"}).insertTo(document.body)
-      ).setStyle(size).size();
-      
-      if (size.height) { size = sizes.y / this.element.size().y; }
-      else             { size = sizes.x / this.element.size().x; }
+      var dummy = $E('div').insertTo(
+        $E('div', {
+          style: "visibility:hidden;float:left;height:0;width:0"
+        }).insertTo(document.body)
+      ).setStyle(size);
+
+      size = size.height ?
+        dummy.size().y / this.element.size().y :
+        dummy.size().x / this.element.size().x ;
+
+      dummy.remove();
     } else if (isString(size)) {
       size  = R(size).endsWith('%') ? R(size).toFloat() / 100 : R(size).toFloat();
     }
-    
+
     return size;
   },
-  
+
   // getting the basic end style
   _getBasicStyle: function(proportion) {
-    var style = this._cloneStyle(this.element, this.PROPERTIES), re = /([\d\.]+)/g;
-    
+    var style = clone_styles(this.element, this.PROPERTIES), re = /([\d\.]+)/g;
+
     function adjust_value(m) {
       return ''+ (R(m).toFloat() * proportion);
     }
-    
+
     for (var key in style) {
       if (key === 'width' || key === 'height') {
         style[key] = style[key] || (this.element['offset'+R(key).capitalize()]+'px');
       }
-      
+
       if (style[key].match(re)) {
         style[key] = style[key].replace(re, adjust_value);
       } else {
         delete(style[key]);
       }
     }
-    
+
     // preventing the border disappearance
     if (style.borderWidth && R(style.borderWidth).toFloat() < 1) {
       style.borderWidth = '1px';
     }
-    
+
     return style;
   },
-  
+
   // getting the position adjustments
   _getEndPosition: function(proportion) {
     var position = {};
     var sizes    = this.element.size();
     var x_diff   = sizes.x * (proportion - 1);
     var y_diff   = sizes.y * (proportion - 1);
-    
+
     switch (this.options.from.replace('-', ' ').split(' ').sort().join('_')) {
       case 'top':
         position.x = - x_diff / 2;
         break;
-        
+
       case 'right':
         position.x = - x_diff;
         position.y = - y_diff / 2;
         break;
-        
+
       case 'bottom':
         position.x = - x_diff / 2;
       case 'bottom_left':
         position.y = - y_diff;
         break;
-        
+
       case 'bottom_right':
         position.y = - y_diff;
       case 'right_top':
         position.x = - x_diff;
         break;
-        
+
       case 'center':
         position.x = - x_diff / 2;
       case 'left':
         position.y = - y_diff / 2;
         break;
-        
+
       default: // left_top or none, do nothing, let the thing expand as is
     }
-    
+
     return position;
   }
 });
+
+function clone_styles(element, keys) {
+  for (var i=0, len = keys.length, style = element.computedStyles(), clean = {}, key; i < len; i++) {
+    key = keys[i];
+    if (key in style) {
+      clean[key] = ''+ style[key];
+    }
+  }
+
+  return clean;
+}
 
 /**
  * Bounce visual effect, slightly moves an element forward and back
@@ -356,57 +372,48 @@ Fx.Puff = new Class(Fx.Zoom, {
 });
 
 /**
- * Handles the to-class and from-class visual effects
+ * Glow effect, kinda the same thing as Hightlight, but changes the text color
  *
- * Copyright (C) 2009-2010 Nikolay Nemshilov
+ * Copyright (C) 2011 Nikolay Nemshilov
  */
-Fx.Css = Fx.CSS = new Class(Fx.Morph, {
-  STYLES: $w('width height lineHeight opacity border padding margin color fontSize background top left right bottom'),
-  
-// protected
-  
-  prepare: function(add_class, remove_class) {
-    this.addClass    = add_class    || '';
-    this.removeClass = remove_class || '';
-    
-    // wiring the classes add/remove on-finish
-    if (add_class)    { this.onFinish(this.element.addClass.bind(this.element, add_class));       }
-    if (remove_class) { this.onFinish(this.element.removeClass.bind(this.element, remove_class)); }
-    
-    return this.$super({});
+Fx.Glow = new Class(Fx.Morph, {
+  extend: {
+    Options: Object.merge(Fx.Options, {
+      color:      '#FF8',
+      transition: 'Exp'
+    })
   },
-  
-  // hacking the old method to make it apply the classes
-  _endStyle: function(style, keys) {
-    var element = this.element, dummy  = $(element._.cloneNode(true))
-        .setStyle('position:absolute;z-index:-1;visibility:hidden')
-        .setWidth(element.size().x)
-        .addClass(this.addClass).removeClass(this.removeClass);
-        
-    if (element._.parentNode) { element.insert(dummy, 'before'); }
-    
-    var after  = this._cloneStyle(dummy, keys);
-    
-    dummy.remove();
-    
-    return after;
-  },
-  
-  // replacing the old method to make it return our own list of properties
-  _styleKeys: function() {
-    var hash = {};
-    this.STYLES.each(function(name) {
-      hash[name] = 1;
-    });
-    
-    return this.$super(hash);
+
+  // protected
+
+  /**
+   * starts the transition
+   *
+   * @param high String the hightlight color
+   * @param back String optional fallback color
+   * @return self
+   */
+  prepare: function(start, end) {
+    var element       = this.element,
+        element_style = element._.style,
+        style_name    = 'color',
+        end_color     = end || element.getStyle(style_name);
+
+    // trying to find the end color
+    end_color = [element].concat(element.parents())
+      .map('getStyle', style_name)
+      .compact().first() || '#FFF';
+
+    element_style[style_name] = (start || this.options.color);
+
+    return this.$super({color: end_color});
   }
 });
 
 /**
  * Element shortcuts for the additional effects
  *
- * @copyright (C) 2009-2010 Nikolay Nemshilov
+ * @copyright (C) 2009-2011 Nikolay Nemshilov
  */
 RightJS.Element.include({
   /**
@@ -417,9 +424,9 @@ RightJS.Element.include({
    * @return Element self
    */
   move: function(position, options) {
-    return this.fx('move', [position, options || {}]); // <- don't replace with arguments
+    return call_fx(this, 'move', [position, options || {}]); // <- don't replace with arguments
   },
-  
+
   /**
    * The bounce effect shortcut
    *
@@ -428,9 +435,9 @@ RightJS.Element.include({
    * @return Element self
    */
   bounce: function() {
-    return this.fx('bounce', arguments);
+    return call_fx(this, 'bounce', arguments);
   },
-  
+
   /**
    * The zoom effect shortcut
    *
@@ -439,9 +446,9 @@ RightJS.Element.include({
    * @return Element self
    */
   zoom: function(size, options) {
-    return this.fx('zoom', [size, options || {}]);
+    return call_fx(this, 'zoom', [size, options || {}]);
   },
-  
+
   /**
    * Initiates the Fx.Run effect
    *
@@ -450,9 +457,9 @@ RightJS.Element.include({
    * @return Element self
    */
   run: function() {
-    return this.fx('run', arguments);
+    return call_fx(this, 'run', arguments);
   },
-  
+
   /**
    * The puff effect shortcut
    *
@@ -461,21 +468,37 @@ RightJS.Element.include({
    * @return Element self
    */
   puff: function() {
-    return this.fx('puff', arguments);
+    return call_fx(this, 'puff', arguments);
   },
-  
+
   /**
-   * The Fx.Class effect shortcut
+   * The Fx.Glow effect shortcut
    *
-   * @param add String css-class name to add
-   * @param remove String css-class name to remove
+   * @param String optinal glow color
    * @param Object fx options
+   * @return Element self
    */
-  morphToClass: function() {
-    var args = $A(arguments);
-    if (args[0] === null) { args[0] = ''; }
-    
-    return this.fx('CSS', args);
+  glow: function() {
+    return call_fx(this, 'glow', arguments);
   }
 });
+
+/**
+ * Runs Fx on the element
+ *
+ * @param Element element reference
+ * @param String fx name
+ * @param Array effect arguments
+ * @return the element back
+ */
+function call_fx(element, name, params) {
+  var args    = $A(params).compact(),
+      options = isHash(args.last()) ? args.pop() : {},
+      fx      = new Fx[name.capitalize()](element, options);
+
+  fx.start.apply(fx, args);
+
+  return element;
+}
+
 })(RightJS);

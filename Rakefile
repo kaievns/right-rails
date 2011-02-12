@@ -89,9 +89,9 @@ namespace :rjs do
 
     system(%Q{
       cd #{RIGHTJS_CORE_DIR};
-      rake build OPTIONS=no-olds;
+      nake build OPTIONS=no-olds;
       cp build/*.js #{OUTPUT_JSS_DIR};
-      rake build OPTIONS=safe;
+      nake build OPTIONS=safe;
       cp build/right-safe*.js #{OUTPUT_JSS_DIR};
     })
 
@@ -104,7 +104,7 @@ namespace :rjs do
 
     system(%Q{
       cd #{RIGHTJS_PLUGINS_DIR};
-      rake build;
+      nake build;
       cp build/*.js #{OUTPUT_JSS_DIR}/right;
     })
 
@@ -117,7 +117,7 @@ namespace :rjs do
 
     system(%Q{
       cd #{RIGHTJS_UI_DIR};
-      rake build;
+      nake build;
       cp build/*.js #{OUTPUT_JSS_DIR}/right;
     })
 

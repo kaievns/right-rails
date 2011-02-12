@@ -1,8 +1,8 @@
 /**
- * Lightbox feature for RightJS
+ * RightJS-UI Lightbox v2.2.1
  * http://rightjs.org/ui/lightbox
  *
- * Copyright (C) 2009-2010 Nikolay Nemshilov
+ * Copyright (C) 2009-2011 Nikolay Nemshilov
  */
 var Lightbox = RightJS.Lightbox = (function(document, RightJS) {
 /**
@@ -10,36 +10,8 @@ var Lightbox = RightJS.Lightbox = (function(document, RightJS) {
  * it creates an abstract proxy with the common functionality
  * which then we reuse and override in the actual widgets
  *
- * Copyright (C) 2010 Nikolay Nemshilov
+ * Copyright (C) 2010-2011 Nikolay Nemshilov
  */
-
-/**
- * The filenames to include
- *
- * Copyright (C) 2010 Nikolay Nemshilov
- */
-var R       = RightJS,
-    $       = RightJS.$,
-    $$      = RightJS.$$,
-    $w      = RightJS.$w,
-    $E      = RightJS.$E,
-    $ext    = RightJS.$ext,
-    Xhr     = RightJS.Xhr,
-    Class   = RightJS.Class,
-    Object  = RightJS.Object,
-    Wrapper = RightJS.Wrapper,
-    Element = RightJS.Element,
-    Browser = RightJS.Browser;
-
-// IE6 doesn't support position:fixed so it needs a crunch
-Browser.IE6 = Browser.OLD && navigator.userAgent.indexOf("MSIE 6") > 0;
-
-
-
-
-
-
-
 
 /**
  * The widget units constructor
@@ -59,7 +31,7 @@ function Widget(tag_name, methods) {
    *
    * Copyright (C) 2010 Nikolay Nemshilov
    */
-  var AbstractWidget = new RightJS.Wrapper(RightJS.Element.Wrappers[tag_name] || RightJS.Element, {
+  var AbstractWidget = new RightJS.Class(RightJS.Element.Wrappers[tag_name] || RightJS.Element, {
     /**
      * The common constructor
      *
@@ -91,7 +63,8 @@ function Widget(tag_name, methods) {
         options = {};
       }
       this.setOptions(options, this);
-      return this;
+
+      return (RightJS.Wrapper.Cache[RightJS.$uid(this._)] = this);
     },
 
   // protected
@@ -104,12 +77,16 @@ function Widget(tag_name, methods) {
      * @return void
      */
     setOptions: function(options, element) {
-      element = element || this;
-      RightJS.Options.setOptions.call(this,
-        RightJS.Object.merge(options, eval("("+(
+      if (element) {
+        options = RightJS.Object.merge(options, new Function("return "+(
           element.get('data-'+ this.key) || '{}'
-        )+")"))
-      );
+        ))());
+      }
+
+      if (options) {
+        RightJS.Options.setOptions.call(this, RightJS.Object.merge(this.options, options));
+      }
+
       return this;
     }
   });
@@ -118,7 +95,7 @@ function Widget(tag_name, methods) {
    * Creating the actual widget class
    *
    */
-  var Klass = new RightJS.Wrapper(AbstractWidget, methods);
+  var Klass = new RightJS.Class(AbstractWidget, methods);
 
   // creating the widget related shortcuts
   RightJS.Observer.createShortcuts(Klass.prototype, Klass.EVENTS || []);
@@ -130,9 +107,9 @@ function Widget(tag_name, methods) {
 /**
  * A shared module to create textual spinners
  *
- * Copyright (C) 2010 Nikolay Nemshilov
+ * Copyright (C) 2010-2011 Nikolay Nemshilov
  */
-var Spinner = new RightJS.Wrapper(RightJS.Element, {
+var Spinner = new RightJS.Class(RightJS.Element, {
   /**
    * Constructor
    *
@@ -168,14 +145,41 @@ var Spinner = new RightJS.Wrapper(RightJS.Element, {
 
 
 /**
+ * The filenames to include
+ *
+ * Copyright (C) 2010-2011 Nikolay Nemshilov
+ */
+var R       = RightJS,
+    $       = RightJS.$,
+    $$      = RightJS.$$,
+    $w      = RightJS.$w,
+    $E      = RightJS.$E,
+    $ext    = RightJS.$ext,
+    Xhr     = RightJS.Xhr,
+    Class   = RightJS.Class,
+    Object  = RightJS.Object,
+    Element = RightJS.Element,
+    Browser = RightJS.Browser;
+
+// IE6 doesn't support position:fixed so it needs a crunch
+Browser.IE6 = Browser.OLD && navigator.userAgent.indexOf("MSIE 6") > 0;
+
+
+
+
+
+
+
+
+/**
  * The lightbox widget
  *
- * Copyright (C) 2009-2010 Nikolay Nemshilov
+ * Copyright (C) 2009-2011 Nikolay Nemshilov
  */
 var Lightbox = new Widget({
 
   extend: {
-    version: '2.0.4',
+    version: '2.2.1',
 
     EVENTS: $w('show hide load'),
 
@@ -236,7 +240,7 @@ var Lightbox = new Widget({
   },
 
   /**
-   * Extracting the rel="lightboux[groupname]" attributes
+   * Extracting the rel="lightbox[groupname]" attributes
    *
    * @param Object options
    * @param Element link with options
@@ -420,9 +424,9 @@ Lightbox.extend({
 /**
  * Lightbox background locker element
  *
- * Copyright (C) 2010 Nikolay Nemshilov
+ * Copyright (C) 2010-2011 Nikolay Nemshilov
  */
-var Locker = new Wrapper(Element, {
+var Locker = new Class(Element, {
   initialize: function(options) {
     this.$super('div', {'class': 'rui-lightbox-locker'});
 
@@ -436,9 +440,9 @@ var Locker = new Wrapper(Element, {
 /**
  * The dialog element wrapper
  *
- * Copyright (C) 2010 Nikolay Nemshilov
+ * Copyright (C) 2010-2011 Nikolay Nemshilov
  */
-var Dialog = new Wrapper(Element, {
+var Dialog = new Class(Element, {
   /**
    * Constructor
    *
@@ -620,7 +624,7 @@ var Dialog = new Wrapper(Element, {
    * @return Dialog this
    */
   unlock: function() {
-    this.locker.remove(this.content.html().blank() ? null : 'fade', {
+    this.locker.remove(R(this.content.html()).blank() ? null : 'fade', {
       duration: this.options.fxDuration * 2/3
     });
 
@@ -791,7 +795,7 @@ var Pager = {
       var data = link.get('data-lightbox');
       var rel  = link.get('rel');
 
-      return (data && eval("("+ data + ")").group === group) ||
+      return (data && new Function("return "+ data)().group === group) ||
         (rel && rel.indexOf('lightbox['+ group + ']') > -1);
     });
   },
@@ -813,15 +817,18 @@ var Pager = {
 
 $(document).on({
   /**
-   * Catches clicks on the target links
+   * Catches clicks on the target links (respecting
+   * native behavior when modifier keys are pressed,
+   * e.g. opt+click must download clicked link)
    *
    * @param Event click
    * @return void
    */
   click: function(event) {
-    var target = event.find(Lightbox.Options.cssRule) || event.find('a[rel^=lightbox]');
+    var target = event.find(Lightbox.Options.cssRule) || event.find('a[rel^=lightbox]'),
+    e = event._;
 
-    if (target) {
+    if (target && !(e.shiftKey || e.altKey || e.ctrlKey || e.metaKey)) {
       event.stop();
       new Lightbox({}, target).load(target);
     }
@@ -888,7 +895,18 @@ $(window).on({
 });
 
 
-document.write("<style type=\"text/css\">div.rui-spinner,div.rui-spinner div{margin:0;padding:0;border:none;background:none;list-style:none;font-weight:normal;float:none;display:inline-block; *display:inline; *zoom:1;border-radius:.12em;-moz-border-radius:.12em;-webkit-border-radius:.12em}div.rui-spinner{text-align:center;white-space:nowrap;background:#EEE;border:1px solid #DDD;height:1.2em;padding:0 .2em}div.rui-spinner div{width:.4em;height:70%;background:#BBB;margin-left:1px}div.rui-spinner div:first-child{margin-left:0}div.rui-spinner div.glowing{background:#777}div.rui-lightbox{position:fixed;top:0;left:0;float:none;width:100%;height:100%;margin:0;padding:0;background:none;border:none;text-align:center;z-index:9999;z-index/*\\**/:auto\\9;}div.rui-lightbox-locker{position:absolute;top:0px;left:0px;width:100%;height:100%;background-color:#000;opacity:0.8;filter:alpha(opacity=80);cursor:default;z-index/*\\**/:9990\\9;}div.rui-lightbox-dialog{display:inline-block; *display:inline; *zoom:1;position:relative;text-align:left;z-index/*\\**/:9999\\9;}div.rui-lightbox-title{height:1.2em;margin-bottom:.1em;white-space:nowrap;color:#DDD;font-weight:bold;font-size:1.6em;font-family:Helvetica}div.rui-lightbox-body{background-color:#FFF;padding:1em;border-radius:.5em;-moz-border-radius:.5em;-webkit-border-radius:.5em}div.rui-lightbox-body-inner{position:relative}div.rui-lightbox-scroller{overflow:hidden}div.rui-lightbox-content{display:inline-block; *display:inline; *zoom:1;min-height:10em;min-width:10em;_height:10em;_width:10em}div.rui-lightbox-body-locker{background-color:white;position:absolute;left:0px;top:0px;width:100%;height:100%;opacity:0;filter:alpha(opacity=0)}div.rui-lightbox-body-locker div.rui-spinner{position:absolute;right:0;bottom:0;border:none;background:none;font-size:150%}div.rui-lightbox-navigation{color:#888;font-size:160%;font-family:Arial;height:1em;user-select:none;-moz-user-select:none;-webkit-user-select:none}div.rui-lightbox-navigation div{cursor:pointer;position:absolute}div.rui-lightbox-navigation div:hover{color:white}div.rui-lightbox-navigation div.next{left:2em}div.rui-lightbox-navigation div.close{right:0}div.rui-lightbox-image div.rui-lightbox-body,div.rui-lightbox-media div.rui-lightbox-body{padding:0;border:1px solid #777;border-radius:0px;-moz-border-radius:0px;-webkit-border-radius:0px}div.rui-lightbox-image div.rui-lightbox-content,div.rui-lightbox-media div.rui-lightbox-content{min-height:12em;min-width:12em;_height:12em;_width:12em}div.rui-lightbox-image div.rui-lightbox-content img{vertical-align:middle}div.rui-lightbox-image div.rui-lightbox-body,div.rui-lightbox-image div.rui-lightbox-body-locker,div.rui-lightbox-media div.rui-lightbox-body,div.rui-lightbox-media div.rui-lightbox-body-locker{background-color:#D8D8D8}div.rui-lightbox-image div.rui-lightbox-body-locker div.rui-spinner,div.rui-lightbox-media div.rui-lightbox-body-locker div.rui-spinner{bottom:.5em;right:.5em}</style>");
+var embed_style = document.createElement('style'),                 
+    embed_rules = document.createTextNode("div.rui-spinner,div.rui-spinner div{margin:0;padding:0;border:none;background:none;list-style:none;font-weight:normal;float:none;display:inline-block; *display:inline; *zoom:1;border-radius:.12em;-moz-border-radius:.12em;-webkit-border-radius:.12em}div.rui-spinner{text-align:center;white-space:nowrap;background:#EEE;border:1px solid #DDD;height:1.2em;padding:0 .2em}div.rui-spinner div{width:.4em;height:70%;background:#BBB;margin-left:1px}div.rui-spinner div:first-child{margin-left:0}div.rui-spinner div.glowing{background:#777}div.rui-lightbox{position:fixed;top:0;left:0;float:none;width:100%;height:100%;margin:0;padding:0;background:none;border:none;text-align:center;z-index:9999;z-index/*\\**/:auto\\9}div.rui-lightbox-locker{position:absolute;top:0px;left:0px;width:100%;height:100%;background-color:#000;opacity:0.8;filter:alpha(opacity=80);cursor:default;z-index/*\\**/:9990\\9}div.rui-lightbox-dialog{display:inline-block; *display:inline; *zoom:1;position:relative;text-align:left;z-index/*\\**/:9999\\9}div.rui-lightbox-title{height:1.2em;margin-bottom:.1em;white-space:nowrap;color:#DDD;font-weight:bold;font-size:1.6em;font-family:Helvetica}div.rui-lightbox-body{background-color:#FFF;padding:1em;border-radius:.5em;-moz-border-radius:.5em;-webkit-border-radius:.5em}div.rui-lightbox-body-inner{position:relative}div.rui-lightbox-scroller{overflow:hidden}div.rui-lightbox-content{display:inline-block; *display:inline; *zoom:1;min-height:10em;min-width:10em;_height:10em;_width:10em}div.rui-lightbox-body-locker{background-color:white;position:absolute;left:0px;top:0px;width:100%;height:100%;opacity:0;filter:alpha(opacity=0)}div.rui-lightbox-body-locker div.rui-spinner{position:absolute;right:0;bottom:0;border:none;background:none;font-size:150%}div.rui-lightbox-navigation{color:#888;font-size:160%;font-family:Arial;height:1em;user-select:none;-moz-user-select:none;-webkit-user-select:none}div.rui-lightbox-navigation div{cursor:pointer;position:absolute}div.rui-lightbox-navigation div:hover{color:white}div.rui-lightbox-navigation div.next{left:2em}div.rui-lightbox-navigation div.close{right:0}div.rui-lightbox-image div.rui-lightbox-body,div.rui-lightbox-media div.rui-lightbox-body{padding:0;border:1px solid #777;border-radius:0px;-moz-border-radius:0px;-webkit-border-radius:0px}div.rui-lightbox-image div.rui-lightbox-content,div.rui-lightbox-media div.rui-lightbox-content{min-height:12em;min-width:12em;_height:12em;_width:12em}div.rui-lightbox-image div.rui-lightbox-content img{vertical-align:middle}div.rui-lightbox-image div.rui-lightbox-body,div.rui-lightbox-image div.rui-lightbox-body-locker,div.rui-lightbox-media div.rui-lightbox-body,div.rui-lightbox-media div.rui-lightbox-body-locker{background-color:#D8D8D8}div.rui-lightbox-image div.rui-lightbox-body-locker div.rui-spinner,div.rui-lightbox-media div.rui-lightbox-body-locker div.rui-spinner{bottom:.5em;right:.5em}");      
+                                                                   
+embed_style.type = 'text/css';                                     
+document.getElementsByTagName('head')[0].appendChild(embed_style); 
+                                                                   
+if(embed_style.styleSheet) {                                       
+  embed_style.styleSheet.cssText = embed_rules.nodeValue;          
+} else {                                                           
+  embed_style.appendChild(embed_rules);                            
+}                                                                  
+
 
 return Lightbox;
 })(document, RightJS);
