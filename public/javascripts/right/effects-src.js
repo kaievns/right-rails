@@ -1,8 +1,8 @@
 /**
- * RightJS Additional visual effects module
+ * Additional Visual Effects v2.2.0
  * http://rightjs.org/plugins/effects
  *
- * Copyright (C) 2008-2011 Nikolay Nemshilov
+ * Copyright (C) 2009-2011 Nikolay Nemshilov
  */
 (function(RightJS) {
   if (!RightJS.Fx) { throw "RightJS Fx is missing"; }
@@ -24,6 +24,10 @@ var R        = RightJS,
     defined  = RightJS.defined,
     isHash   = RightJS.isHash,
     isString = RightJS.isString;
+
+RightJS.Effects = {
+  version: '2.2.0'
+};
 
 
 

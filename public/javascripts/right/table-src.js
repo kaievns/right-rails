@@ -1,7 +1,8 @@
 /**
- * Tables specific dom-wrapper v2.2.0
+ * Tables Specific Wrappers v2.2.0
+ * http://rightjs.org/plugins/table
  *
- * Copyright (C) 2010-2011 Nikolay Nemshilov
+ * Copyright (C) 2009-2011 Nikolay Nemshilov
  */
 var Table = RightJS.Table = (function(RightJS) {
 /**

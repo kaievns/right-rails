@@ -1,15 +1,18 @@
 /**
- * Pretty keyboard events handler for RightJS
+ * Pretty Keyboard Events v2.2.1
  * http://rightjs.org/plugins/keys
  *
- * Copyright (C) 2010-2011 Nikolay Nemshilov
+ * Copyright (C) 2009-2011 Nikolay Nemshilov
  */
 (function(RightJS) {
 /**
  * The keys plugin initialization
  *
- * Copyright (C) 2010 Nikolay Nemshilov
+ * Copyright (C) 2010-2011 Nikolay Nemshilov
  */
+RightJS.Keys = {
+  version: '2.2.1'
+};
 
 
 

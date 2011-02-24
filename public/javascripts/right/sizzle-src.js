@@ -1,13 +1,18 @@
 /**
- * Sizzle engine support for RightJS
+ * Sizzle Engine Support v2.2.0
+ * http://rightjs.org/plugins/sizzle
  *
- * Copyright (C) 2010-2011 Nikolay Nemshilov
+ * Copyright (C) 2009-2011 Nikolay Nemshilov
  */
 /**
  * sizzle initialization script
  *
- * Copyright (C) 2010 Nikolay Nemshilov
+ * Copyright (C) 2010-2011 Nikolay Nemshilov
  */
+
+RightJS.Sizzle = {
+  version: '2.2.0'
+};
 
 
 

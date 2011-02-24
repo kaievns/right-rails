@@ -1,5 +1,5 @@
 /**
- * RightJS-UI Lightbox v2.2.1
+ * RightJS-UI Lightbox v2.2.2
  * http://rightjs.org/ui/lightbox
  *
  * Copyright (C) 2009-2011 Nikolay Nemshilov
@@ -179,7 +179,7 @@ Browser.IE6 = Browser.OLD && navigator.userAgent.indexOf("MSIE 6") > 0;
 var Lightbox = new Widget({
 
   extend: {
-    version: '2.2.1',
+    version: '2.2.2',
 
     EVENTS: $w('show hide load'),
 
@@ -207,13 +207,13 @@ var Lightbox = new Widget({
     },
 
     // the supported image-urls regexp
-    Images: /\.(jpg|jpeg|gif|png|bmp)/,
+    Images: /\.(jpg|jpeg|gif|png|bmp)/i,
 
     // media content sources
     Medias: [
-      [/(http:\/\/.*?youtube\.[a-z]+)\/watch\?v=([^&]+)/,       '$1/v/$2',                      'swf'],
-      [/(http:\/\/video.google.com)\/videoplay\?docid=([^&]+)/, '$1/googleplayer.swf?docId=$2', 'swf'],
-      [/(http:\/\/vimeo\.[a-z]+)\/([0-9]+).*?/,                 '$1/moogaloop.swf?clip_id=$2',  'swf']
+      [/(http:\/\/.*?youtube\.[a-z]+)\/watch\?v=([^&]+)/i,       '$1/v/$2',                      'swf'],
+      [/(http:\/\/video.google.com)\/videoplay\?docid=([^&]+)/i, '$1/googleplayer.swf?docId=$2', 'swf'],
+      [/(http:\/\/vimeo\.[a-z]+)\/([0-9]+).*?/i,                 '$1/moogaloop.swf?clip_id=$2',  'swf']
     ]
   },
 
