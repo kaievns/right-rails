@@ -32,7 +32,7 @@ Or you can install it as a rails plugin
     script/plugin install git://github.com/MadRabbit/right-rails.git
 
 In case of ruby-gem and Rails 3, add the following into your +Gemfile+
-    
+
     gem 'right-rails'
 
 If you on Rails 2, add the following code into your +environment.rb+
@@ -56,16 +56,16 @@ Enjoy!
 
 See the wiki-pages for the documentation
 
-http://wiki.github.com/MadRabbit/right-rails
+https://github.com/MadRabbit/right-rails/wiki
 
 See also the demo application for examples
 
 http://github.com/MadRabbit/right-rails-demo
 
-    
+
 
 
 
 == Copyright
 
-Copyright (c) 2009-2010 Nikolay Nemshilov, released under the MIT license
+Copyright (c) 2009-2011 Nikolay Nemshilov, released under the MIT license
