@@ -1,4 +1,4 @@
-require 'spec'
+require 'rspec'
 
 $LOAD_PATH << File.join(File.dirname(__FILE__), '..', 'lib')
 
@@ -12,17 +12,17 @@ module Rails
     def env
       'production'
     end
-    
+
     def root
       'rails-root'
     end
-    
+
     def public_path
       "#{root}/public"
     end
   end
-  
+
   module VERSION
-    MAJOR = 2 
+    MAJOR = 2 unless defined?(MAJOR)
   end
 end

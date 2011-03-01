@@ -1,34 +1,26 @@
 require 'rake'
-require 'rake/testtask'
 require 'rake/rdoctask'
-require 'spec/rake/spectask'
+require 'rspec/core/rake_task'
 
 desc 'Default: run rspec tests.'
 task :default => :spec
 
 desc "Run all specs in spec directory"
-Spec::Rake::SpecTask.new(:spec) do |t|
-  t.spec_opts = ['--options', "spec/spec.opts"]
-  t.spec_files = FileList['spec/**/*_spec.rb']
+RSpec::Core::RakeTask.new(:spec) do |t|
+  t.rspec_opts = ['--options', "spec/spec.opts"]
+  t.pattern    = 'spec/**/*_spec.rb'
 end
 
 namespace :spec do
   desc "Run all specs in spec directory with RCov"
-  Spec::Rake::SpecTask.new(:rcov) do |t|
-    t.spec_opts = ['--options', "spec/spec.opts"]
-    t.spec_files = FileList['spec/**/*_spec.rb']
-    t.rcov = true
-    t.rcov_dir = 'coverage'
-    t.rcov_opts = lambda do
+  RSpec::Core::RakeTask.new(:rcov) do |t|
+    t.rspec_opts = ['--options', "spec/spec.opts"]
+    t.pattern    = 'spec/**/*_spec.rb'
+    t.rcov       = true
+    t.rcov_opts  = lambda do
       IO.readlines("spec/rcov.opts").map {|l| l.chomp.split " "}.flatten
     end
   end
-
-#  desc "Print Specdoc for all specs"
-#  Spec::Rake::SpecTask.new(:doc) do |t|
-#    t.spec_opts = ["--format", "specdoc", "--dry-run"]
-#    t.spec_files = FileList['spec/**/*_spec.rb']
-#  end
 end
 
 desc 'Generate documentation for the right_rails plugin.'
