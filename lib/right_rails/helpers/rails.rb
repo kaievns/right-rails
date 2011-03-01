@@ -9,20 +9,20 @@ module RightRails::Helpers::Rails
   #
   def javascript_include_tag(first, *others)
     if (first == :defaults)
-      options = others.last.is_a?(Hash) ? modules.pop : nil
+      options = others.last.is_a?(Hash) ? others.pop : nil
 
       rightjs_require_module *others
 
       scripts = RightRails::Helpers.required_js_files(self)
       scripts << 'application'
       scripts << options unless options.nil?
-      
-      super scripts
+
+      super *scripts
     else
       super first, *others
     end
   end
-  
+
   #
   # Overloading the `remote_function` helper so it used the RightJS semantics
   #
@@ -31,18 +31,18 @@ module RightRails::Helpers::Rails
     url = options[:url]
     url = url.merge(:escape => false) if url.is_a?(Hash)
     options[:url] = escape_javascript(url_for(url))
-    
+
     cmd = RightRails::Helpers.build_xhr_request(options)
-    
+
     cmd =  "#{options[:before]};#{cmd}" if options[:before]
     cmd << ";#{options[:after]}"        if options[:after]
-    
+
     cmd = "if(#{options[:condition]}){#{cmd}}" if options[:condition]
     cmd = "if(confirm('#{escape_javascript(options[:confirm])}')){#{cmd}}" if options[:confirm]
-    
+
     cmd
   end
-  
+
   #
   # Overloading the `submit_to_remote` so it used RightJS instead
   #
@@ -54,7 +54,7 @@ module RightRails::Helpers::Rails
 
     button_to_remote(value, options, html_options)
   end
-  
+
   #
   # Replacing `periodically_call_remote` method
   #
@@ -63,41 +63,41 @@ module RightRails::Helpers::Rails
     code = "function(){#{remote_function(options)}}.periodical(#{frequency * 1000})"
     javascript_tag(code)
   end
-  
+
   #
   # replacing the draggables generator to make our autoscripts stuff working
   #
   def draggable_element_js(*args)
     rightjs_require_module 'dnd'
-    
+
     super *args
   end
-  
+
   #
   # replace the droppables generator to be used with RightJS
   #
   def drop_receiving_element_js(*args)
     rightjs_require_module 'dnd'
-    
+
     super(*args).gsub!('Droppables.add', 'new Droppable'
       ).gsub!('element.id', 'draggable.element.id'
       ).gsub!('(element)', '(draggable)')
   end
-  
+
   #
   # catching the sortables generator
   #
   def sortable_element_js(id, options={})
     rightjs_require_module 'dnd', 'sortable'
-    
+
     script = "new Sortable('#{id}'"
-    
+
     # processing the options
     options[:url] = escape_javascript(url_for(options[:url])) if options[:url]
     s_options = RightRails::Helpers.unit_options(options, 'sortable')
     script << ",#{s_options}" unless s_options == '{}'
-    
+
     script << ")"
   end
-  
+
 end
