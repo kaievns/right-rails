@@ -11,23 +11,27 @@
 # - RightRails::Config.include_rails_module           +true+ or +false+
 # - RightRails::Config.swap_builds_and_sources        +true+ or +false+
 # - RightRails::Config.include_scripts_automatically  +true+ or +false+
+# - RightRails::Config.use_cdn_in_production          +false+ or +true+
+# - RigthRails::Config.cdn_url                        'http://cdn.rightjs.org'
 #
 # When you set a property in _auto_ then the script will try to figure the
 # parameters out by the current environment and the content of the
 # public/javascript/right.js file
 #
 module RightRails::Config
-  
+
   DEFAULT_PUBLIC_PATH      = 'auto' #  'auto' or some path
   DEFAULT_SAFE_MODE        = 'auto' #  'auto', true or false
   DEFAULT_RIGHTJS_VERSION  = 'auto' #  'auto', 2 or 1
   DEFAULT_ENVIRONMENT      = 'auto' #  'auto', 'production' or 'development'
   DEFAULT_RIGHTJS_LOCATION = 'javascripts/right.js'
   DEFAULT_LOCALES_LOCATION = 'javascripts/right/i18n'
+  DEFAULT_CDN_URL          = 'http://cdn.rightjs.org'
+  DEFAULT_USE_CDN          = false  # false or true
   DEFAULT_INCLUDE_RAILS    = true   # true or false
   DEFAULT_AUTO_INCLUDES    = true   # true or false
   DEFAULT_SWAP_BUILDS      = true   # true or false
-  
+
   class << self
     #
     # Resetting the configuration to the defaults
@@ -41,8 +45,10 @@ module RightRails::Config
       remove_instance_variable(:@include_rails)   if defined?(@include_rails)
       remove_instance_variable(:@auto_includes)   if defined?(@auto_includes)
       remove_instance_variable(:@swap_builds)     if defined?(@swap_builds)
+      remove_instance_variable(:@use_cdn)         if defined?(@use_cdn)
+      remove_instance_variable(:@cdn_url)         if defined?(@cdn_url)
     end
-    
+
     #
     # Returns the currently used environment
     #
@@ -52,10 +58,10 @@ module RightRails::Config
       unless defined?(@environment)
         self.env = DEFAULT_ENVIRONMENT
       end
-      
+
       @environment
     end
-    
+
     #
     # Sets the current environment, which will effectively make
     # RightRails to switch between the builds and src versions of
@@ -71,17 +77,17 @@ module RightRails::Config
           "production"
         end
       end
-      
+
       @environment = value.to_s == 'production' ? 'production' : 'development'
     end
-    
+
     #
     # Returns a marker if we are in the _development_ environment
     #
     def dev_env?
       env == 'development'
     end
-    
+
     #
     # Returns the public_html directory path
     #
@@ -91,10 +97,10 @@ module RightRails::Config
       unless defined?(@public_path)
         self.public_path = DEFAULT_PUBLIC_PATH
       end
-      
+
       @public_path
     end
-    
+
     #
     # If you have your public_html somewhere else
     # this is the place where you can define it
@@ -108,15 +114,15 @@ module RightRails::Config
           "public"
         end
       end
-      
+
       # getting rid of the trailing slash
       if path.slice(path.size-1, path.size) == '/'
-        path = path.slice(0, path.size-1) 
+        path = path.slice(0, path.size-1)
       end
-      
+
       @public_path = path.dup
     end
-    
+
     #
     # Returns a full-path to the localization modules directory
     #
@@ -124,22 +130,22 @@ module RightRails::Config
       unless defined?(@locales_path)
         self.locales_path = "#{public_path}/#{DEFAULT_LOCALES_LOCATION}"
       end
-      
+
       @locales_path
     end
-    
+
     #
     # Sets the RightJS localilzation modules directory path
     #
     def locales_path=(path)
       # getting rid of the trailing slash
       if path.slice(path.size-1, path.size) == '/'
-        path = path.slice(0, path.size-1) 
+        path = path.slice(0, path.size-1)
       end
-      
+
       @locales_path = path
     end
-    
+
     #
     # Checks if the RightJS is used in the safe-mode
     #
@@ -147,10 +153,10 @@ module RightRails::Config
       unless defined?(@safe_mode)
         self.safe_mode = DEFAULT_SAFE_MODE
       end
-      
+
       @safe_mode
     end
-    
+
     #
     # Setup whether RightJS is used in the safe-mode or not
     #
@@ -161,7 +167,7 @@ module RightRails::Config
     def safe_mode=(value)
       @safe_mode = !!(value == 'auto' ? read_rightjs_file =~ /\.safe\s*=\s*true/ : value)
     end
-    
+
     #
     # Returns the RightJS version (2 or 1)
     #
@@ -169,10 +175,10 @@ module RightRails::Config
       unless defined?(@rightjs_version)
         self.rightjs_version = DEFAULT_RIGHTJS_VERSION
       end
-      
+
       @rightjs_version
     end
-    
+
     #
     # With this method you can set up which version of RightJS do you use
     # 2 or 1. You also can set it to a string 'auto' (by default) in which
@@ -183,10 +189,10 @@ module RightRails::Config
       if value == 'auto'
         value = read_rightjs_file =~ /version\s*(:|=)\s*("|')1/ ? 1 : 2
       end
-      
+
       @rightjs_version = value < 2 ? 1 : 2
     end
-    
+
     #
     # Returns a marker if the script should automatically include
     # the ruby-on-rails module for RightJS
@@ -195,10 +201,10 @@ module RightRails::Config
       unless defined?(@include_rails)
         self.include_rails_module = DEFAULT_INCLUDE_RAILS
       end
-      
+
       @include_rails
     end
-    
+
     #
     # Sets the marker if the plugin should automatically include
     # the ruby-on-rails module for RightJS
@@ -206,7 +212,7 @@ module RightRails::Config
     def include_rails_module=(value)
       @include_rails = !! value
     end
-    
+
     #
     # Checks if the plugin should automatically swap between
     # the builds and the source-versions of JavaScript files
@@ -216,10 +222,10 @@ module RightRails::Config
       unless defined?(@swap_builds)
         self.swap_builds_and_sources = DEFAULT_SWAP_BUILDS
       end
-      
+
       @swap_builds
     end
-    
+
     #
     # Sets the marker if the plugin should automatically
     # swap between source and builds of JavaScript files
@@ -227,7 +233,7 @@ module RightRails::Config
     def swap_builds_and_sources=(value)
       @swap_builds = !! value
     end
-    
+
     #
     # Checks if the plugin should include JavaScript modules
     # automatically when they needed
@@ -236,10 +242,10 @@ module RightRails::Config
       unless defined?(@auto_includes)
         self.include_scripts_automatically = DEFAULT_AUTO_INCLUDES
       end
-      
+
       @auto_includes
     end
-    
+
     #
     # Sets the marker if the plugin should automatically include
     # all the JavaScript files on the page when they needed
@@ -247,15 +253,55 @@ module RightRails::Config
     def include_scripts_automatically=(value)
       @auto_includes = !! value
     end
-    
+
+    #
+    # Checks if the plugin going to automatically use
+    # CDN Server in production instead of local files
+    #
+    def use_cdn_in_production
+      unless defined?(@use_cdn)
+        self.use_cdn_in_production = DEFAULT_USE_CDN
+      end
+
+      @use_cdn
+    end
+
+    #
+    # Sets the marker if the plugin should automatically use
+    # CDN Server in production instead of the local files
+    #
+    def use_cdn_in_production=(value)
+      @use_cdn = !! value
+    end
+
+    #
+    # Returns the current CDN Server URL address
+    #
+    def cdn_url
+      unless defined?(@cdn_url)
+        self.cdn_url = DEFAULT_CDN_URL
+      end
+
+      @cdn_url
+    end
+
+    #
+    # Sets a new CDN Server url address
+    #
+    def cdn_url=(value)
+      @cdn_url = value
+    end
+
+
     # boolean methods aliases
     alias_method :safe_mode?,                     :safe_mode
     alias_method :include_rails_module? ,         :include_rails_module
+    alias_method :use_cdn_in_production?,         :use_cdn_in_production
     alias_method :swap_builds_and_sources? ,      :swap_builds_and_sources
     alias_method :include_scripts_automatically?, :include_scripts_automatically
-    
+
   private
-    
+
     #
     # reading the `public/javascripts/right.js` file for the purposes
     # of the automatic configuration
@@ -267,7 +313,7 @@ module RightRails::Config
     rescue
       ''
     end
-    
+
     #
     # Checking if we are in the Ruby-on-Rails environment
     #
