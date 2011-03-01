@@ -2,12 +2,12 @@
 # There is the namespace for the helpers and some private methods
 #
 module RightRails::Helpers
-  
+
   autoload :Basic, 'right_rails/helpers/basic'
   autoload :Rails, 'right_rails/helpers/rails'
   autoload :Forms, 'right_rails/helpers/forms'
   autoload :Misc,  'right_rails/helpers/misc'
-  
+
   ##########################################################################
   #  Varios RightJS unit keys
   ##########################################################################
@@ -24,7 +24,7 @@ module RightRails::Helpers
     spinnerFx
     params
   }
-  
+
   CALENDAR_OPTION_KEYS = %w{
     format
     showTime
@@ -86,7 +86,7 @@ module RightRails::Helpers
     fxName
     fxDuration
   }
-  
+
   TABS_OPTION_KEYS = %w{
     idPrefix
     tabsElement
@@ -104,7 +104,7 @@ module RightRails::Helpers
     Xhr
     Cookie
   }
-  
+
   LIGHTBOX_OPTION_KEYS = %w{
     group
     endOpacity
@@ -116,14 +116,14 @@ module RightRails::Helpers
     mediaWidth
     mediaHeight
   }
-  
+
   RESIZABLE_OPTION_KEYS = %w{
     minWidth
     maxWidth
     minHeight
     maxHeight
   }
-  
+
   SORTABLE_OPTION_KEYS = %w{
     url
     direction
@@ -137,7 +137,7 @@ module RightRails::Helpers
     accept
     minLength
   }
-  
+
 protected
 
   class << self
@@ -147,7 +147,7 @@ protected
     def prefix
       RightRails::Config.safe_mode? ? 'RightJS.' : ''
     end
-    
+
     #
     # Switches between the css class-names prefixes
     # depending on current RightJS version
@@ -155,7 +155,7 @@ protected
     def css_prefix
       RightRails::Config.rightjs_version < 2 ? 'right' : 'rui'
     end
-    
+
     #
     # Converting the string into an html-safe eqivalent
     # regardless of the current environment
@@ -169,7 +169,7 @@ protected
         string
       end
     end
-    
+
     #
     # Tells the script that the user needs this module
     #
@@ -177,50 +177,71 @@ protected
     #
     def require_js_module(context, *list)
       registry = modules_registry_for(context)
-      
+
       list.each do |name|
         unless registry.include?(name.to_s)
           registry << name.to_s
         end
       end
     end
-    
+
     #
     # Returns a list of required JavaScript files for RightJS
     #
     def required_js_files(context)
       scripts = ['right']
-      
-      
-      if RightRails::Config.include_scripts_automatically?
+      config  = RightRails::Config
+
+
+      if config.include_scripts_automatically?
         # hooking up the 'rails' javascript module if required
-        scripts << 'right/rails' if RightRails::Config.include_rails_module?
-        
+        scripts << 'right/rails' if config.include_rails_module?
+
         # adding the modules if needed
         scripts += modules_registry_for(context).collect do |package|
           "right/#{package}"
         end
-        
+
         # swapping to the sources in the development mode
-        if RightRails::Config.swap_builds_and_sources? && RightRails::Config.dev_env?
+        if config.swap_builds_and_sources? && config.dev_env?
           scripts = scripts.collect do |package|
             "#{package}-src"
           end
         end
-        
+
         # loading up the locales if available
         if defined?(I18n)
-          locale_file = "#{RightRails::Config.locales_path}/#{I18n.locale.to_s.downcase}"
+          locale_file = "#{config.locales_path}/#{I18n.locale.to_s.downcase}"
 
           if File.exists? "#{locale_file}.js"
-            scripts << locale_file.slice(RightRails::Config.public_path.size + "/javascript/".size + 1, locale_file.size) 
+            scripts << locale_file.slice(config.public_path.size + "/javascripts/".size, locale_file.size)
           end
         end
       end
-      
+
+      # switching to CDN server if asked
+      if !config.dev_env? && config.use_cdn_in_production?
+        scripts.map! do |script|
+          header  = File.read("#{config.public_path}/javascripts/#{script}.js", 100)
+
+          if version = header[/\d+\.\d+\.\d+/]
+            script += "-#{version}"
+          end
+
+          if script.slice(0, 6) == 'right/' # plugins and modules
+            script.gsub! 'right/', (
+              header.include?('/ui/') ? 'ui/' : 'plugins/'
+            )
+            script.gsub! 'plugins/', '' if script.include?('/i18n/')
+          end
+
+          "#{config.cdn_url}/#{script}.js"
+        end
+      end
+
       scripts
     end
-    
+
     #
     # Returns the rightjs-modules registry for the context
     #
@@ -229,7 +250,7 @@ protected
         return @___rightjs_modules_registry ||= []
       end
     end
-    
+
     #
     # Collects the RightJS unit options out of the given list of options
     #
@@ -261,22 +282,22 @@ protected
 
       "{#{unit_options.sort.join(',')}}"
     end
-    
+
     #
     # Adds the unit options to the options list
     #
     def add_unit_options(options, unit)
       options_string = unit_options(options, unit)
-      
+
       if RightRails::Config.rightjs_version > 1
         options["data-#{unit}"] = options_string
       elsif options_string != '{}'
-        options["data-#{unit}-options"] = options_string 
+        options["data-#{unit}-options"] = options_string
       end
-      
+
       options
     end
-    
+
     #
     # Removes the unit option keys out of the given options
     #
@@ -284,12 +305,12 @@ protected
       unit_keys = get_keys_for(unit)
       options.reject{ |k, v| unit_keys.include?(k.to_s) }
     end
-    
+
     # returns a list of keys for the unit
     def get_keys_for(unit)
       const_get("#{unit.to_s.upcase}_OPTION_KEYS") || []
     end
-    
+
     #
     # Builds a RightJS based Xhr request call
     #
@@ -297,9 +318,9 @@ protected
       xhr = options[:submit] ?
         "new #{RightRails::Helpers.prefix}Xhr(" :
         "#{RightRails::Helpers.prefix}Xhr.load("
-      
+
       xhr << "'#{options[:url]}'"
-      
+
       # building the options
       xhr_options = { :onSuccess => '',  :onFailure => '', :onComplete => '' }
 
@@ -362,7 +383,7 @@ protected
 
       xhr
     end
-    
+
   end
-  
+
 end
