@@ -105,6 +105,15 @@ module RightRails::Helpers
     Cookie
   }
 
+  TAGS_OPTION_KEYS = %w{
+    tags
+    vertical
+    allowNew
+    nocase
+    autocomplete
+    separator
+  }
+
   LIGHTBOX_OPTION_KEYS = %w{
     group
     endOpacity
