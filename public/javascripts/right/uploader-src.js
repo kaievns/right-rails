@@ -1,5 +1,5 @@
 /**
- * RightJS-UI Uploader v2.2.0
+ * RightJS-UI Uploader v2.2.1
  * http://rightjs.org/ui/uploader
  *
  * Copyright (C) 2010-2011 Nikolay Nemshilov
@@ -98,7 +98,7 @@ function Widget(tag_name, methods) {
   var Klass = new RightJS.Class(AbstractWidget, methods);
 
   // creating the widget related shortcuts
-  RightJS.Observer.createShortcuts(Klass.prototype, Klass.EVENTS || []);
+  RightJS.Observer.createShortcuts(Klass.prototype, Klass.EVENTS || RightJS([]));
 
   return Klass;
 }
@@ -129,7 +129,7 @@ var R      = RightJS,
  */
 var Uploader = new Widget({
   extend: {
-    version: '2.2.0',
+    version: '2.2.1',
 
     EVENTS: $w('start update finish error'),
 
@@ -234,6 +234,7 @@ var Uploader = new Widget({
   // sends a request to the server
   request: function() {
     Xhr.load(this.options.url + "?" + this.options.param + "=" + this.uid, {
+      evalJS:   false,
       evalJSON: false,
       onSuccess: R(function(xhr) {
         this.update(new Function('return '+xhr.text)());

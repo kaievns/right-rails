@@ -1,5 +1,5 @@
 /**
- * Drag'n'Drop module v2.2.0
+ * Drag'n'Drop module v2.2.2
  * http://rightjs.org/plugins/drag-n-drop
  *
  * Copyright (C) 2009-2011 Nikolay Nemshilov
@@ -28,7 +28,7 @@ var R        = RightJS,
  */
 var Draggable = new Class(Observer, {
   extend: {
-    version: '2.2.0',
+    version: '2.2.2',
 
     EVENTS: $w('before start drag stop drop'),
 
@@ -79,7 +79,10 @@ var Draggable = new Class(Observer, {
     this.element = $(element);
     this.$super(options);
 
-    this.element.draggable = this.init();
+    this._dragStart = R(this.dragStart).bind(this);
+    this.handle.onMousedown(this._dragStart);
+
+    this.element.draggable = this;
   },
 
   /**
@@ -139,17 +142,10 @@ var Draggable = new Class(Observer, {
 
 // protected
 
-  init: function() {
-    // caching the callback so that we could detach it later
-    this._dragStart = R(this.dragStart).bind(this);
-
-    this.handle.onMousedown(this._dragStart);
-
-    return this;
-  },
-
   // handles the event start
   dragStart: function(event) {
+    if (this._drag) { return false; } else { this._drag = true; }
+
     this.fire('before', this, event.stop());
 
     // calculating the positions diff
@@ -158,14 +154,16 @@ var Draggable = new Class(Observer, {
     this.xDiff = event.pageX - position.x;
     this.yDiff = event.pageY - position.y;
 
-    // grabbing the relative position diffs
-    var relative_position = {
-      y: R(this.element.getStyle('top')).toFloat(),
-      x: R(this.element.getStyle('left')).toFloat()
-    };
+    // grabbing the relative position diffs for nested spaces
+    this.rxDiff = this.ryDiff = 0;
+    this.element.parents().reverse().each(function(parent) {
+      if (parent.getStyle('position') !== 'static') {
+        parent = parent.position();
 
-    this.rxDiff = isNaN(relative_position.x) ? 0 : (relative_position.x - position.x);
-    this.ryDiff = isNaN(relative_position.y) ? 0 : (relative_position.y - position.y);
+        this.rxDiff = - parent.x;
+        this.ryDiff = - parent.y;
+      }
+    }, this);
 
     // preserving the element sizes
     var size = {
@@ -196,7 +194,6 @@ var Draggable = new Class(Observer, {
     if (this.options.moveOut) {
       this.element.insertTo(document.body);
     }
-
 
     // caching the window scrolls
     this.winScrolls = $(window).scrolls();
@@ -266,6 +263,8 @@ var Draggable = new Class(Observer, {
 
     if (this.options.revert) {
       this.revert();
+    } else {
+      this._drag = false;
     }
 
     Draggable.current = null;
@@ -285,6 +284,7 @@ var Draggable = new Class(Observer, {
         })
       );
     }
+    this._drag = false;
   },
 
   // calculates the constraints

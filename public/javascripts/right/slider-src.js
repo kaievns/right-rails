@@ -1,5 +1,5 @@
 /**
- * RightJS-UI Slider v2.2.1
+ * RightJS-UI Slider v2.2.3
  * http://rightjs.org/ui/slider
  *
  * Copyright (C) 2009-2011 Nikolay Nemshilov
@@ -98,7 +98,7 @@ function Widget(tag_name, methods) {
   var Klass = new RightJS.Class(AbstractWidget, methods);
 
   // creating the widget related shortcuts
-  RightJS.Observer.createShortcuts(Klass.prototype, Klass.EVENTS || []);
+  RightJS.Observer.createShortcuts(Klass.prototype, Klass.EVENTS || RightJS([]));
 
   return Klass;
 }
@@ -177,7 +177,7 @@ var Slider = new Widget({
   include: Updater,
 
   extend: {
-    version: '2.2.1',
+    version: '2.2.3',
 
     EVENTS: $w('change'),
 
@@ -270,7 +270,7 @@ var Slider = new Widget({
         dims        = this.dims  = this.dimensions();
 
     this.offset = horizontal ? handle.left - dims.left : dims.top + dims.height - handle.top - handle_size;
-    this.space  = (horizontal ? dims.width - handle_size - this.offset * 2 : dims.height - handle_size) - this.offset * 2;
+    this.space  = (horizontal ? dims.width : dims.height) - handle_size - this.offset * 2;
 
     return this;
   },
@@ -297,7 +297,7 @@ var Slider = new Widget({
     if (value > options.max) { value = options.max; }
     if (options.snap) {
       var snap = options.snap;
-      var diff = value % snap;
+      var diff = (value - options.min) % snap;
       value = diff < snap/2 ? value - diff : value - diff + snap;
     }
 

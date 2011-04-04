@@ -1,5 +1,5 @@
 /**
- * RightJS-UI Tabs v2.2.2
+ * RightJS-UI Tabs v2.2.3
  * http://rightjs.org/ui/tabs
  *
  * Copyright (C) 2009-2011 Nikolay Nemshilov
@@ -98,7 +98,7 @@ function Widget(tag_name, methods) {
   var Klass = new RightJS.Class(AbstractWidget, methods);
 
   // creating the widget related shortcuts
-  RightJS.Observer.createShortcuts(Klass.prototype, Klass.EVENTS || []);
+  RightJS.Observer.createShortcuts(Klass.prototype, Klass.EVENTS || RightJS([]));
 
   return Klass;
 }
@@ -176,7 +176,7 @@ var R  = RightJS,
  */
 var Tabs = new Widget('UL', {
   extend: {
-    version: '2.2.2',
+    version: '2.2.3',
 
     EVENTS: $w('select hide load disable enable add remove move'),
 
@@ -489,8 +489,10 @@ var Panel = Tabs.Panel = new Class(Element, {
   // shows the panel
   show: function() {
     return this.resizing(function() {
-      this.tab.main.find('.rui-tabs-panel').each(function(panel) {
-        panel[panel === this ? 'addClass' : 'removeClass']('rui-tabs-current');
+      this.tab.main.tabs.each(function(tab) {
+        tab.panel[
+          tab.panel === this ? 'addClass' : 'removeClass'
+        ]('rui-tabs-current');
       }, this);
     });
   },
@@ -522,7 +524,7 @@ var Panel = Tabs.Panel = new Class(Element, {
     if (controller.__working) { return this.resizing.bind(this, callback).delay(100); }
 
     var options    = controller.options;
-    var prev_panel = controller.first('.rui-tabs-panel.rui-tabs-current');
+    var prev_panel = controller.tabs.map('panel').first('hasClass', 'rui-tabs-current');
     var this_panel = this;
     var swapping   = prev_panel !== this_panel;
     var loading    = this.first('div.rui-tabs-panel-locker');

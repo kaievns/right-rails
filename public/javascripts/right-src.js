@@ -1,5 +1,5 @@
 /**
- * RightJS v2.2.2 - http://rightjs.org
+ * RightJS v2.2.3 - http://rightjs.org
  * Released under the terms of MIT license
  *
  * Copyright (C) 2008-2011 Nikolay Nemshilov
@@ -9,7 +9,7 @@
  *
  * Copyright (C) 2008-2011 Nikolay Nemshilov
  */
-var RightJS = (function(window, document, Object, Array, String, Function, Number, Math) {
+var RightJS = (function(window, document, Object, Array, String, Function, Number, Math, undefined) {
 
 /**
  * The framework description object
@@ -20,7 +20,7 @@ var RightJS = function(value) {
   return value; // <- a dummy method to emulate the safe-mode
 };
 
-RightJS.version = "2.2.2";
+RightJS.version = "2.2.3";
 RightJS.modules =["core", "dom", "form", "events", "xhr", "fx", "cookie"];
 
 
@@ -294,29 +294,34 @@ if (isHash(HTML)) {
       value != null && value.hasOwnProperty != null;
   };
 }
+
+
 /**
  * Generating methods for native units extending
  */
-var i=0, natives = 'Array Function Number String Date RegExp'.split(' '),
-include_native = function() {
-  for (var i=0; i < arguments.length; i++) {
-    if (isHash(arguments[i])) {
-      $ext(this.prototype,  arguments[i]);
-      $ext(this.Methods, arguments[i]);
-    }
-  }
-};
-
-for (; i < natives.length; i++) {
-  $ext(RightJS[natives[i]] = window[natives[i]], {
+// adds a standard '.include' method to the native unit
+function extend_native(klass) {
+  return $ext(klass, {
     Methods: {},
-    include: include_native
+    include: function() {
+      for (var i=0, l = arguments.length; i < l; i++) {
+        if (isHash(arguments[i])) {
+          $ext(klass.prototype, arguments[i]);
+          $ext(klass.Methods,   arguments[i]);
+        }
+      }
+    }
   });
+}
+
+for (var i=0, natives = 'Array Function Number String Date RegExp'.split(' '); i < natives.length; i++) {
+  RightJS[natives[i]] = extend_native(new Function('return '+ natives[i])());
 }
 
 // referring those two as well
 RightJS.Object = Object;
 RightJS.Math   = Math;
+
 
 /**
  * Checks if the data is an array and if not,
@@ -467,7 +472,7 @@ $ext(Object, {
    */
   merge: function() {
     var object = {}, i=0, args=arguments, key;
-    for (; i < args.length; i++) {
+    for (l = args.length; i < l; i++) {
       if (isHash(args[i])) {
         for (key in args[i]) {
           object[key] = isHash(args[i][key]) && !(args[i][key] instanceof Class) ?
@@ -488,7 +493,7 @@ $ext(Object, {
     var tokens = [], key, value, encode = encodeURIComponent;
     for (key in object) {
       value = ensure_array(object[key]);
-      for (var i=0; i < value.length; i++) {
+      for (var i=0, l = value.length; i < l; i++) {
         tokens.push(encode(key) +'='+ encode(value[i]));
       }
     }
@@ -547,13 +552,13 @@ var original_sort = A_proto.sort,
 
 // JavaScript 1.6 methods recatching up or faking
 for_each = A_proto.forEach || function(callback, scope) {
-  for (var i=0; i < this.length; i++) {
+  for (var i=0, l=this.length; i < l; i++) {
     callback.call(scope, this[i], i, this);
   }
 },
 
 filter   = A_proto.filter || function(callback, scope) {
-  for (var result=[], j=0, i=0; i < this.length; i++) {
+  for (var result=[], j=0, i=0, l=this.length; i < l; i++) {
     if (callback.call(scope, this[i], i, this)) {
       result[j++] = this[i];
     }
@@ -562,7 +567,7 @@ filter   = A_proto.filter || function(callback, scope) {
 },
 
 reject   = function(callback, scope) {
-  for (var result=[], j=0, i=0; i < this.length; i++) {
+  for (var result=[], j=0, i=0, l=this.length; i < l; i++) {
     if (!callback.call(scope, this[i], i, this)) {
       result[j++] = this[i];
     }
@@ -571,14 +576,14 @@ reject   = function(callback, scope) {
 },
 
 map      = A_proto.map || function(callback, scope) {
-  for (var result=[], i=0; i < this.length; i++) {
+  for (var result=[], i=0, l=this.length; i < l; i++) {
     result[i] = callback.call(scope, this[i], i, this);
   }
   return result;
 },
 
 some     = A_proto.some || function(callback, scope) {
-  for (var i=0; i < this.length; i++) {
+  for (var i=0, l=this.length; i < l; i++) {
     if (callback.call(scope, this[i], i, this)) {
       return true;
     }
@@ -587,7 +592,7 @@ some     = A_proto.some || function(callback, scope) {
 },
 
 every    = A_proto.every || function(callback, scope) {
-  for (var i=0; i < this.length; i++) {
+  for (var i=0, l=this.length; i < l; i++) {
     if (!callback.call(scope, this[i], i, this)) {
       return false;
     }
@@ -596,7 +601,7 @@ every    = A_proto.every || function(callback, scope) {
 },
 
 first    = function(callback, scope) {
-  for (var i=0; i < this.length; i++) {
+  for (var i=0, l=this.length; i < l; i++) {
     if (callback.call(scope, this[i], i, this)) {
       return this[i];
     }
@@ -668,7 +673,7 @@ Array.include({
    * @return Integer index or -1 if not found
    */
   indexOf: A_proto.indexOf || function(value, from) {
-    for (var i=(from<0) ? Math.max(0, this.length+from) : from || 0; i < this.length; i++) {
+    for (var i=(from<0) ? Math.max(0, this.length+from) : from || 0, l=this.length; i < l; i++) {
       if (this[i] === value) {
         return i;
       }
@@ -988,7 +993,7 @@ Array.include({
    * @return Number a summ of values on the list
    */
   sum: function() {
-    for(var sum=0, i=0; i<this.length; sum += this[i++]) {}
+    for(var sum=0, i=0, l=this.length; i < l; sum += this[i++]) {}
     return sum;
   }
 });
@@ -1491,7 +1496,7 @@ Class_Methods = {
     $A(arguments).filter(isHash).each(function(module) {
       Object.each(Class_clean_module(module, false), function(name, method) {
         // searching for the super-method
-        for (var super_method, i=0; i < klasses.length; i++) {
+        for (var super_method, i=0, l = klasses.length; i < l; i++) {
           if (name in klasses[i].prototype) {
             super_method = klasses[i].prototype[name];
             break;
@@ -1553,7 +1558,7 @@ function Class_findSet(object, property) {
     candidates  = [object, constructor].concat(constructor.ancestors || []),
     i = 0;
 
-  for (; i < candidates.length; i++) {
+  for (l = candidates.length; i < l; i++) {
     if (upcased in candidates[i]) {
       return candidates[i][upcased];
     } else if (property in candidates[i]) {
@@ -1864,7 +1869,8 @@ Browser = RightJS.Browser = {
   IE8L:         false
 },
 
-IE8_OR_LESS = false;
+IE8_OR_LESS = false,
+IE_OPACITY  = !('opacity' in HTML.style) && ('filter' in HTML.style);
 
 try {
   // checking if that an IE version <= 8
@@ -2390,11 +2396,13 @@ Element.include({
   },
 
   next: function(css_rule) {
-    return this.nextSiblings(css_rule)[0];
+    return !css_rule && this._.nextElementSibling !== undefined ?
+      wrap(this._.nextElementSibling) : this.nextSiblings(css_rule)[0];
   },
 
   prev: function(css_rule) {
-    return this.prevSiblings(css_rule)[0];
+    return !css_rule && this._.previousElementSibling !== undefined ?
+      wrap(this._.previousElementSibling) : this.prevSiblings(css_rule)[0];
   },
 
   /**
@@ -2744,12 +2752,8 @@ Element.include({
     for (key in hash) {
       c_key = key.indexOf('-') < 0 ? key : key.camelize();
 
-      if (key === 'opacity') {
-        if (Browser_IE) {
-          element_style.filter = 'alpha(opacity='+ hash[key] * 100 +')';
-        } else {
-          element_style.opacity = hash[key];
-        }
+      if (IE_OPACITY && key === 'opacity') {
+        element_style.filter = 'alpha(opacity='+ hash[key] * 100 +')';
       } else if (key === 'float') {
         c_key = Browser_IE ? 'styleFloat' : 'cssFloat';
       }
@@ -2874,7 +2878,7 @@ function clean_style(style, key) {
   key = key.camelize();
 
   if (key === 'opacity') {
-    return Browser_IE ? (
+    return IE_OPACITY ? (
       (/opacity=(\d+)/i.exec(style.filter || '') ||
       ['', '100'])[1].toInt() / 100
     )+'' :style[key].replace(',', '.');
@@ -3398,7 +3402,10 @@ Element_add_event_shortcuts(
    * @return Element matching node or null
    */
   first: function(css_rule) {
-    return wrap(this._.querySelector(css_rule || '*'));
+    return wrap(
+      css_rule === undefined && this._.firstElementChild !== undefined ?
+      this._.firstElementChild : this._.querySelector(css_rule || '*')
+    );
   },
 
   /**
@@ -4385,6 +4392,11 @@ var Xhr = RightJS.Xhr = new Class(Observer, {
 
     // copying some options to the instance level attributes
     $ext(this.$super(options), this.options);
+
+    // merging in the global params
+    if (this.params != Xhr.Options.params) {
+      this.params = this.prepareData(Xhr.Options.params, this.params);
+    }
 
     // removing the local spinner if it's the same as the global one
     if (Xhr.Options.spinner && $(this.spinner) === $(Xhr.Options.spinner)) {
@@ -5492,7 +5504,7 @@ function style_keys(style) {
       add_variants(keys, key, directions);
     } else if (key.startsWith('background')) {
       add_variants(keys, 'background', ['Color', 'Position', 'PositionX', 'PositionY']);
-    } else if (key === 'opacity' && Browser_IE) {
+    } else if (key === 'opacity' && IE_OPACITY) {
       keys.push('filter');
     } else {
       keys.push(key);
@@ -5564,7 +5576,7 @@ function clean_styles(element, before, after) {
   }
 
   // IE opacity filter fix
-  if (after.filter && !before.filter) {
+  if (IE_OPACITY && after.filter && !before.filter) {
     before.filter = 'alpha(opacity=100)';
   }
 
@@ -5605,13 +5617,14 @@ function clone_style(element, keys) {
 
   for (; i < len; i++) {
     key = keys[i];
+
     if (key in style) {
       clean[key] = ''+ style[key];
-    }
 
-    // libwebkit bug fix for in case of languages pack applied
-    if (key === 'opacity') {
-      clean[key] = clean[key].replace(',', '.');
+      // libwebkit bug fix for in case of languages pack applied
+      if (key === 'opacity') {
+        clean[key] = clean[key].replace(',', '.');
+      }
     }
   }
 
@@ -5860,7 +5873,7 @@ Fx.Scroll = new Class(Fx.Attr, {
     this.$super(
       element instanceof Window ?
         element._.document[
-          Browser.WebKit ? 'body' : 'documentElement'
+          'body' in element._.document ? 'body' : 'documentElement'
         ] : element,
       options
     );

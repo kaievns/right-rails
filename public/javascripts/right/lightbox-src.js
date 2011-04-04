@@ -1,5 +1,5 @@
 /**
- * RightJS-UI Lightbox v2.2.2
+ * RightJS-UI Lightbox v2.2.3
  * http://rightjs.org/ui/lightbox
  *
  * Copyright (C) 2009-2011 Nikolay Nemshilov
@@ -98,7 +98,7 @@ function Widget(tag_name, methods) {
   var Klass = new RightJS.Class(AbstractWidget, methods);
 
   // creating the widget related shortcuts
-  RightJS.Observer.createShortcuts(Klass.prototype, Klass.EVENTS || []);
+  RightJS.Observer.createShortcuts(Klass.prototype, Klass.EVENTS || RightJS([]));
 
   return Klass;
 }
@@ -179,7 +179,7 @@ Browser.IE6 = Browser.OLD && navigator.userAgent.indexOf("MSIE 6") > 0;
 var Lightbox = new Widget({
 
   extend: {
-    version: '2.2.2',
+    version: '2.2.3',
 
     EVENTS: $w('show hide load'),
 
@@ -522,8 +522,27 @@ var Dialog = new Class(Element, {
 
     // checking the constraints
     var threshold = 100; // px
-    if ((end_size.x + threshold) > win_size.x) { end_size.x = win_size.x - threshold; }
-    if ((end_size.y + threshold) > win_size.y) { end_size.y = win_size.y - threshold; }
+
+    if ((/^<img [^>]+>/img).test(this.content.html())) {
+      // adjusting the sizes propoprtinally for images
+      R([['x', 'y'], ['y', 'x']]).each(function(set) {
+        var dim1 = set[0], dim2 = set[1], old_size = end_size[dim1];
+
+        if ((end_size[dim1] + threshold) > win_size[dim1]) {
+          end_size[dim1] = win_size[dim1] - threshold;
+          end_size[dim2] = Math.floor(end_size[dim2] * end_size[dim1] / old_size);
+        }
+      });
+
+      this.content.first('img').setStyle({
+        width:  end_size.x + 'px',
+        height: end_size.y + 'px'
+      });
+    } else {
+      // adjusting the sizes in case of any other content
+      if ((end_size.x + threshold) > win_size.x) { end_size.x = win_size.x - threshold; }
+      if ((end_size.y + threshold) > win_size.y) { end_size.y = win_size.y - threshold; }
+    }
 
     // the actual resize and reposition
     var end_top = (cur_top * 2 + cur_size.y - end_size.y) / 2;
