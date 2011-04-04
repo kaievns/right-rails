@@ -122,7 +122,7 @@ module RightRails::Helpers::Forms
   #
   # a tags-field for a form
   #
-  def tags_field(object_name, method, options)
+  def tags_field(object_name, method, options={})
     options = Util.tags_options(self, options)
 
     ActionView::Helpers::InstanceTag.new(

@@ -1,7 +1,7 @@
 Gem::Specification.new do |s|
   s.name    = 'right-rails'
-  s.version = '1.1.0'
-  s.date    = '2011-03-01'
+  s.version = '1.2.0'
+  s.date    = '2011-04-04'
 
   s.summary = "RightJS plugin for Rails"
   s.description = "RightRails is a RubyOnRails plugin for the RightJS JavaScript framework. "\
@@ -13,17 +13,16 @@ Gem::Specification.new do |s|
   s.email    = 'nemshilov@gmail.com'
   s.homepage = 'http://github.com/MadRabbit/right-rails'
 
-#  s.post_install_message = %Q{
-#<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<< RIGHT RAILS >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
-#
-#  Please run the following command to copy RightJS scripts and modules in place
-#
-#  script/generate right_rails
-#
-#  \e[5m\e[31mNOTE\e[0m\e[0m: will copy over the RightJS 2.0 files!!!
-#
-#<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<< RIGHT RAILS >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
-#}
+  s.post_install_message = %Q{
+<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<< RIGHT RAILS >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
+
+  Please run the following command to copy RightJS scripts and modules in place
+
+  rails g right_rails
+
+<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<< RIGHT RAILS >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
+
+}
 
 
   s.files = Dir['generators/**/*'] + Dir['public/**/*'] + Dir['lib/**/*'] + Dir['spec/**/*']
