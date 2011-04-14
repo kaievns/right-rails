@@ -1,5 +1,5 @@
 /**
- * RubyOnRails Support Module v2.2.1
+ * RubyOnRails Support Module v2.2.2
  * http://rightjs.org/plugins/rails
  *
  * Copyright (C) 2009-2011 Nikolay Nemshilov
@@ -19,7 +19,7 @@ var R      = RightJS,
     Object = RightJS.Object;
 
 RightJS.Rails = {
-  version: '2.2.1'
+  version: '2.2.2'
 };
 
 
@@ -27,7 +27,7 @@ RightJS.Rails = {
 /**
  * Underscored aliases for Ruby On Rails
  *
- * Copyright (C) 2009-2010 Nikolay Nemshilov
+ * Copyright (C) 2009-2011 Nikolay Nemshilov
  */
 
 // the language and window level aliases
@@ -39,12 +39,12 @@ R([
   RightJS.Options,
   RightJS.Observer,
   RightJS.Observer.prototype,
-  window,
-  document
+  RightJS.Window.prototype,
+  RightJS.Document.prototype
 ]).each(function(object) {
   for (var key in object) {
     try { // some keys are not accessable
-      
+
       if (/[A-Z]/.test(key) && typeof(object[key]) === 'function') {
         var u_key = R(key).underscored();
         if (object[u_key] === null || object[u_key] === undefined) {
@@ -64,9 +64,9 @@ R([
   RightJS.Input
 ]).each(function(object) {
   if (!object) { return; }
-  
+
   var aliases = {}, methods = object.prototype;
-    
+
   for (var key in methods) {
     if (/[A-Z]/.test(key) && typeof(methods[key]) === 'function') {
       object.prototype[R(key).underscored()] = methods[key];
@@ -103,30 +103,29 @@ RightJS.$alias(RightJS.Array.prototype, {
  * Copyright (C) 2010-2011 Nikolay Nemshilov
  */
 // tries to cancel the event via confirmation
-var user_cancels = function(event, element) {
+function user_cancels(event, element) {
   var message = element.get('data-confirm');
   if (message && !confirm(message)) {
     event.stop();
     return true;
   }
-};
+}
 
 // adds XHR events to the element
-var add_xhr_events = function(element, options) {
+function add_xhr_events(element, options) {
   return Object.merge({
     onCreate:   function() { element.fire('ajax:loading',  {xhr: this}); },
     onComplete: function() { element.fire('ajax:complete', {xhr: this}); },
     onSuccess:  function() { element.fire('ajax:success',  {xhr: this}); },
     onFailure:  function() { element.fire('ajax:failure',  {xhr: this}); }
   }, options);
-};
+}
 
 // processes link clicks
-var try_link_submit = function(event) {
-  var link   = event.target,
+function try_link_submit(event, link) {
+  var url    = link.get('href'),
       method = link.get('data-method'),
-      remote = link.get('data-remote'),
-      url    = link.get('href');
+      remote = link.get('data-remote');
 
   if (user_cancels(event, link)) { return; }
   if (method || remote) { event.stop(); }
@@ -142,21 +141,24 @@ var try_link_submit = function(event) {
         token = $$('meta[name=csrf-token]')[0],
         form  = $E('form', {action: url, method: 'post'});
 
+    param = param && param.get('content');
+    token = token && token.get('content');
+
     if (param && token) {
-      form.insert('<input type="hidden" name="'+param.get('content')+'" value="'+token.get('content')+'" />');
+      form.insert('<input type="hidden" name="'+param+'" value="'+token+'" />');
     }
 
     form.insert('<input type="hidden" name="_method" value="'+method+'"/>')
       .insertTo(document.body).submit();
   }
-};
+}
 
 // global events listeners
 $(document).on({
   click: function(event) {
-    var tag = event.target._.tagName;
-    if (tag === 'A' || tag === 'BUTTON') {
-      try_link_submit(event);
+    var link = event.find('a');
+    if (link) {
+      try_link_submit(event, link);
     }
   },
 
@@ -384,13 +386,13 @@ var RR = {
 /**
  * the document onload hooks
  *
- * Copyright (C) 2010 Nikolay Nemshilov
+ * Copyright (C) 2010-2011 Nikolay Nemshilov
  */
 $(document).on({
   ready: function() {
     RR.hide_flash();
   },
-  
+
   click: function(event) {
     RR.process_click(event);
   }
