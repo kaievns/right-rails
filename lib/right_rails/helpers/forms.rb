@@ -130,6 +130,24 @@ module RightRails::Helpers::Forms
     ).to_tags_field_tag(options)
   end
 
+  #
+  # a standalone RTE field tag
+  #
+  def rte_field_tag(name, value, options={})
+    text_area_tag name, value, Util.rte_options(self, options)
+  end
+
+  #
+  # a rte-field for a form
+  #
+  def rte_field(object_name, method, options={})
+    options = Util.rte_options(self, options)
+
+    ActionView::Helpers::InstanceTag.new(
+      object_name, method, self, options.delete(:object)
+    ).to_rte_field_tag(options)
+  end
+
 private
 
   #
@@ -239,6 +257,14 @@ private
         require_modules context, 'tags'
         unit_options(options, 'tags').merge(in_rightjs_1 ? {:rel => 'tags'} : {})
       end
+
+      #
+      # Prepares the RTE widget options
+      #
+      def rte_options(context, options)
+        require_modules context, 'rte'
+        unit_options(options, 'rte')
+      end
     end
   end
 
@@ -272,6 +298,10 @@ private
 
     def tags_field(name, options={})
       @template.tags_field(@object_name, name, objectify_options(options))
+    end
+
+    def rte_field(name, options={})
+      @template.rte_field(@object_name, name, objectify_options(options))
     end
   end
 
@@ -310,6 +340,10 @@ private
 
     def to_tags_field_tag(options)
       to_input_field_tag('text', options)
+    end
+
+    def to_rte_field_tag(options)
+      to_text_area_tag(options)
     end
   end
 

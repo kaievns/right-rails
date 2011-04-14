@@ -282,5 +282,30 @@ describe RightRails::Helpers::Forms do
     end
   end
 
+  describe ".rte_field" do
+    it "should automatically require the 'right/rte.js' file" do
+      rte_field_tag('name', 'some text')
+      rightjs_required_files.should include('right/rte')
+    end
+
+    it "should generate a simple rte_field_tag" do
+      rte_field_tag('name', 'some text').should ==
+        %Q{<textarea data-rte="{}" id="name" name="name">some text</textarea>}
+    end
+
+    it "should generate a rte_field_tag with options" do
+      rte_field_tag('name', 'some text', {
+        :toolbar => 'extra'
+      }).should ==
+        %Q{<textarea data-rte="{toolbar:'extra'}" id="name" name="name">some text</textarea>}
+    end
+
+    it "should generate a rte_field with options" do
+      rte_field('object', 'method', {:toolbar => 'basic'}).should ==
+        %Q{<textarea cols="40" data-rte="{toolbar:'basic'}" id="object_method" } +
+          %{name="object[method]" rows="20"></textarea>}
+    end
+  end
+
 
 end

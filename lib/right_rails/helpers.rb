@@ -133,6 +133,14 @@ module RightRails::Helpers
     maxHeight
   }
 
+  RTE_OPTION_KEYS = %w{
+    toolbar
+    autoresize
+    showToolbar
+    showStatus
+    videoSize
+  }
+
   SORTABLE_OPTION_KEYS = %w{
     url
     direction
