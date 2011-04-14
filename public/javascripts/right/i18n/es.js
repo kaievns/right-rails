@@ -3,8 +3,9 @@
  *
  * Copyright (C) Nikolay Nemshilov
  */
-if (self.Calendar) {
-  $ext(Calendar.i18n, {
+RightJS.Object.each({
+
+  Calendar: {
     Done:           'Hecho',
     Now:            'Ahora',
     NextMonth:      'Mes siguiente',
@@ -12,37 +13,29 @@ if (self.Calendar) {
     NextYear:       'Año siguiente',
     PrevYear:       'Año precedente',
 
-    dayNames:        $w('Domingo Lunes Martes Miércoles Jueves Viernes Sábado'),
-    dayNamesShort:   $w('Dom Lun Mar Mié Jue Vie Sab'),
-    dayNamesMin:     $w('Do Lu Ma Mi Ju Vi Sa'),
-    monthNames:      $w('Enero Febrero Marzo Abril Mayo Junio Julio Agosto Septiembre Octubre Noviembre Diciembre'),
-    monthNamesShort: $w('Ene Feb Mar Abr May Jun Jul Ago Sep Oct Nov Dic')
-  });
-}
+    dayNames:        'Domingo Lunes Martes Miércoles Jueves Viernes Sábado'.split(' '),
+    dayNamesShort:   'Dom Lun Mar Mié Jue Vie Sab'.split(' '),
+    dayNamesMin:     'Do Lu Ma Mi Ju Vi Sa'.split(' '),
+    monthNames:      'Enero Febrero Marzo Abril Mayo Junio Julio Agosto Septiembre Octubre Noviembre Diciembre'.split(' '),
+    monthNamesShort: 'Ene Feb Mar Abr May Jun Jul Ago Sep Oct Nov Dic'.split(' ')
+  },
 
-if (self.Lightbox) {
-  $ext(Lightbox.i18n, {
+  Lightbox: {
     Close: 'Cerrar',
     Prev:  'Imagen precedente',
     Next:  'Imagen siguiente'
-  });
-}
+  },
 
-if (self.InEdit) {
-  $ext(InEdit.i18n, {
+  InEdit: {
     Save:   "Guardar",
     Cancel: "Borrar"
-  });
-}
+  },
 
-if (self.Colorpicker) {
-  $ext(Colorpicker.i18n, {
+  Colorpicker: {
     Done: 'Hecho'
-  });
-}
+  },
 
-if (self.Dialog) {
-  $ext(Dialog.i18n, {
+  Dialog: {
     Ok:       'Ok',
     Close:    'Cerrar',
     Cancel:   'Cancelar',
@@ -53,6 +46,50 @@ if (self.Dialog) {
     Alert:    'Aviso!',
     Confirm:  'Confirmar',
     Prompt:   'Entrar'
-  })
-}
+  },
 
+  Rte: {
+    Clear:       'Clear',
+    Save:        'Save',
+    Source:      'Source',
+    Bold:        'Bold',
+    Italic:      'Italic',
+    Underline:   'Underline',
+    Strike:      'Strike through',
+    Ttext:       'Typetext',
+    Header:      'Header',
+    Cut:         'Cut',
+    Copy:        'Copy',
+    Paste:       'Paste',
+    Left:        'Left',
+    Center:      'Center',
+    Right:       'Right',
+    Justify:     'Justify',
+    Undo:        'Undo',
+    Redo:        'Redo',
+    Code:        'Code block',
+    Quote:       'Block quote',
+    Link:        'Add link',
+    Image:       'Insert image',
+    Video:       'Insert video',
+    Dotlist:     'List with dots',
+    Numlist:     'List with numbers',
+    Indent:      'Indent',
+    Outdent:     'Outdent',
+    Forecolor:   'Text color',
+    Backcolor:   'Background color',
+    Select:      'Select',
+    Remove:      'Remove',
+    Format:      'Format',
+    Fontname:    'Font name',
+    Fontsize:    'Size',
+    Subscript:   'Subscript',
+    Superscript: 'Superscript',
+    UrlAddress:  'URL Address'
+  }
+
+}, function(module, i18n) {
+  if (self[module]) {
+    RightJS.$ext(self[module].i18n, i18n);
+  }
+});

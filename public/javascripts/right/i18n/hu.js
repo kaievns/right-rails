@@ -4,7 +4,13 @@
  * Copyright (C) Arnold Mészáros
  */
 if (self.Calendar) {
-  $ext(Calendar.i18n, {
+  Calendar.Options.format   = 'HU';
+  Calendar.Formats.HU       = '%Y.%m.%d';
+}
+
+RightJS.Object.each({
+
+  Calendar: {
     Done:            'Kész',
     Now:             'Most',
     NextMonth:       'Következő hónap',
@@ -12,44 +18,29 @@ if (self.Calendar) {
     NextYear:        'Következő év',
     PrevYear:        'Előző év',
 
-    dayNames:        $w('Vasárnap Hétfő Kedd Szerda Csütörtök Péntek Szombat'),
-    dayNamesShort:   $w('Va Hé Ke Sze Csü Pé Szo'),
-    dayNamesMin:     $w('V H K Sz Cs P Sz'),
-    monthNames:      $w('Január Február Március Április Május Június Július Augusztus Szeptember Október November December'),
-    monthNamesShort: $w('Jan Feb Már Ápr Máj Jún Júl Aug Szep Okt Nov Dec')
-  });
-  $ext(Calendar.Options, {
-    firstDay:        1,
-    format:          'HU'
-  });
-  $ext(Calendar.Formats, {
-    HU:              '%Y.%m.%d'
-  });
-}
+    dayNames:        'Vasárnap Hétfő Kedd Szerda Csütörtök Péntek Szombat'.split(' '),
+    dayNamesShort:   'Va Hé Ke Sze Csü Pé Szo'.split(' '),
+    dayNamesMin:     'V H K Sz Cs P Sz'.split(' '),
+    monthNames:      'Január Február Március Április Május Június Július Augusztus Szeptember Október November December'.split(' '),
+    monthNamesShort: 'Jan Feb Már Ápr Máj Jún Júl Aug Szep Okt Nov Dec'.split(' ')
+  },
 
-if (self.Lightbox) {
-  $ext(Lightbox.i18n, {
+  Lightbox: {
     Close: 'Bezár',
     Prev:  'Előző kép',
     Next:  'Következő kép'
-  });
-}
+  },
 
-if (self.InEdit) {
-  $ext(InEdit.i18n, {
+  InEdit: {
     Save:   "Save",
     Cancel: "Cancel"
-  });
-}
+  },
 
-if (self.Colorpicker) {
-  $ext(Colorpicker.i18n, {
+  Colorpicker: {
     Done: 'Kész'
-  });
-}
+  },
 
-if (self.Dialog) {
-  $ext(Dialog.i18n, {
+  Dialog: {
     Ok:       'Ok',
     Close:    'Close',
     Cancel:   'Cancel',
@@ -60,6 +51,50 @@ if (self.Dialog) {
     Alert:    'Warning!',
     Confirm:  'Confirm',
     Prompt:   'Enter'
-  })
-}
+  },
 
+  Rte: {
+    Clear:       'Clear',
+    Save:        'Save',
+    Source:      'Source',
+    Bold:        'Bold',
+    Italic:      'Italic',
+    Underline:   'Underline',
+    Strike:      'Strike through',
+    Ttext:       'Typetext',
+    Header:      'Header',
+    Cut:         'Cut',
+    Copy:        'Copy',
+    Paste:       'Paste',
+    Left:        'Left',
+    Center:      'Center',
+    Right:       'Right',
+    Justify:     'Justify',
+    Undo:        'Undo',
+    Redo:        'Redo',
+    Code:        'Code block',
+    Quote:       'Block quote',
+    Link:        'Add link',
+    Image:       'Insert image',
+    Video:       'Insert video',
+    Dotlist:     'List with dots',
+    Numlist:     'List with numbers',
+    Indent:      'Indent',
+    Outdent:     'Outdent',
+    Forecolor:   'Text color',
+    Backcolor:   'Background color',
+    Select:      'Select',
+    Remove:      'Remove',
+    Format:      'Format',
+    Fontname:    'Font name',
+    Fontsize:    'Size',
+    Subscript:   'Subscript',
+    Superscript: 'Superscript',
+    UrlAddress:  'URL Address'
+  }
+
+}, function(module, i18n) {
+  if (self[module]) {
+    RightJS.$ext(self[module].i18n, i18n);
+  }
+});
