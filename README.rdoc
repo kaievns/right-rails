@@ -23,33 +23,25 @@ helpers.
 
 == Installation
 
-RightRails is available as a normal ruby-gem
-
-    sudo gem install right-rails
-
-Or you can install it as a rails plugin
-
-    script/plugin install git://github.com/MadRabbit/right-rails.git
-
-In case of ruby-gem and Rails 3, add the following into your +Gemfile+
+Just add the following into your +Gemfile+
 
     gem 'right-rails'
 
-If you on Rails 2, add the following code into your +environment.rb+
-
-    Rails::Initializer.run do |config|
-      config.gem 'right-rails'
-    end
-
-Once you've done that, run the +right_rails+ generator
+If you're on Rails < 3.1 then run the +right_rails+ generator
 
     script/generate right_rails
 
-Or under Rails 3
+If you're using Rails 3.1 with the pipeline assets handler, then you
+can require things in your +application.js+ file
 
-    rails g right_rails
+    //= require right
+    //= require right/rails
 
-Enjoy!
+Or, you can use +right-rails+ automatic scripts handling by specifying
+
+    = javascript_include_tag :defaults
+
+In your layout file. It will hook all the scripts on its own.
 
 
 == Documentation
