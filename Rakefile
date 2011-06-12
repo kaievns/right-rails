@@ -41,7 +41,7 @@ end
 namespace :rjs do
   CURRENT_DIR         = File.dirname(__FILE__)
 
-  OUTPUT_DIR          = CURRENT_DIR + '/public'
+  OUTPUT_DIR          = CURRENT_DIR + '/vendor'
   OUTPUT_JSS_DIR      = OUTPUT_DIR + "/javascripts"
   OUTPUT_IMG_DIR      = OUTPUT_DIR + "/images/rightjs-ui"
 
@@ -127,7 +127,7 @@ namespace :rjs do
 
     FileList["#{OUTPUT_JSS_DIR}/right/*.js"].each do |filename|
       old_content = File.read(filename)
-      new_content = old_content.gsub('url(../../img/', "url(/images/rightjs-ui/")
+      new_content = old_content.gsub('url(../../img/', "url(/assets/rightjs-ui/")
 
       if old_content != new_content
         puts "Patching: #{File.basename(filename)}"
