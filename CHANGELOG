@@ -1,3 +1,7 @@
+2011-06-12 Nikolay Nemshilov
+  o Version 1.2.2
+    * Rails 3.1 assets pipeline support
+
 2011-04-04 Nikolay Nemshilov
   o Version 1.2.0
     * RightJS 2.2.3 and plugins update
