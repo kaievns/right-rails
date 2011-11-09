@@ -13,9 +13,6 @@ class RightRailsGenerator < Rails::Generators::Base
     # copying the javascript javascript files
     directory javascripts_path , "public/javascripts/"
 
-    # creating the iframed uploads layout
-    copy_file source_path + "/templates/iframed.html.erb", "app/views/layouts/iframed.html.erb"
-
     # copying the images in place
     directory images_path, "public/images/rightjs-ui"
   end

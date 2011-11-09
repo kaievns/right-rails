@@ -22,9 +22,6 @@ class RightRailsGenerator < Rails::Generator::Base
         )
       end
 
-      # creating the iframed uploads layout
-      m.file "iframed.html.erb", "app/views/layouts/iframed.html.erb"
-
       # copying the images in place
       m.directory "public/images/rightjs-ui"
 
