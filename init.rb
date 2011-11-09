@@ -1,6 +1,7 @@
 # Include hook code here
 
 require 'right_rails'
+require 'rjs_renderer'
 
 if defined?(Rails)
   unless ::Rails.version < "3.1"
