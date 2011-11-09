@@ -1,5 +1,5 @@
 /**
- * RightJS-UI Colorpicker v2.2.0
+ * RightJS-UI Colorpicker v2.2.1
  * http://rightjs.org/ui/colorpicker
  *
  * Copyright (C) 2010-2011 Nikolay Nemshilov
@@ -414,21 +414,23 @@ var Colorpicker = new Widget({
   include: [Toggler, Assignable],
 
   extend: {
-    version: '2.2.0',
+    version: '2.2.1',
 
     EVENTS: $w('change show hide done'),
 
     Options: {
-      format:     'hex',   // hex or rgb
+      format:       'hex',   // hex or rgb
 
-      update:     null,    // an element to update with the color text
-      updateBg:   null,    // an element to update it's background color
-      trigger:    null,    // a trigger element for the popup
+      update:       null,    // an element to update with the color text
+      updateBg:     null,    // an element to update it's background color
+      updateBorder: null,    // an element to update it's border color
+      updateColor:  null,    // an element to update it's text color
+      trigger:      null,    // a trigger element for the popup
 
-      fxName:     'fade',  // popup displaying fx
-      fxDuration: 'short',
+      fxName:       'fade',  // popup displaying fx
+      fxDuration:   'short',
 
-      cssRule:    '*[data-colorpicker]'
+      cssRule:      '*[data-colorpicker]'
     },
 
     i18n: {
@@ -472,6 +474,8 @@ var Colorpicker = new Widget({
     // hooking up the elements to update
     if (this.options.update)   { this.assignTo(this.options.update, this.options.trigger); }
     if (this.options.updateBg) { this.updateBg(this.options.updateBg); }
+    if (this.options.updateBorder) { this.updateBorder(this.options.updateBorder); }
+    if (this.options.updateColor) { this.updateColor(this.options.updateColor); }
 
     // setting up the initial values
     this.tint   = R([1, 0, 0]);
@@ -535,6 +539,41 @@ var Colorpicker = new Widget({
     }
     return this;
   },
+
+    /**
+   * Assigns the colorpicer to automatically update
+   * given element's text color on changes
+   *
+   * @param mixed element reference
+   * @return Colorpicker this
+   */
+    updateColor: function(element_ref) {
+    var element = $(element_ref);
+    if (element) {
+      this.onChange(R(function(color) {
+        element._.style.color = this.toRgb();
+      }).bind(this));
+    }
+    return this;
+  },
+
+    /**
+   * Assigns the colorpicer to automatically update
+   * given element's border color on changes
+   *
+   * @param mixed element reference
+   * @return Colorpicker this
+   */
+  updateBorder: function(element_ref) {
+    var element = $(element_ref);
+    if (element) {
+      this.onChange(R(function(color) {
+        element._.style.borderColor = this.toRgb();
+      }).bind(this));
+    }
+    return this;
+  },
+
 
   /**
    * Inlines the widget into the given element
@@ -964,17 +1003,17 @@ $(document).on({
 });
 
 
-var embed_style = document.createElement('style'),
-    embed_rules = document.createTextNode("*.rui-button{display:inline-block; *display:inline; *zoom:1;height:1em;line-height:1em;margin:0;padding:.2em .5em;text-align:center;border:1px solid #CCC;border-radius:.2em;-moz-border-radius:.2em;-webkit-border-radius:.2em;cursor:pointer;color:#333;background-color:#FFF;user-select:none;-moz-user-select:none;-webkit-user-select:none} *.rui-button:hover{color:#111;border-color:#999;background-color:#DDD;box-shadow:#888 0 0 .1em;-moz-box-shadow:#888 0 0 .1em;-webkit-box-shadow:#888 0 0 .1em} *.rui-button:active{color:#000;border-color:#777;text-indent:1px;box-shadow:none;-moz-box-shadow:none;-webkit-box-shadow:none} *.rui-button-disabled, *.rui-button-disabled:hover, *.rui-button-disabled:active{color:#888;background:#DDD;border-color:#CCC;cursor:default;text-indent:0;box-shadow:none;-moz-box-shadow:none;-webkit-box-shadow:none}div.rui-re-anchor{margin:0;padding:0;background:none;border:none;float:none;display:inline;position:absolute;z-index:9999}.rui-panel{margin:0;padding:.5em;position:relative;background-color:#EEE;border:1px solid #BBB;border-radius:.3em;-moz-border-radius:.3em;-webkit-border-radius:.3em;box-shadow:.15em .3em .5em #BBB;-moz-box-shadow:.15em .3em .5em #BBB;-webkit-box-shadow:.15em .3em .5em #BBB;cursor:default}div.rui-colorpicker .field,div.rui-colorpicker .field *,div.rui-colorpicker .colors,div.rui-colorpicker .colors *{border:none;background:none;width:auto;height:auto;position:static;float:none;top:none;left:none;right:none;bottom:none;margin:0;padding:0;display:block;font-weight:normal;vertical-align:center}div.rui-colorpicker div.field,div.rui-colorpicker div.field div.pointer,div.rui-colorpicker div.colors,div.rui-colorpicker div.colors div.pointer{background:url(/assets/rightjs-ui/colorpicker.png) no-repeat 0 0}div.rui-colorpicker div.field,div.rui-colorpicker div.colors,div.rui-colorpicker div.controls{display:inline-block; *display:inline; *zoom:1;position:relative;vertical-align:top;height:150px}div.rui-colorpicker div.field div.pointer,div.rui-colorpicker div.colors div.pointer{position:absolute;top:0px;left:0;width:9px;height:9px}div.rui-colorpicker input.display,div.rui-colorpicker div.preview,div.rui-colorpicker div.rgb-display,div.rui-colorpicker input.rui-ui-button{font-size:100%;display:block;width:auto;padding:0 .2em}div.rui-colorpicker input.display,div.rui-colorpicker div.preview,div.rui-colorpicker div.rgb-display input,div.rui-colorpicker input.rui-ui-button{border:1px solid #AAA;-moz-border-radius:.2em;-webkit-border-radius:.2em}div.rui-colorpicker div.field{width:150px;background-color:red;cursor:crosshair;margin-right:1.2em}div.rui-colorpicker div.field div.pointer{background-position:-170px 0;margin-left:-2px;margin-top:-2px}div.rui-colorpicker div.colors{width:16px;background-position:-150px 0;border-color:#EEE;cursor:pointer;margin-right:.6em}div.rui-colorpicker div.colors div.pointer{cursor:default;background-position:-170px -20px;margin-left:-8px;margin-top:-3px}div.rui-colorpicker div.controls{width:5em}div.rui-colorpicker div.preview{height:2em;background:white;border-color:#BBB}div.rui-colorpicker input.display{margin-top:.5em;background:#FFF;width:4.5em}div.rui-colorpicker div.rgb-display{padding:0;text-align:right;margin-top:.5em}div.rui-colorpicker div.rgb-display label{display:inline}div.rui-colorpicker div.rgb-display label:after{content:none}div.rui-colorpicker div.rgb-display input{vertical-align:top;font-size:100%;width:2em;text-align:right;margin-left:.2em;padding:0 .2em;background:#FFF;margin-bottom:1px;display:inline}div.rui-colorpicker div.rui-button{cursor:pointer;position:absolute;bottom:0;right:0;width:4em}div.rui-colorpicker-inline{display:inline-block; *display:inline; *zoom:1;position:relative;box-shadow:none;-moz-box-shadow:none;-webkit-box-shadow:none;z-index:auto}");
-
-embed_style.type = 'text/css';
-document.getElementsByTagName('head')[0].appendChild(embed_style);
-
-if(embed_style.styleSheet) {
-  embed_style.styleSheet.cssText = embed_rules.nodeValue;
-} else {
-  embed_style.appendChild(embed_rules);
-}
+var embed_style = document.createElement('style'),                 
+    embed_rules = document.createTextNode("*.rui-button{display:inline-block; *display:inline; *zoom:1;height:1em;line-height:1em;margin:0;padding:.2em .5em;text-align:center;border:1px solid #CCC;border-radius:.2em;-moz-border-radius:.2em;-webkit-border-radius:.2em;cursor:pointer;color:#333;background-color:#FFF;user-select:none;-moz-user-select:none;-webkit-user-select:none} *.rui-button:hover{color:#111;border-color:#999;background-color:#DDD;box-shadow:#888 0 0 .1em;-moz-box-shadow:#888 0 0 .1em;-webkit-box-shadow:#888 0 0 .1em} *.rui-button:active{color:#000;border-color:#777;text-indent:1px;box-shadow:none;-moz-box-shadow:none;-webkit-box-shadow:none} *.rui-button-disabled, *.rui-button-disabled:hover, *.rui-button-disabled:active{color:#888;background:#DDD;border-color:#CCC;cursor:default;text-indent:0;box-shadow:none;-moz-box-shadow:none;-webkit-box-shadow:none}div.rui-re-anchor{margin:0;padding:0;background:none;border:none;float:none;display:inline;position:absolute;z-index:9999}.rui-panel{margin:0;padding:.5em;position:relative;background-color:#EEE;border:1px solid #BBB;border-radius:.3em;-moz-border-radius:.3em;-webkit-border-radius:.3em;box-shadow:.15em .3em .5em #BBB;-moz-box-shadow:.15em .3em .5em #BBB;-webkit-box-shadow:.15em .3em .5em #BBB;cursor:default}div.rui-colorpicker .field,div.rui-colorpicker .field *,div.rui-colorpicker .colors,div.rui-colorpicker .colors *{border:none;background:none;width:auto;height:auto;position:static;float:none;top:none;left:none;right:none;bottom:none;margin:0;padding:0;display:block;font-weight:normal;vertical-align:center}div.rui-colorpicker div.field,div.rui-colorpicker div.field div.pointer,div.rui-colorpicker div.colors,div.rui-colorpicker div.colors div.pointer{background:url(/assets/rightjs-ui/colorpicker.png) no-repeat 0 0}div.rui-colorpicker div.field,div.rui-colorpicker div.colors,div.rui-colorpicker div.controls{display:inline-block; *display:inline; *zoom:1;position:relative;vertical-align:top;height:150px}div.rui-colorpicker div.field div.pointer,div.rui-colorpicker div.colors div.pointer{position:absolute;top:0px;left:0;width:9px;height:9px}div.rui-colorpicker input.display,div.rui-colorpicker div.preview,div.rui-colorpicker div.rgb-display,div.rui-colorpicker input.rui-ui-button{font-size:100%;display:block;width:auto;padding:0 .2em}div.rui-colorpicker input.display,div.rui-colorpicker div.preview,div.rui-colorpicker div.rgb-display input,div.rui-colorpicker input.rui-ui-button{border:1px solid #AAA;-moz-border-radius:.2em;-webkit-border-radius:.2em}div.rui-colorpicker div.field{width:150px;background-color:red;cursor:crosshair;margin-right:1.2em}div.rui-colorpicker div.field div.pointer{background-position:-170px 0;margin-left:-2px;margin-top:-2px}div.rui-colorpicker div.colors{width:16px;background-position:-150px 0;border-color:#EEE;cursor:pointer;margin-right:.6em}div.rui-colorpicker div.colors div.pointer{cursor:default;background-position:-170px -20px;margin-left:-8px;margin-top:-3px}div.rui-colorpicker div.controls{width:5em}div.rui-colorpicker div.preview{height:2em;background:white;border-color:#BBB}div.rui-colorpicker input.display{margin-top:.5em;background:#FFF;width:4.5em}div.rui-colorpicker div.rgb-display{padding:0;text-align:right;margin-top:.5em}div.rui-colorpicker div.rgb-display label{display:inline}div.rui-colorpicker div.rgb-display label:after{content:none}div.rui-colorpicker div.rgb-display input{vertical-align:top;font-size:100%;width:2em;text-align:right;margin-left:.2em;padding:0 .2em;background:#FFF;margin-bottom:1px;display:inline}div.rui-colorpicker div.rui-button{cursor:pointer;position:absolute;bottom:0;right:0;width:4em}div.rui-colorpicker-inline{display:inline-block; *display:inline; *zoom:1;position:relative;box-shadow:none;-moz-box-shadow:none;-webkit-box-shadow:none;z-index:auto}");      
+                                                                   
+embed_style.type = 'text/css';                                     
+document.getElementsByTagName('head')[0].appendChild(embed_style); 
+                                                                   
+if(embed_style.styleSheet) {                                       
+  embed_style.styleSheet.cssText = embed_rules.nodeValue;          
+} else {                                                           
+  embed_style.appendChild(embed_rules);                            
+}                                                                  
 
 
 return Colorpicker;

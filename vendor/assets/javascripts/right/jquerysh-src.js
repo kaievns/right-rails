@@ -1,5 +1,5 @@
 /**
- * jQuery-like interfaces v2.2.0
+ * jQuery-like interfaces v2.2.1
  * http://rightjs.org/plugins/jquerysh
  *
  * Copyright (C) 2009-2011 Nikolay Nemshilov
@@ -28,7 +28,7 @@ var rjs_$   = RightJS.$,
  * Copyright (C) 2011 Nikolay Nemshilov
  */
 RightJS.jQuerysh = {
-  version: '2.2.0',
+  version: '2.2.1',
 
   // collection methods
   collectionMethods: {
@@ -233,11 +233,11 @@ RightJS.Element.include({
     return this.fade('out');
   },
 
-  slideIn: function() {
+  slideDown: function() {
     return this.slide('in');
   },
 
-  slideOut: function() {
+  slideUp: function() {
     return this.slide('out');
   }
 

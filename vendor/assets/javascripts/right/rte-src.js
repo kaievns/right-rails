@@ -1,5 +1,5 @@
 /**
- * RightJS-UI RTE v2.2.0
+ * RightJS-UI RTE v2.2.1
  * http://rightjs.org/ui/rte
  *
  * Copyright (C) 2010-2011 Nikolay Nemshilov
@@ -133,7 +133,7 @@ var R       = RightJS,
 var Rte = new Widget({
 
   extend: {
-    version: '2.2.0',
+    version: '2.2.1',
 
     EVENTS: $w('change focus blur'),
 
@@ -258,6 +258,7 @@ var Rte = new Widget({
       Cut:         'Cut',
       Copy:        'Copy',
       Paste:       'Paste',
+      Pastetext:   'Paste as text',
       Left:        'Left',
       Center:      'Center',
       Right:       'Right',
@@ -2132,6 +2133,15 @@ Rte.Tools.Paste = new Class(Rte.Tools.Cut, {
 });
 
 /**
+ * The paste action
+ *
+ * Copyrigth (C) 2010-2011 Nikolay Nemshilov
+ */
+Rte.Tools.Pastetext = new Class(Rte.Tools.Command, {
+  command:  'paste'
+});
+
+/**
  * the 'left' tool
  *
  * Copyright (C) 2010 Nikolay Nemshilov
@@ -2417,6 +2427,16 @@ Rte.Tools.Source = new Class(Rte.Tool, {
     .insertTo(this.rte.editor, 'before')
     .resize(this.rte.editor.size())
     .setValue('' + this.rte.value())
+    .onKeydown(function(event) {
+      var raw = event._;
+
+      if (raw.metaKey || raw.ctrlKey) {
+        if (raw.keyCode == 69) { // Ctrl+E
+          event.stop();
+          this.exec();
+        }
+      }
+    }.bind(this))
     .focus();
 
     this.rte.focused = true;
@@ -2668,17 +2688,17 @@ Input.include({
   }
 });
 
-var embed_style = document.createElement('style'),
-    embed_rules = document.createTextNode("div.rui-rte,div.rui-rte-toolbar,div.rui-rte-toolbar *,div.rui-rte-editor,div.rui-rte-status,div.rui-rte-status *{margin:0;padding:0;background:none;border:none;width:auto;height:auto}textarea[data-rte]{visibility:hidden}div.rui-rte{display:inline-block; *display:inline; *zoom:1;position:relative}div.rui-rte-toolbar{padding:.15em .3em;background:#eee;border-radius:.25em .25em 0 0;-moz-border-radius:.25em .25em 0 0;-webkit-border-radius:.25em .25em 0 0;border:1px solid #ccc;border-bottom:none}div.rui-rte-toolbar div.line{display:inline-block; *display:inline; *zoom:1;margin-bottom:1px}div.rui-rte-toolbar div.bar{display:inline-block; *display:inline; *zoom:1;margin-right:2px}div.rui-rte-toolbar div.tool{display:inline-block; *display:inline; *zoom:1;margin-right:1px;vertical-align:middle;position:relative;cursor:pointer;border:1px solid #bbb;background-image:url(/assets/rightjs-ui/rte.png);background-position:0px 0px;background-color:#fff;border-radius:.25em;-moz-border-radius:.25em;-webkit-border-radius:.25em}div.rui-rte-toolbar div.tool:hover{background-color:#ddd;border-color:#777}div.rui-rte-toolbar div.active{background-position:-20px 0px;background-color:#eee;border-color:#666;box-shadow:#aaa .025em .025em .5em;-moz-box-shadow:#aaa .025em .025em .5em;-webkit-box-shadow:#aaa .025em .025em .5em}div.rui-rte-toolbar div.disabled,div.rui-rte-toolbar div.disabled:hover{opacity:.4;filter:alpha(opacity=40);background-position:-40px 0px;background-color:#eee;border-color:#aaa;cursor:default}div.rui-rte-toolbar div.highlight{background-color:#BBB;border-color:#666}div.rui-rte-toolbar div.icon{height:20px;width:20px;background-image:url(/assets/rightjs-ui/rte.png);background-repeat:no-repeat;background-position:20px 20px}div.rui-rte-toolbar div.save div.icon{background-position:0px -20px}div.rui-rte-toolbar div.clear div.icon{background-position:-20px -20px}div.rui-rte-toolbar div.source div.icon{background-position:-40px -20px}div.rui-rte-toolbar div.bold div.icon{background-position:0px -40px}div.rui-rte-toolbar div.italic div.icon{background-position:-20px -40px}div.rui-rte-toolbar div.underline div.icon{background-position:-40px -40px}div.rui-rte-toolbar div.strike div.icon{background-position:-60px -40px}div.rui-rte-toolbar div.cut div.icon{background-position:0px -60px}div.rui-rte-toolbar div.copy div.icon{background-position:-20px -60px}div.rui-rte-toolbar div.paste div.icon{background-position:-40px -60px}div.rui-rte-toolbar div.left div.icon{background-position:0px -80px}div.rui-rte-toolbar div.center div.icon{background-position:-20px -80px}div.rui-rte-toolbar div.right div.icon{background-position:-40px -80px}div.rui-rte-toolbar div.justify div.icon{background-position:-60px -80px}div.rui-rte-toolbar div.undo div.icon{background-position:0px -100px}div.rui-rte-toolbar div.redo div.icon{background-position:-20px -100px}div.rui-rte-toolbar div.quote div.icon{background-position:0px -120px}div.rui-rte-toolbar div.code div.icon{background-position:-20px -120px}div.rui-rte-toolbar div.ttext div.icon{background-position:-40px -120px}div.rui-rte-toolbar div.header div.icon{background-position:-60px -120px}div.rui-rte-toolbar div.image div.icon{background-position:0px -140px}div.rui-rte-toolbar div.link div.icon{background-position:-20px -140px}div.rui-rte-toolbar div.video div.icon{background-position:-40px -140px}div.rui-rte-toolbar div.dotlist div.icon{background-position:0px -160px}div.rui-rte-toolbar div.numlist div.icon{background-position:-20px -160px}div.rui-rte-toolbar div.indent div.icon{background-position:-40px -160px}div.rui-rte-toolbar div.outdent div.icon{background-position:-60px -160px}div.rui-rte-toolbar div.forecolor div.icon{background-position:0px -180px}div.rui-rte-toolbar div.backcolor div.icon{background-position:-20px -180px}div.rui-rte-toolbar div.symbol div.icon{background-position:0px -200px}div.rui-rte-toolbar div.subscript div.icon{background-position:-20px -200px}div.rui-rte-toolbar div.superscript div.icon{background-position:-40px -200px}div.rui-rte-toolbar div.with-options{padding-right:8px}div.rui-rte-toolbar div.with-options div.trigger{position:absolute;right:0;height:100%;width:7px;text-align:center;background:#ccc;border-left:1px solid #bbb}div.rui-rte-toolbar div.bar div:hover div.trigger,div.rui-rte-toolbar div.bar div.active div.trigger{background:#aaa;border-color:#888}div.rui-rte-toolbar div.with-options div.icon{display:none}div.rui-rte-toolbar div.with-options div.display{display:block;line-height:20px;padding:0 6px;margin:0;color:#222;font-size:12px;background:#f8f8f8}div.rui-rte-toolbar div.with-options ul.options,div.rui-rte-toolbar div.with-options ul.options li{list-style:none;margin:0;padding:0}div.rui-rte-toolbar div.with-options ul.options{display:none;cursor:default;position:absolute;margin-bottom:1px;margin-left:-1px;background:#fff;border:1px solid #aaa;border-radius:.25em;-moz-border-radius:.25em;-webkit-border-radius:.25em;box-shadow:#bbb .1em .1em .25em;-moz-box-shadow:#bbb .1em .1em .25em;-webkit-box-shadow:#bbb .1em .1em .25em}div.rui-rte-toolbar div.with-options ul.options li{padding:.2em .5em;white-space:nowrap;cursor:pointer}div.rui-rte-toolbar div.with-options ul.options li:hover{background-color:#eee}div.rui-rte-toolbar div.with-options ul.options li> *{margin:0;padding:0;border:none;position:static}div.rui-rte-toolbar div.color div.icon{display:block}div.rui-rte-toolbar div.color ul.options{padding-bottom:.5em}div.rui-rte-toolbar div.color ul.options li.group,div.rui-rte-toolbar div.color ul.options li.group:hover{background:none}div.rui-rte-toolbar div.color ul.options li.group ul{width:144px;clear:both;padding-top:.5em}div.rui-rte-toolbar div.color ul.options li.group ul li{float:left;width:16px;height:16px;line-height:16px;font-size:80%;text-align:center;text-indent:-9999em;padding:0;cursor:pointer;border:1px solid transparent}div.rui-rte-toolbar div.color ul.options li.group ul li:hover,div.rui-rte-toolbar div.color ul.options li.group ul li.active{background:none;border-color:#444;border-radius:.1em;-moz-border-radius:.1em;-webkit-border-radius:.1em}div.rui-rte-toolbar div.color ul.options li.group ul li.active{text-indent:0}div.rui-rte-toolbar div.color div.display{position:absolute;text-indent:-9999em;bottom:2px;left:3px;margin:0;padding:0;width:14px;height:4px;border-radius:.1em;-moz-border-radius:.1em;-webkit-border-radius:.1em}div.rui-rte-toolbar div.color ul.options li.group ul li.none{border-color:#444}div.rui-rte-toolbar div.color ul.options li.group ul li.label,div.rui-rte-toolbar div.color ul.options li.group ul li.label:hover{text-indent:0;border:none;margin-left:.5em;font-size:1em;cursor:default}div.rui-rte-editor{outline:none;outline:hidden;padding:.1em .3em;overflow:auto;background:white;border:1px solid #ccc}div.rui-rte-editor:focus{border-color:#aaa}div.rui-rte-editor> *:first-child{margin-top:0}div.rui-rte-editor> *:last-child{margin-bottom:0}div.rui-rte textarea.rui-rte-source{position:absolute;outline:none;resize:none}div.rui-rte-status{font-size:90%;height:1.4em;padding:0 .5em;color:#888;background:#eee;border:1px solid #ccc;border-top:none;border-radius:0 0 .25em .25em;-moz-border-radius:0 0 .25em .25em;-webkit-border-radius:0 0 .25em .25em}");
-
-embed_style.type = 'text/css';
-document.getElementsByTagName('head')[0].appendChild(embed_style);
-
-if(embed_style.styleSheet) {
-  embed_style.styleSheet.cssText = embed_rules.nodeValue;
-} else {
-  embed_style.appendChild(embed_rules);
-}
+var embed_style = document.createElement('style'),                 
+    embed_rules = document.createTextNode("div.rui-rte,div.rui-rte-toolbar,div.rui-rte-toolbar *,div.rui-rte-editor,div.rui-rte-status,div.rui-rte-status *{margin:0;padding:0;background:none;border:none;width:auto;height:auto}textarea[data-rte]{visibility:hidden}div.rui-rte{display:inline-block; *display:inline; *zoom:1;position:relative}div.rui-rte-toolbar{padding:.15em .3em;background:#eee;border-radius:.25em .25em 0 0;-moz-border-radius:.25em .25em 0 0;-webkit-border-radius:.25em .25em 0 0;border:1px solid #ccc;border-bottom:none}div.rui-rte-toolbar div.line{display:inline-block; *display:inline; *zoom:1;margin-bottom:1px}div.rui-rte-toolbar div.bar{display:inline-block; *display:inline; *zoom:1;margin-right:2px}div.rui-rte-toolbar div.tool{display:inline-block; *display:inline; *zoom:1;margin-right:1px;vertical-align:middle;position:relative;cursor:pointer;border:1px solid #bbb;background-image:url(/assets/rightjs-ui/rte.png);background-position:0px 0px;background-color:#fff;border-radius:.25em;-moz-border-radius:.25em;-webkit-border-radius:.25em}div.rui-rte-toolbar div.tool:hover{background-color:#ddd;border-color:#777}div.rui-rte-toolbar div.active{background-position:-20px 0px;background-color:#eee;border-color:#666;box-shadow:#aaa .025em .025em .5em;-moz-box-shadow:#aaa .025em .025em .5em;-webkit-box-shadow:#aaa .025em .025em .5em}div.rui-rte-toolbar div.disabled,div.rui-rte-toolbar div.disabled:hover{opacity:.4;filter:alpha(opacity=40);background-position:-40px 0px;background-color:#eee;border-color:#aaa;cursor:default}div.rui-rte-toolbar div.highlight{background-color:#BBB;border-color:#666}div.rui-rte-toolbar div.icon{height:20px;width:20px;background-image:url(/assets/rightjs-ui/rte.png);background-repeat:no-repeat;background-position:20px 20px}div.rui-rte-toolbar div.save div.icon{background-position:0px -20px}div.rui-rte-toolbar div.clear div.icon{background-position:-20px -20px}div.rui-rte-toolbar div.source div.icon{background-position:-40px -20px}div.rui-rte-toolbar div.bold div.icon{background-position:0px -40px}div.rui-rte-toolbar div.italic div.icon{background-position:-20px -40px}div.rui-rte-toolbar div.underline div.icon{background-position:-40px -40px}div.rui-rte-toolbar div.strike div.icon{background-position:-60px -40px}div.rui-rte-toolbar div.cut div.icon{background-position:0px -60px}div.rui-rte-toolbar div.copy div.icon{background-position:-20px -60px}div.rui-rte-toolbar div.paste div.icon{background-position:-40px -60px}div.rui-rte-toolbar div.pastetext div.icon{background-position:-60px -60px}div.rui-rte-toolbar div.left div.icon{background-position:0px -80px}div.rui-rte-toolbar div.center div.icon{background-position:-20px -80px}div.rui-rte-toolbar div.right div.icon{background-position:-40px -80px}div.rui-rte-toolbar div.justify div.icon{background-position:-60px -80px}div.rui-rte-toolbar div.undo div.icon{background-position:0px -100px}div.rui-rte-toolbar div.redo div.icon{background-position:-20px -100px}div.rui-rte-toolbar div.quote div.icon{background-position:0px -120px}div.rui-rte-toolbar div.code div.icon{background-position:-20px -120px}div.rui-rte-toolbar div.ttext div.icon{background-position:-40px -120px}div.rui-rte-toolbar div.header div.icon{background-position:-60px -120px}div.rui-rte-toolbar div.image div.icon{background-position:0px -140px}div.rui-rte-toolbar div.link div.icon{background-position:-20px -140px}div.rui-rte-toolbar div.video div.icon{background-position:-40px -140px}div.rui-rte-toolbar div.dotlist div.icon{background-position:0px -160px}div.rui-rte-toolbar div.numlist div.icon{background-position:-20px -160px}div.rui-rte-toolbar div.indent div.icon{background-position:-40px -160px}div.rui-rte-toolbar div.outdent div.icon{background-position:-60px -160px}div.rui-rte-toolbar div.forecolor div.icon{background-position:0px -180px}div.rui-rte-toolbar div.backcolor div.icon{background-position:-20px -180px}div.rui-rte-toolbar div.symbol div.icon{background-position:0px -200px}div.rui-rte-toolbar div.subscript div.icon{background-position:-20px -200px}div.rui-rte-toolbar div.superscript div.icon{background-position:-40px -200px}div.rui-rte-toolbar div.with-options{padding-right:8px}div.rui-rte-toolbar div.with-options div.trigger{position:absolute;right:0;height:100%;width:7px;text-align:center;background:#ccc;border-left:1px solid #bbb}div.rui-rte-toolbar div.bar div:hover div.trigger,div.rui-rte-toolbar div.bar div.active div.trigger{background:#aaa;border-color:#888}div.rui-rte-toolbar div.with-options div.icon{display:none}div.rui-rte-toolbar div.with-options div.display{display:block;line-height:20px;padding:0 6px;margin:0;color:#222;font-size:12px;background:#f8f8f8}div.rui-rte-toolbar div.with-options ul.options,div.rui-rte-toolbar div.with-options ul.options li{list-style:none;margin:0;padding:0}div.rui-rte-toolbar div.with-options ul.options{display:none;cursor:default;position:absolute;margin-bottom:1px;margin-left:-1px;background:#fff;border:1px solid #aaa;border-radius:.25em;-moz-border-radius:.25em;-webkit-border-radius:.25em;box-shadow:#bbb .1em .1em .25em;-moz-box-shadow:#bbb .1em .1em .25em;-webkit-box-shadow:#bbb .1em .1em .25em}div.rui-rte-toolbar div.with-options ul.options li{padding:.2em .5em;white-space:nowrap;cursor:pointer}div.rui-rte-toolbar div.with-options ul.options li:hover{background-color:#eee}div.rui-rte-toolbar div.with-options ul.options li> *{margin:0;padding:0;border:none;position:static}div.rui-rte-toolbar div.color div.icon{display:block}div.rui-rte-toolbar div.color ul.options{padding-bottom:.5em}div.rui-rte-toolbar div.color ul.options li.group,div.rui-rte-toolbar div.color ul.options li.group:hover{background:none}div.rui-rte-toolbar div.color ul.options li.group ul{width:144px;clear:both;padding-top:.5em}div.rui-rte-toolbar div.color ul.options li.group ul li{float:left;width:16px;height:16px;line-height:16px;font-size:80%;text-align:center;text-indent:-9999em;padding:0;cursor:pointer;border:1px solid transparent}div.rui-rte-toolbar div.color ul.options li.group ul li:hover,div.rui-rte-toolbar div.color ul.options li.group ul li.active{background:none;border-color:#444;border-radius:.1em;-moz-border-radius:.1em;-webkit-border-radius:.1em}div.rui-rte-toolbar div.color ul.options li.group ul li.active{text-indent:0}div.rui-rte-toolbar div.color div.display{position:absolute;text-indent:-9999em;bottom:2px;left:3px;margin:0;padding:0;width:14px;height:4px;border-radius:.1em;-moz-border-radius:.1em;-webkit-border-radius:.1em}div.rui-rte-toolbar div.color ul.options li.group ul li.none{border-color:#444}div.rui-rte-toolbar div.color ul.options li.group ul li.label,div.rui-rte-toolbar div.color ul.options li.group ul li.label:hover{text-indent:0;border:none;margin-left:.5em;font-size:1em;cursor:default}div.rui-rte-editor{outline:none;outline:hidden;padding:.1em .3em;overflow:auto;background:white;border:1px solid #ccc}div.rui-rte-editor:focus{border-color:#aaa}div.rui-rte-editor> *:first-child{margin-top:0}div.rui-rte-editor> *:last-child{margin-bottom:0}div.rui-rte textarea.rui-rte-source{position:absolute;outline:none;resize:none}div.rui-rte-status{font-size:90%;height:1.4em;padding:0 .5em;color:#888;background:#eee;border:1px solid #ccc;border-top:none;border-radius:0 0 .25em .25em;-moz-border-radius:0 0 .25em .25em;-webkit-border-radius:0 0 .25em .25em}");      
+                                                                   
+embed_style.type = 'text/css';                                     
+document.getElementsByTagName('head')[0].appendChild(embed_style); 
+                                                                   
+if(embed_style.styleSheet) {                                       
+  embed_style.styleSheet.cssText = embed_rules.nodeValue;          
+} else {                                                           
+  embed_style.appendChild(embed_rules);                            
+}                                                                  
 
 
 return Rte;
