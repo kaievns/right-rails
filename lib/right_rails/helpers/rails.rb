@@ -56,6 +56,18 @@ module RightRails::Helpers::Rails
   end
 
   #
+  # Getting back Rails 3.0 kind of method that supports blocks
+  #
+  def button_to_function(name, *args, &block)
+    html_options = args.extract_options!.symbolize_keys
+
+    function = block_given? ? update_page(&block) : args[0] || ''
+    onclick = "#{"#{html_options[:onclick]}; " if html_options[:onclick]}#{function};"
+
+    tag(:input, html_options.merge(:type => 'button', :value => name, :onclick => onclick))
+  end
+
+  #
   # Replacing `periodically_call_remote` method
   #
   def periodically_call_remote(options={})
@@ -67,21 +79,28 @@ module RightRails::Helpers::Rails
   #
   # replacing the draggables generator to make our autoscripts stuff working
   #
-  def draggable_element_js(*args)
+  def draggable_element_js(element_id, options)
     rightjs_require_module 'dnd'
-
-    super *args
+    %(new Draggable(#{ActiveSupport::JSON.encode(element_id)}, #{options_for_javascript(options)});)
   end
 
   #
   # replace the droppables generator to be used with RightJS
   #
-  def drop_receiving_element_js(*args)
+  def drop_receiving_element_js(element_id, options={})
     rightjs_require_module 'dnd'
 
-    super(*args).gsub!('Droppables.add', 'new Droppable'
-      ).gsub!('element.id', 'draggable.element.id'
-      ).gsub!('(element)', '(draggable)')
+    options[:with]     ||= "'id=' + encodeURIComponent(draggable.element.id)"
+    options[:onDrop]   ||= "function(draggable){" + remote_function(options) + "}"
+    options.delete_if { |key, value| AJAX_OPTIONS.include?(key) }
+
+    options[:accept] = array_or_string_for_javascript(options[:accept]) if options[:accept]
+    options[:hoverclass] = "'#{options[:hoverclass]}'" if options[:hoverclass]
+
+    # Confirmation happens during the onDrop callback, so it can be removed from the options
+    options.delete(:confirm) if options[:confirm]
+
+    %(new Droppable(#{ActiveSupport::JSON.encode(element_id)}, #{options_for_javascript(options)});)
   end
 
   #
@@ -100,4 +119,28 @@ module RightRails::Helpers::Rails
     script << ")"
   end
 
+# ScriptaculousHelper substitute
+
+  CALLBACKS = Set.new([ :create, :uninitialized, :loading, :loaded, :interactive, :complete, :failure, :success ] + (100..599).to_a)
+  AJAX_OPTIONS = Set.new([ :before, :after, :condition, :url, :asynchronous, :method, :insertion, :position, :form, :with, :update, :script, :type ]).merge(CALLBACKS)
+
+  def array_or_string_for_javascript(option)
+    if option.kind_of?(Array)
+      "['#{option.join('\',\'')}']"
+    elsif !option.nil?
+      "'#{option}'"
+    end
+  end
+
+  def draggable_element(element_id, options = {})
+    javascript_tag(draggable_element_js(element_id, options).chop!)
+  end
+
+  def drop_receiving_element(element_id, options = {})
+    javascript_tag(drop_receiving_element_js(element_id, options).chop!)
+  end
+
+  def sortable_element(element_id, options = {})
+    javascript_tag(sortable_element_js(element_id, options).chop!)
+  end
 end
