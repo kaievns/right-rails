@@ -29,7 +29,7 @@ Just add the following into your +Gemfile+
 
 If you're on Rails < 3.1 then run the +right_rails+ generator
 
-    script/generate right_rails
+    rails g right_rails
 
 If you're using Rails 3.1 with the pipeline assets handler, then you
 can require things in your +application.js+ file
