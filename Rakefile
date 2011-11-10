@@ -41,7 +41,7 @@ end
 namespace :rjs do
   CURRENT_DIR         = File.dirname(__FILE__)
 
-  OUTPUT_DIR          = CURRENT_DIR + '/vendor'
+  OUTPUT_DIR          = CURRENT_DIR + '/vendor/assets'
   OUTPUT_JSS_DIR      = OUTPUT_DIR + "/javascripts"
   OUTPUT_IMG_DIR      = OUTPUT_DIR + "/images/rightjs-ui"
 
