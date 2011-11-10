@@ -83,17 +83,17 @@ private
         result[:content_type] = Mime::HTML
         result[:layout]       = nil
         result[:text]         = %Q{
-          |<!-- iframed uploads JS responses layout -->
-          |<html>
-          |  <head>
-          |    <script type="text/javascript">
-          |      with (window.parent) {
-          |        #{result[:text]}
-          |      }
-          |    </script>
-          |  </head>
-          |</html>
-        }.gsub(/\s+\|/, "\n").strip
+<!-- iframed uploads JS responses layout -->
+<html>
+  <head>
+    <script type="text/javascript">
+      with (window.parent) {
+        #{result[:text]}
+      }
+    </script>
+  </head>
+</html>
+        }.strip
       end
 
       result.merge! @options
