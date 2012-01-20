@@ -2,7 +2,7 @@
 # The RightRails module. Just a namespace
 #
 module RightRails
-  VERSION = '1.3.0'
+  VERSION = '1.3.1'
 
   autoload :Config,               'right_rails/config'
   autoload :JavaScriptGenerator,  'right_rails/java_script_generator'
