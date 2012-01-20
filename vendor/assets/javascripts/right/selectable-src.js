@@ -1,8 +1,8 @@
 /**
- * RightJS-UI Selectable v2.2.2
+ * RightJS-UI Selectable v2.2.3
  * http://rightjs.org/ui/selectable
  *
- * Copyright (C) 2009-2011 Nikolay Nemshilov
+ * Copyright (C) 2009-2012 Nikolay Nemshilov
  */
 var Selectable = RightJS.Selectable = (function(document, RightJS) {
 /**
@@ -179,13 +179,13 @@ var R        = RightJS,
 /**
  * Selectable unit main script
  *
- * Copyright (C) 2009-2011 Nikolay Nemshilov
+ * Copyright (C) 2009-2012 Nikolay Nemshilov
  */
 var Selectable = new Widget('UL', {
   include: Updater,
 
   extend: {
-    version: '2.2.2',
+    version: '2.2.3',
 
     EVENTS: $w('change select unselect disable enable hover leave show hide'),
 
@@ -245,11 +245,13 @@ var Selectable = new Widget('UL', {
       .$super('selectable', element)
       .setOptions(options)
       .on({
-        mousedown: this._mousedown,
-        mouseover: this._mouseover,
-        mouseout:  this._mouseout,
-        mouseup:   this._mouseup,
-        click:     this._click,
+        mousedown:  this._mousedown,
+        touchstart: this._mousedown,
+        mouseover:  this._mouseover,
+        mouseout:   this._mouseout,
+        mouseup:    this._mouseup,
+        touchend:   this._mouseup,
+        click:      this._click,
 
         select:    this._change,
         unselect:  this._change

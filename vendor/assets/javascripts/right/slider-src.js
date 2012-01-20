@@ -1,8 +1,8 @@
 /**
- * RightJS-UI Slider v2.3.0
+ * RightJS-UI Slider v2.3.1
  * http://rightjs.org/ui/slider
  *
- * Copyright (C) 2009-2011 Nikolay Nemshilov
+ * Copyright (C) 2009-2012 Nikolay Nemshilov
  */
 var Slider = RightJS.Slider = (function(document, Math, RightJS) {
 /**
@@ -171,13 +171,13 @@ var R       = RightJS,
 /**
  * RightJS UI Slider unit
  *
- * Copyright (C) 2009-2011 Nikolay Nemshilov
+ * Copyright (C) 2009-2012 Nikolay Nemshilov
  */
 var Slider = new Widget({
   include: Updater,
 
   extend: {
-    version: '2.3.0',
+    version: '2.3.1',
 
     EVENTS: $w('change'),
 
@@ -441,7 +441,7 @@ var Slider = new Widget({
 /**
  * Document onReady hook for sliders
  *
- * Copyright (C) 2009-2010 Nikolay Nemshilov
+ * Copyright (C) 2009-2012 Nikolay Nemshilov
  */
 $(document).on({
   // preinitializing the sliders
@@ -453,31 +453,14 @@ $(document).on({
     });
   },
 
-  // initiates the slider move
-  mousedown: function(event) {
-    var slider = event.find('.rui-slider');
-    if (slider) {
-      event.stop();
-      if (!(slider instanceof Slider)) {
-        slider = new Slider(slider);
-      }
-      Slider.current = slider.start(event);
-    }
-  },
+  mousedown:  document_mousedown,
+  touchstart: document_mousedown,
 
-  // handles the slider move
-  mousemove: function(event) {
-    if (Slider.current) {
-      Slider.current.move(event);
-    }
-  },
+  mousemove:  document_mousemove,
+  touchmove:  document_mousemove,
 
-  // handles the slider release
-  mouseup: function(event) {
-    if (Slider.current) {
-      Slider.current = false;
-    }
-  }
+  mouseup:    document_mouseup,
+  touchend:   document_mouseup
 });
 
 $(window).onBlur(function() {
@@ -486,6 +469,31 @@ $(window).onBlur(function() {
   }
 });
 
+// initiates the slider move
+function document_mousedown(event) {
+  var slider = event.find('.rui-slider');
+  if (slider) {
+    event.stop();
+    if (!(slider instanceof Slider)) {
+      slider = new Slider(slider);
+    }
+    Slider.current = slider.start(event);
+  }
+}
+
+// handles the slider move
+function document_mousemove(event) {
+  if (Slider.current) {
+    Slider.current.move(event);
+  }
+}
+
+// handles the slider release
+function document_mouseup(event) {
+  if (Slider.current) {
+    Slider.current = false;
+  }
+}
 
 var embed_style = document.createElement('style'),                 
     embed_rules = document.createTextNode("div.rui-slider,div.rui-slider .handle,div.rui-slider .level{margin:0;padding:0;border:none;background:none}div.rui-slider{height:0.4em;width:20em;border:1px solid #bbb;background:#F8F8F8;border-radius:.2em;-moz-border-radius:.2em;-webkit-border-radius:.2em;position:relative;margin:.6em 0;display:inline-block; *display:inline; *zoom:1;vertical-align:middle;user-select:none;-moz-user-select:none;-webkit-user-select:none;cursor:pointer}div.rui-slider .handle{font-size:25%;position:absolute;left:0;top:0;width:4pt;height:10pt;margin-top:-4pt;margin-left:0.4em;background:#BBB;border:1px solid #999;border-radius:.8em;-moz-border-radius:.8em;-webkit-border-radius:.8em;z-index:20}div.rui-slider .level{font-size:25%;position:absolute;top:0;left:0;width:0;height:100%;background:#ddd;z-index:1}div.rui-slider-vertical{height:10em;width:0.4em;margin:0 .3em}div.rui-slider-vertical .handle{top:auto;bottom:0;margin:0;margin-left:-4pt;margin-bottom:0.4em;height:5pt;width:10pt}div.rui-slider-vertical .level{height:0;width:100%;top:auto;bottom:0}");      

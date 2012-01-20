@@ -1,8 +1,8 @@
 /**
- * RightJS-UI Colorpicker v2.2.1
+ * RightJS-UI Colorpicker v2.2.2
  * http://rightjs.org/ui/colorpicker
  *
- * Copyright (C) 2010-2011 Nikolay Nemshilov
+ * Copyright (C) 2010-2012 Nikolay Nemshilov
  */
 var Colorpicker = RightJS.Colorpicker = (function(document, Math, parseInt, RightJS) {
 /**
@@ -408,13 +408,13 @@ var R = RightJS,
 /**
  * The basic file for Colorpicker
  *
- * Copyright (C) 2010-2011 Nikolay Nemshilov
+ * Copyright (C) 2010-2012 Nikolay Nemshilov
  */
 var Colorpicker = new Widget({
   include: [Toggler, Assignable],
 
   extend: {
-    version: '2.2.1',
+    version: '2.2.2',
 
     EVENTS: $w('change show hide done'),
 
@@ -462,7 +462,8 @@ var Colorpicker = new Widget({
         this.controls = new Controls()
       ])
       .on({
-        mousedown: this.startTrack,
+        mousedown:  this.startTrack,
+        touchstart: this.startTrack,
 
         keyup: this.recalc,
         blur:  this.update,
@@ -938,20 +939,27 @@ Colorpicker.include({
 /**
  * The document level hooks for colorpicker
  *
- * Copyright (C) 2010 Nikolay Nemshilov
+ * Copyright (C) 2010-2012 Nikolay Nemshilov
  */
-$(document).on({
-  mouseup: function() {
-    if (Colorpicker.tracking) {
-      Colorpicker.tracking.stopTrack();
-    }
-  },
 
-  mousemove: function(event) {
-    if (Colorpicker.tracking) {
-      Colorpicker.tracking.trackMove(event);
-    }
-  },
+function document_mouseup() {
+  if (Colorpicker.tracking) {
+    Colorpicker.tracking.stopTrack();
+  }
+}
+
+function document_mousemove(event) {
+  if (Colorpicker.tracking) {
+    Colorpicker.tracking.trackMove(event);
+  }
+}
+
+$(document).on({
+  mouseup:  document_mouseup,
+  touchend: document_mouseup,
+
+  mousemove: document_mousemove,
+  touchmove: document_mousemove,
 
   focus: function(event) {
     var target = event.target instanceof Input ? event.target : null;
@@ -959,6 +967,7 @@ $(document).on({
     Colorpicker.hideAll();
 
     if (target && (target.colorpicker || target.match(Colorpicker.Options.cssRule))) {
+
       (target.colorpicker || new Colorpicker({update: target}))
         .setValue(target.value()).showAt(target);
     }

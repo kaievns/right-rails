@@ -1,8 +1,8 @@
 /**
- * RightJS-UI Dialog v2.2.0
+ * RightJS-UI Dialog v2.2.1
  * http://rightjs.org/ui/dialog
  *
- * Copyright (C) 2010-2011 Nikolay Nemshilov
+ * Copyright (C) 2010-2012 Nikolay Nemshilov
  */
 var Dialog = RightJS.Dialog = (function(RightJS) {
 /**
@@ -240,11 +240,11 @@ var R  = RightJS,
 /**
  * Basic dialog class
  *
- * Copyright (C) 2010-2011 Nikolay Nemshilov
+ * Copyright (C) 2010-2012 Nikolay Nemshilov
  */
 var Dialog = new Widget({
   extend: {
-    version: '2.2.0',
+    version: '2.2.1',
 
     EVENTS: $w('ok cancel help expand collapse resize load'),
 
@@ -471,7 +471,7 @@ var Dialog = new Widget({
 /**
  * Dialog header line element
  *
- * Copyright (C) 2010 Nikolay Nemshilov
+ * Copyright (C) 2010-2012 Nikolay Nemshilov
  */
 Dialog.Head = new Class(Element, {
 
@@ -513,7 +513,8 @@ Dialog.Head = new Class(Element, {
 
     this.on({
       selectstart: function(e) { e.stop(); },
-      mousedown:   this.dragStart
+      mousedown:   this.dragStart,
+      touchstart:  this.dragStart
     });
 
     if (!this.options.draggable) {
@@ -716,7 +717,7 @@ Dialog.Prompt = new Class(Dialog, {
 /**
  * Document level hooks for the dialogs
  *
- * Copyright (C) 2010 Nikolay Nemshilov
+ * Copyright (C) 2010-2012 Nikolay Nemshilov
  */
 $(document).on({
   keydown: function(event) {
@@ -732,18 +733,26 @@ $(document).on({
     }
   },
 
-  mousemove: function(event) {
-    if (Dialog.dragged) {
-      Dialog.dragged.head.dragMove(event);
-    }
-  },
+  mousemove: document_mousemove,
+  touchmove: document_mousemove,
 
-  mouseup: function(event) {
-    if (Dialog.dragged) {
-      Dialog.dragged.head.dragStop(event);
-    }
-  }
+  mouseup:   document_mouseup,
+  touchend:  document_mouseup
 });
+
+function document_mousemove(event) {
+  if (Dialog.dragged) {
+    Dialog.dragged.head.dragMove(event);
+  }
+}
+
+function document_mouseup(event) {
+  if (Dialog.dragged) {
+    Dialog.dragged.head.dragStop(event);
+  }
+}
+
+
 
 $(window).onResize(function() {
   if (Dialog.current) {

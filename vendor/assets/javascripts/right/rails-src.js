@@ -1,14 +1,14 @@
 /**
- * RubyOnRails Support Module v2.3.1
+ * RubyOnRails Support Module v2.3.2
  * http://rightjs.org/plugins/rails
  *
- * Copyright (C) 2009-2011 Nikolay Nemshilov
+ * Copyright (C) 2009-2012 Nikolay Nemshilov
  */
 (function(window, document, RightJS) {
 /**
  * The Rails plugin initialization script
  *
- * Copyright (C) 2010-2011 Nikolay Nemshilov
+ * Copyright (C) 2010-2012 Nikolay Nemshilov
  */
 
 var R      = RightJS,
@@ -20,7 +20,7 @@ var R      = RightJS,
     Input  = RightJS.Input;
 
 RightJS.Rails = {
-  version: '2.3.1'
+  version: '2.3.2'
 };
 
 
@@ -101,7 +101,7 @@ RightJS.$alias(RightJS.Array.prototype, {
 /**
  * Rails 3 UJS support module
  *
- * Copyright (C) 2010-2011 Nikolay Nemshilov
+ * Copyright (C) 2010-2012 Nikolay Nemshilov
  */
 // tries to cancel the event via confirmation
 function user_cancels(event, element) {
@@ -159,11 +159,7 @@ function try_link_submit(event, link) {
   var url    = link.get('href'),
       method = link.get('data-method'),
       remote = link.get('data-remote'),
-      param  = $$('meta[name=csrf-param]')[0],
-      token  = $$('meta[name=csrf-token]')[0];
-
-  param = param && param.get('content');
-  token = token && token.get('content');
+      token  = get_csrf_token();
 
   if (user_cancels(event, link)) { return; }
   if (method || remote) { event.stop(); }
@@ -172,14 +168,14 @@ function try_link_submit(event, link) {
     Xhr.load(url, add_xhr_events(link, {
       method:  method || 'get',
       spinner: link.get('data-spinner'),
-      params:  new Function('return {"'+ param +'": "'+ token +'"}')()
+      params:  new Function('return {"'+ token[0] +'": "'+ token[1] +'"}')()
     }));
 
   } else if (method) {
     var form  = $E('form', {action: url, method: 'post'});
 
-    if (param && token) {
-      form.insert('<input type="hidden" name="'+param+'" value="'+token+'" />');
+    if (token) {
+      form.insert('<input type="hidden" name="'+token[0]+'" value="'+token[1]+'" />');
     }
 
     form.insert('<input type="hidden" name="_method" value="'+method+'"/>')
@@ -189,8 +185,40 @@ function try_link_submit(event, link) {
   }
 }
 
+function get_csrf_token() {
+  var param, token;
+
+  param = $$('meta[name=csrf-param]')[0];
+  token = $$('meta[name=csrf-token]')[0];
+
+  param = param && param.get('content');
+  token = token && token.get('content');
+
+  if (param && token) {
+    return [param, token];
+  }
+}
+
 // global events listeners
 $(document).on({
+  ready: function() {
+    var token   = get_csrf_token(), i = 0, xhr,
+        modules = ['InEdit', 'Rater', 'Sortable'];
+
+    if (token) {
+      for (; i < modules.length; i++) {
+        if (modules[i] in RightJS) {
+          xhr = RightJS[modules[i]].Options.Xhr;
+
+          if (RightJS.isHash(xhr)) {
+            xhr.params = Object.merge(xhr.params, {});
+            xhr.params[token[0]] = token[1];
+          }
+        }
+      }
+    }
+  },
+
   click: function(event) {
     var link = event.find('a');
     if (link) {

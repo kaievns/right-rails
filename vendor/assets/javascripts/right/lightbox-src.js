@@ -1,5 +1,5 @@
 /**
- * RightJS-UI Lightbox v2.2.3
+ * RightJS-UI Lightbox v2.4.0
  * http://rightjs.org/ui/lightbox
  *
  * Copyright (C) 2009-2011 Nikolay Nemshilov
@@ -174,12 +174,12 @@ Browser.IE6 = Browser.OLD && navigator.userAgent.indexOf("MSIE 6") > 0;
 /**
  * The lightbox widget
  *
- * Copyright (C) 2009-2011 Nikolay Nemshilov
+ * Copyright (C) 2009-2012 Nikolay Nemshilov
  */
 var Lightbox = new Widget({
 
   extend: {
-    version: '2.2.3',
+    version: '2.4.0',
 
     EVENTS: $w('show hide load'),
 
@@ -197,7 +197,9 @@ var Lightbox = new Widget({
 
       // video links default size
       mediaWidth:      425,
-      mediaHeight:     350
+      mediaHeight:     350,
+
+      fullscreen:      true // allow fullscreen video
     },
 
     i18n: {
@@ -730,12 +732,18 @@ var Loader = new Class({
       ]
     },
     options = Lightbox.current ? Lightbox.current.options : Lightbox.Options,
-    sizes = ' width="'+ options.mediaWidth + '" height="'+ options.mediaHeight + '"';
+    sizes = ' width="'+ options.mediaWidth + '" height="'+ options.mediaHeight + '"',
+    fullscreen_param = options.fullscreen ? '<param name="allowFullScreen" value="true"></param>' : '',
+    fullscreen_attr  = options.fullscreen ? ' allowfullscreen="true"' : '';
+
+    if (url.indexOf('youtube.com') > 0 && options.fullscreen) {
+      url += '?version=3&amp;hl=en_US&amp;rel=0';
+    }
 
     return '<object classid="clsid:' + media_types[type][0] +
       '" codebase="' + media_types[type][1] + '"'+ sizes + '>' +
-      '<param name="src" value="'+ url +'" />'+
-      '<embed src="'+ url +'" type="'+ media_types[type][2]+'"'+ sizes + ' />' +
+      '<param name="src" value="'+ url +'" />'+ fullscreen_param +
+      '<embed src="'+ url +'" type="'+ media_types[type][2]+'"'+ sizes + fullscreen_attr+ ' />' +
     '</object>';
   }
 

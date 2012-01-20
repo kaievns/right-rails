@@ -1,8 +1,8 @@
 /**
- * Drag'n'Drop module v2.2.2
+ * Drag'n'Drop module v2.2.3
  * http://rightjs.org/plugins/drag-n-drop
  *
- * Copyright (C) 2009-2011 Nikolay Nemshilov
+ * Copyright (C) 2009-2012 Nikolay Nemshilov
  */
 (function(window, document, RightJS) {
 /**
@@ -24,11 +24,11 @@ var R        = RightJS,
 /**
  * Draggable unit
  *
- * Copyright (C) 2009-2011 Nikolay Nemshilov
+ * Copyright (C) 2009-2012 Nikolay Nemshilov
  */
 var Draggable = new Class(Observer, {
   extend: {
-    version: '2.2.2',
+    version: '2.2.3',
 
     EVENTS: $w('before start drag stop drop'),
 
@@ -80,7 +80,10 @@ var Draggable = new Class(Observer, {
     this.$super(options);
 
     this._dragStart = R(this.dragStart).bind(this);
-    this.handle.onMousedown(this._dragStart);
+    this.handle.on({
+      mousedown:  this._dragStart,
+      touchstart: this._dragStart
+    });
 
     this.element.draggable = this;
   },
@@ -91,7 +94,9 @@ var Draggable = new Class(Observer, {
    * @return this
    */
   destroy: function() {
-    this.handle.stopObserving('mousedown', this._dragStart);
+    this.handle
+      .stopObserving('mousedown',  this._dragStart)
+      .stopObserving('touchstart', this._dragStart);
     delete(this.element.draggable);
 
     return this;
@@ -526,7 +531,7 @@ var Droppable = new Class(Observer, {
 /**
  * The document events hooker
  *
- * Copyright (C) 2009-2011 Nikolay Nemshilov
+ * Copyright (C) 2009-2012 Nikolay Nemshilov
  */
 $(document).on({
   // parocesses the automatically discovered elements
@@ -535,21 +540,28 @@ $(document).on({
     Droppable.rescan();
   },
 
-  // watch the draggables moving arond
-  mousemove: function(event) {
-    if (Draggable.current !== null) {
-      Draggable.current.dragProcess(event);
-      Droppable.checkHover(event, Draggable.current);
-    }
-  },
+  mousemove: document_mousemove,
+  touchmove: document_mousemove,
 
-  // releases the current draggable on mouse up
-  mouseup: function(event) {
-    if (Draggable.current !== null) {
-      Draggable.current.dragStop(event);
-    }
-  }
+  mouseup:   document_mouseup,
+  touchend:  document_mouseup
 });
+
+
+// watch the draggables moving arond
+function document_mousemove(event) {
+  if (Draggable.current !== null) {
+    Draggable.current.dragProcess(event);
+    Droppable.checkHover(event, Draggable.current);
+  }
+}
+
+// releases the current draggable on mouse up
+function document_mouseup(event) {
+  if (Draggable.current !== null) {
+    Draggable.current.dragStop(event);
+  }
+}
 
 /**
  * Element level hooks for drag'n'drops
