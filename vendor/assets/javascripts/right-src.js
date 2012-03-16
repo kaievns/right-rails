@@ -1,8 +1,8 @@
 /**
- * RightJS v2.3.0 - http://rightjs.org
+ * RightJS v2.3.1 - http://rightjs.org
  * Released under the terms of MIT license
  *
- * Copyright (C) 2008-2011 Nikolay Nemshilov
+ * Copyright (C) 2008-2012 Nikolay Nemshilov
  */
 /**
  * The basic layout for RightJS builds
@@ -20,7 +20,7 @@ var RightJS = function(value) {
   return value; // <- a dummy method to emulate the safe-mode
 };
 
-RightJS.version = "2.3.0";
+RightJS.version = "2.3.1";
 RightJS.modules =["core", "dom", "form", "events", "xhr", "fx", "cookie"];
 
 
@@ -2674,8 +2674,9 @@ Element.include({
    * @return String text content or Element this
    */
   text: function(text) {
-    return text === undefined ? (this._.textContent || this._.innerText) :
-      this.update(this.doc()._.createTextNode(text));
+    return text === undefined ? (
+      this._.textContent === undefined ? this._.innerText : this._.textContent
+    ) : this.update(this.doc()._.createTextNode(text));
   },
 
   /**
@@ -3770,7 +3771,15 @@ var Form = RightJS.Form = Element_wrappers.FORM = new Class(Element, {
    * @return Input field
    */
   input: function(name) {
-    return wrap(this._[name]);
+    var input = this._[name];
+
+    if ('tagName' in input) {
+      input = wrap(input);
+    } else { // a list of radio-buttons (coz they have all the same name)
+      input = $A(input).map(wrap);
+    }
+
+    return input;
   },
 
   /**

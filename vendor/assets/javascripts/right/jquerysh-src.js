@@ -10,7 +10,9 @@
  *
  * Copyright (C) 2010-2011 Nikolay Nemshilov
  */
-var rjs_$   = RightJS.$,
+var _jQuery = window.jQuery,
+    _$      = window.$,
+    rjs_$   = RightJS.$,
     $$      = RightJS.$$,
     $E      = RightJS.$E,
     $A      = RightJS.$A,
@@ -145,6 +147,18 @@ $ext($, {
 
   noop: function() {
     return RightJS(function() {});
+  },
+
+  noConflict: function( deep ) {
+    if ( window.$ === jQuery ) {
+      window.$ = _$;
+    }
+
+    if ( deep && window.jQuery === jQuery ) {
+      window.jQuery = _jQuery;
+    }
+
+    return $;
   }
 
 });

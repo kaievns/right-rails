@@ -1,5 +1,5 @@
 /**
- * RightJS-UI Colorpicker v2.2.2
+ * RightJS-UI Colorpicker v2.2.3
  * http://rightjs.org/ui/colorpicker
  *
  * Copyright (C) 2010-2012 Nikolay Nemshilov
@@ -182,7 +182,7 @@ var Button = new RightJS.Class(RightJS.Element, {
  * A shared module that toggles a widget visibility status
  * in a uniformed way according to the options settings
  *
- * Copyright (C) 2010-2011 Nikolay Nemshilov
+ * Copyright (C) 2010-2012 Nikolay Nemshilov
  */
 var Toggler = {
   /**
@@ -206,7 +206,7 @@ var Toggler = {
    */
   hide: function(fx_name, fx_options) {
     this.constructor.current = null;
-    return Toggler_toggle(this, 'show', fx_name, fx_options);
+    return Toggler_toggle(this, 'hide', fx_name, fx_options);
   },
 
   /**
@@ -249,29 +249,39 @@ var Toggler = {
  * @return void
  */
 function Toggler_toggle(element, event, fx_name, fx_options) {
-  if (RightJS.Fx) {
-    if (fx_name === undefined) {
-      fx_name = element.options.fxName;
+  if ((event === 'hide' && element.visible()) || (event === 'show' && element.hidden())) {
+    if (RightJS.Fx) {
+      element.___fx = true;
 
-      if (fx_options === undefined) {
-        fx_options = {
-          duration: element.options.fxDuration,
-          onFinish: RightJS(element.fire).bind(element, event)
-        };
+      if (fx_name === undefined) {
+        fx_name = element.options.fxName;
 
-        // hide on double time
-        if (event === 'hide') {
-          fx_options.duration = (RightJS.Fx.Durations[fx_options.duration] ||
-            fx_options.duration) / 2;
+        if (fx_options === undefined) {
+          fx_options = {
+            duration: element.options.fxDuration,
+            onFinish: function() {
+              element.___fx = false;
+              element.fire(event);
+            }
+          };
+
+          // hide on double time
+          if (event === 'hide') {
+            fx_options.duration = (RightJS.Fx.Durations[fx_options.duration] ||
+              fx_options.duration) / 2;
+          }
         }
       }
+    } else {
+      // manually trigger the event if no fx were specified
+      element.___fx = false;
+      if (!fx_name) { element.fire(event); }
     }
+
+    return element.$super(fx_name, fx_options);
+  } else {
+    return element;
   }
-
-  // manually trigger the event if no fx were specified
-  if (!RightJS.Fx || !fx_name) { element.fire(event); }
-
-  return element.$super(fx_name, fx_options);
 }
 
 /**
@@ -414,7 +424,7 @@ var Colorpicker = new Widget({
   include: [Toggler, Assignable],
 
   extend: {
-    version: '2.2.2',
+    version: '2.2.3',
 
     EVENTS: $w('change show hide done'),
 
