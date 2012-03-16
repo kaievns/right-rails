@@ -1,7 +1,7 @@
 Gem::Specification.new do |s|
   s.name    = 'right-rails'
-  s.version = '1.3.1'
-  s.date    = '2012-01-20'
+  s.version = '1.3.2'
+  s.date    = '2012-03-16'
 
   s.summary = "RightJS plugin for Rails"
   s.description = "RightRails is a RubyOnRails plugin for the RightJS JavaScript framework. "\
